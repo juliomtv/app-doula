@@ -1,0 +1,9 @@
+{
+  "appId": "com.appdoula.nalin",
+  "appName": "App Doula",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  }
+}

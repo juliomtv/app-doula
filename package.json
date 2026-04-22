@@ -1,0 +1,25 @@
+{
+  "name": "app-doula",
+  "version": "1.0.0",
+  "main": "api_integration.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/juliomtv/app-doula.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/juliomtv/app-doula/issues"
+  },
+  "homepage": "https://github.com/juliomtv/app-doula#readme",
+  "description": "",
+  "dependencies": {
+    "@capacitor/android": "^8.3.1",
+    "@capacitor/cli": "^8.3.1",
+    "@capacitor/core": "^8.3.1"
+  }
+}

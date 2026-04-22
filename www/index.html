@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Nalin Nazareth — Doula</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --rose:#C9907A; --rose-light:#E8C4B4; --rose-pale:#F7EDE8;
+  --rose-deep:#A96B55; --cream:#FBF7F4; --warm:#FDFAF8;
+  --dark:#3A2820; --mid:#7A5A50; --light:#B89890;
+  --shadow:rgba(169,107,85,0.15); --shadow-soft:rgba(169,107,85,0.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);min-height:100vh;display:flex;flex-direction:column;}
+input,select,textarea,button{font-family:'DM Sans',sans-serif;}
+
+/* ── SCREENS ── */
+.screen{display:none;flex-direction:column;min-height:100vh;background:var(--warm);}
+.screen.active{display:flex;}
+
+/* ── STATUS BAR ── */
+.sbar{height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:13px;font-weight:600;color:var(--dark);flex-shrink:0;background:inherit;}
+
+/* ══════════════════════ LOGIN ══════════════════════ */
+#login{background:linear-gradient(160deg,var(--rose-pale) 0%,var(--cream) 60%,#fff 100%);align-items:center;justify-content:center;padding:40px 32px;}
+.login-blob{width:160px;height:150px;background:radial-gradient(ellipse at 40% 40%,var(--rose-light) 0%,rgba(201,144,122,.3) 60%,transparent 100%);border-radius:60% 40% 70% 30%/50% 60% 40% 50%;display:flex;align-items:center;justify-content:center;animation:blobFloat 6s ease-in-out infinite;margin-bottom:4px;}
+@keyframes blobFloat{0%,100%{border-radius:60% 40% 70% 30%/50% 60% 40% 50%;}50%{border-radius:40% 60% 30% 70%/60% 40% 60% 40%;transform:translateY(-6px);}}
+.login-logo{width:72px;height:72px;border:1.5px solid var(--rose);border-radius:50%;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;font-size:32px;}
+.login-title{font-family:'Cormorant Garamond',serif;font-size:38px;font-style:italic;font-weight:300;color:var(--dark);text-align:center;line-height:1;}
+.login-sub{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--mid);text-align:center;margin-top:4px;}
+.login-card{background:white;border-radius:28px;padding:28px 24px;box-shadow:0 8px 40px var(--shadow);width:100%;max-width:380px;margin-top:32px;}
+.login-card h3{font-family:'Cormorant Garamond',serif;font-size:22px;font-style:italic;color:var(--dark);margin-bottom:20px;}
+.field label{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--light);font-weight:500;display:block;margin-bottom:7px;}
+.field input{width:100%;border:1.5px solid var(--rose-pale);border-radius:14px;padding:13px 16px;font-size:15px;color:var(--dark);background:var(--warm);outline:none;transition:border-color .2s;}
+.field input:focus{border-color:var(--rose);}
+.field+.field{margin-top:16px;}
+.btn-rose{width:100%;background:var(--rose);color:white;border:none;border-radius:50px;padding:15px;font-size:15px;font-weight:500;cursor:pointer;margin-top:20px;box-shadow:0 6px 20px rgba(169,107,85,.3);transition:transform .15s,box-shadow .15s;}
+.btn-rose:active{transform:scale(.97);box-shadow:0 3px 10px rgba(169,107,85,.2);}
+.login-err{color:#c0392b;font-size:13px;text-align:center;margin-top:12px;min-height:18px;}
+.login-note{font-size:12px;color:var(--light);text-align:center;margin-top:16px;}
+
+/* ══════════════════════ BOTTOM NAV ══════════════════════ */
+.bnav{background:rgba(253,250,248,.97);backdrop-filter:blur(20px);border-top:1px solid rgba(201,144,122,.1);display:flex;padding:8px 0 24px;position:sticky;bottom:0;z-index:100;flex-shrink:0;}
+.nitem{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 0;}
+.nitem .ni{font-size:22px;transition:transform .2s;}
+.nitem .nl{font-size:10px;color:var(--light);}
+.nitem.active .ni{transform:scale(1.1);}
+.nitem.active .nl{color:var(--rose);font-weight:500;}
+
+/* ══════════════════════ HOME ══════════════════════ */
+#home .scroll{overflow-y:auto;flex:1;}
+.home-hdr{background:linear-gradient(160deg,var(--rose-pale),rgba(247,237,232,.3));padding:16px 22px 24px;position:relative;overflow:hidden;}
+.home-hdr::after{content:'';position:absolute;right:-20px;bottom:-40px;width:150px;height:150px;background:radial-gradient(circle,rgba(201,144,122,.2),transparent 70%);border-radius:50%;}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.greet-sub{font-size:13px;color:var(--light);}
+.greet-name{font-family:'Cormorant Garamond',serif;font-size:24px;font-style:italic;color:var(--dark);}
+.notif{width:40px;height:40px;border-radius:50%;background:white;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px var(--shadow-soft);font-size:18px;position:relative;}
+.ndot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--rose);border:2px solid white;}
+
+/* Pregnancy card */
+.preg-card{background:white;border-radius:22px;padding:18px;box-shadow:0 4px 20px var(--shadow-soft);position:relative;overflow:hidden;}
+.preg-card::before{content:'';position:absolute;right:-10px;top:-10px;width:90px;height:90px;background:radial-gradient(circle,var(--rose-pale),transparent 70%);border-radius:50%;}
+.pc-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--light);}
+.pc-week{font-family:'Cormorant Garamond',serif;font-size:50px;font-weight:300;color:var(--rose-deep);line-height:1;}
+.pc-week small{font-size:17px;color:var(--mid);}
+.pc-bebe{font-family:'Cormorant Garamond',serif;font-size:19px;font-style:italic;color:var(--dark);margin-top:2px;}
+.prog-lbl{display:flex;justify-content:space-between;font-size:12px;color:var(--mid);margin:14px 0 6px;}
+.prog-bar{height:6px;background:var(--rose-pale);border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--rose-light),var(--rose));border-radius:3px;transition:width 1s ease;}
+.tri-dots{display:flex;gap:4px;margin-top:8px;}
+.tdot{flex:1;height:4px;border-radius:2px;background:var(--rose-pale);}
+.tdot.f{background:var(--rose);}
+.tri-lbl{font-size:11px;color:var(--mid);text-align:right;margin-top:4px;}
+
+/* Size compare */
+.size-box{background:var(--rose-pale);border-radius:16px;padding:13px 16px;display:flex;align-items:center;gap:12px;margin:14px 22px 0;}
+.size-box .se{font-size:30px;}
+.size-box p:first-child{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--light);}
+.size-box p:last-child{font-size:14px;color:var(--dark);font-weight:500;}
+
+/* Section */
+.sec-title{font-family:'Cormorant Garamond',serif;font-size:21px;font-style:italic;color:var(--dark);padding:18px 22px 10px;}
+.qgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:0 22px;}
+.qcard{background:white;border-radius:18px;padding:16px;box-shadow:0 2px 10px var(--shadow-soft);cursor:pointer;transition:transform .15s;border:1px solid rgba(201,144,122,.07);}
+.qcard:active{transform:scale(.97);}
+.qcard .qi{font-size:26px;margin-bottom:8px;}
+.qcard .qt{font-size:13px;font-weight:500;color:var(--dark);}
+.qcard .qs{font-size:11px;color:var(--light);margin-top:2px;}
+
+/* Tip */
+.tip-box{margin:16px 22px;background:linear-gradient(135deg,var(--rose-pale),var(--cream));border-radius:18px;padding:16px;border-left:4px solid var(--rose);}
+.tip-tag{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--rose);font-weight:500;margin-bottom:6px;}
+.tip-txt{font-family:'Cormorant Garamond',serif;font-size:16px;font-style:italic;color:var(--dark);line-height:1.6;}
+
+/* Consulta */
+.consult-box{margin:0 22px 24px;background:white;border-radius:18px;padding:16px;box-shadow:0 2px 10px var(--shadow-soft);display:flex;align-items:center;gap:13px;}
+.consult-icon{width:48px;height:48px;background:var(--rose-pale);border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.consult-lbl{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--light);}
+.consult-name{font-size:14px;font-weight:500;color:var(--dark);margin-top:2px;}
+.consult-time{font-size:12px;color:var(--mid);margin-top:1px;}
+
+/* ══════════════════════ CONTEÚDO ══════════════════════ */
+#conteudo .scroll{overflow-y:auto;flex:1;}
+.cont-hdr{background:linear-gradient(135deg,var(--rose-pale),var(--cream));padding:16px 22px 22px;}
+.cont-hdr h2{font-family:'Cormorant Garamond',serif;font-size:28px;font-style:italic;color:var(--dark);}
+.cont-hdr p{font-size:13px;color:var(--mid);margin-top:3px;}
+.tabs{display:flex;gap:8px;margin-top:14px;overflow-x:auto;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{flex-shrink:0;padding:8px 18px;border-radius:50px;border:1.5px solid var(--rose-pale);font-size:13px;font-weight:500;color:var(--mid);cursor:pointer;background:white;transition:all .2s;}
+.tab.active{background:var(--rose);color:white;border-color:var(--rose);}
+
+.cont-grid{padding:18px 22px;display:flex;flex-direction:column;gap:14px;}
+.ccard{background:white;border-radius:18px;overflow:hidden;box-shadow:0 2px 14px var(--shadow-soft);cursor:pointer;transition:transform .15s;}
+.ccard:active{transform:scale(.98);}
+.cthumb{height:130px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.cthumb .te{font-size:44px;}
+.play-btn{position:absolute;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 14px rgba(0,0,0,.15);}
+.cinfo{padding:14px;}
+.ctag{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--rose);font-weight:500;}
+.ctitle{font-size:15px;font-weight:500;color:var(--dark);margin-top:3px;line-height:1.3;}
+.cmeta{font-size:12px;color:var(--light);margin-top:6px;display:flex;gap:10px;}
+.empty-state{text-align:center;padding:48px 22px;color:var(--light);}
+.empty-state .ei{font-size:48px;margin-bottom:12px;}
+.empty-state p{font-size:14px;}
+
+/* ══════════════════════ GESTAÇÃO ══════════════════════ */
+#gestacao .scroll{overflow-y:auto;flex:1;}
+.grav-hdr{background:linear-gradient(135deg,var(--rose-pale),var(--cream));padding:16px 22px 22px;}
+.grav-hdr h2{font-family:'Cormorant Garamond',serif;font-size:28px;font-style:italic;color:var(--dark);}
+.tri-tabs{display:flex;gap:8px;margin-top:14px;}
+.ttab{flex:1;padding:10px 6px;border-radius:13px;border:1.5px solid var(--rose-pale);font-size:12px;font-weight:500;color:var(--mid);cursor:pointer;background:white;text-align:center;transition:all .2s;}
+.ttab small{display:block;font-size:10px;opacity:.7;margin-top:2px;}
+.ttab.active{background:var(--rose);color:white;border-color:var(--rose);}
+.wk-list{padding:18px 22px;display:flex;flex-direction:column;gap:13px;}
+.wkcard{background:white;border-radius:18px;padding:16px;box-shadow:0 2px 10px var(--shadow-soft);display:flex;gap:13px;align-items:flex-start;border-left:4px solid transparent;}
+.wkcard.cur{border-left-color:var(--rose);}
+.wknum{width:42px;height:42px;border-radius:11px;background:var(--rose-pale);flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.wknum span:first-child{font-size:17px;font-weight:600;color:var(--rose-deep);}
+.wknum span:last-child{font-size:9px;color:var(--light);text-transform:uppercase;letter-spacing:1px;}
+.wkinfo{flex:1;}
+.wkt{font-size:14px;font-weight:500;color:var(--dark);}
+.wkd{font-size:12px;color:var(--mid);margin-top:3px;line-height:1.5;}
+.wke{font-size:28px;flex-shrink:0;}
+
+/* ══════════════════════ DIÁRIO ══════════════════════ */
+#diario .scroll{overflow-y:auto;flex:1;}
+.diary-hdr{background:linear-gradient(135deg,var(--rose-pale),var(--cream));padding:16px 22px 22px;}
+.diary-hdr h2{font-family:'Cormorant Garamond',serif;font-size:28px;font-style:italic;color:var(--dark);}
+.mood-row{display:flex;gap:8px;padding:16px 22px 0;}
+.moodbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:11px 4px;border-radius:14px;background:white;border:1.5px solid var(--rose-pale);cursor:pointer;transition:all .2s;}
+.moodbtn.sel{background:var(--rose-pale);border-color:var(--rose);}
+.moodbtn span:first-child{font-size:22px;}
+.moodbtn span:last-child{font-size:10px;color:var(--mid);}
+.diary-write{padding:16px 22px;}
+textarea.dta{width:100%;border:1.5px solid var(--rose-pale);border-radius:16px;padding:14px;font-size:14px;color:var(--dark);background:white;outline:none;resize:none;height:110px;line-height:1.6;}
+textarea.dta:focus{border-color:var(--rose);}
+.diary-acts{display:flex;gap:8px;margin-top:10px;}
+.dact{flex:1;padding:11px;border-radius:13px;border:1.5px solid var(--rose-pale);background:white;font-size:12px;font-weight:500;color:var(--mid);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;}
+.dsave{flex:2;padding:11px;border-radius:13px;background:var(--rose);border:none;font-size:13px;font-weight:500;color:white;cursor:pointer;}
+.entries-list{padding:0 22px 24px;display:flex;flex-direction:column;gap:11px;}
+.entry{background:white;border-radius:16px;padding:14px;box-shadow:0 2px 10px var(--shadow-soft);}
+.entry-hdr{display:flex;justify-content:space-between;margin-bottom:7px;}
+.entry-date{font-size:11px;color:var(--light);letter-spacing:1px;text-transform:uppercase;}
+.entry-txt{font-size:13px;color:var(--mid);line-height:1.6;}
+.entry-wtag{display:inline-block;background:var(--rose-pale);color:var(--rose-deep);font-size:10px;padding:3px 10px;border-radius:20px;margin-top:7px;}
+
+/* ══════════════════════ PERFIL ══════════════════════ */
+#perfil .scroll{overflow-y:auto;flex:1;}
+.perf-hero{background:linear-gradient(160deg,var(--rose-pale),var(--cream));padding:16px 22px 28px;text-align:center;}
+.perf-avatar{width:86px;height:86px;border-radius:50%;background:linear-gradient(135deg,var(--rose-light),var(--rose));margin:16px auto 12px;display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:0 6px 20px rgba(169,107,85,.25);}
+.perf-name{font-family:'Cormorant Garamond',serif;font-size:26px;font-style:italic;color:var(--dark);}
+.perf-due{font-size:13px;color:var(--mid);margin-top:3px;}
+.perf-badge{display:inline-flex;align-items:center;gap:6px;background:white;border-radius:50px;padding:6px 16px;margin-top:10px;box-shadow:0 2px 10px var(--shadow-soft);font-size:12px;color:var(--mid);}
+.stats-g{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;padding:18px 22px 0;}
+.scard{background:white;border-radius:16px;padding:14px 10px;box-shadow:0 2px 10px var(--shadow-soft);text-align:center;}
+.sval{font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--rose-deep);}
+.slbl{font-size:10px;color:var(--light);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+.menu-list{padding:18px 22px 20px;display:flex;flex-direction:column;gap:10px;}
+.mitem{background:white;border-radius:15px;padding:15px 16px;box-shadow:0 2px 8px var(--shadow-soft);display:flex;align-items:center;gap:13px;cursor:pointer;transition:transform .15s;}
+.mitem:active{transform:scale(.98);}
+.mico{width:38px;height:38px;background:var(--rose-pale);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.mtext{flex:1;}
+.mtext span{display:block;}
+.mtext span:first-child{font-size:14px;font-weight:500;color:var(--dark);}
+.mtext span:last-child{font-size:11px;color:var(--light);margin-top:1px;}
+.marr{color:var(--light);font-size:18px;}
+.logout-btn{margin:0 22px 32px;width:calc(100% - 44px);border:1.5px solid var(--rose-pale);background:white;border-radius:50px;padding:13px;font-size:14px;color:var(--mid);cursor:pointer;font-weight:500;}
+
+/* Toasts */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--dark);color:white;padding:10px 20px;border-radius:50px;font-size:13px;opacity:0;transition:all .3s;z-index:999;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ LOGIN ═══════════════ -->
+<div class="screen active" id="login">
+  <div class="login-blob"><div class="login-logo">🌸</div></div>
+  <div class="login-title">Nalin Nazareth</div>
+  <div class="login-sub">Doula · Educadora Perinatal</div>
+  <div class="login-card">
+    <h3>Bem-vinda de volta 💕</h3>
+    <div class="field">
+      <label>E-mail</label>
+      <input type="email" id="l-email" placeholder="seu@email.com" value="ana@email.com">
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="l-senha" placeholder="••••••••" value="123456">
+    </div>
+    <button class="btn-rose" onclick="doLogin()">Entrar</button>
+    <div class="login-err" id="l-err"></div>
+    <div class="login-note">Não tem conta? Peça à sua doula para criar seu acesso 🌺</div>
+  </div>
+</div>
+
+<!-- ═══════════════ HOME ═══════════════ -->
+<div class="screen" id="home">
+  <div class="sbar"><span>9:41</span><span>📶🔋</span></div>
+  <div class="scroll">
+    <div class="home-hdr">
+      <div class="hdr-top">
+        <div>
+          <div class="greet-sub">Olá, mamãe 🌸</div>
+          <div class="greet-name" id="h-nome">Carregando...</div>
+        </div>
+        <button class="notif">🔔<div class="ndot"></div></button>
+      </div>
+      <div class="preg-card">
+        <div class="pc-label">Semana da gestação</div>
+        <div class="pc-week"><span id="h-sem">—</span> <small>semanas</small></div>
+        <div class="pc-bebe" id="h-bebe">Bebê...</div>
+        <div class="prog-lbl"><span>Progresso</span><span id="h-pct">—%</span></div>
+        <div class="prog-bar"><div class="prog-fill" id="h-bar" style="width:0%"></div></div>
+        <div class="tri-dots" id="h-tdots"></div>
+        <div class="tri-lbl" id="h-tri"></div>
+      </div>
+    </div>
+    <div class="size-box">
+      <div class="se" id="h-emoji">🌱</div>
+      <div>
+        <p>Tamanho do bebê esta semana</p>
+        <p id="h-size">Carregando...</p>
+      </div>
+    </div>
+    <div class="sec-title">O que deseja hoje?</div>
+    <div class="qgrid">
+      <div class="qcard" onclick="navTo('conteudo')"><div class="qi">🎬</div><div class="qt">Videoaulas</div><div class="qs" id="h-nvid">— aulas</div></div>
+      <div class="qcard" onclick="navTo('conteudo')"><div class="qi">📖</div><div class="qt">E-books</div><div class="qs" id="h-nebook">— materiais</div></div>
+      <div class="qcard" onclick="navTo('gestacao')"><div class="qi">🤰</div><div class="qt">Jornada</div><div class="qs">Semana a semana</div></div>
+      <div class="qcard" onclick="navTo('diario')"><div class="qi">📝</div><div class="qt">Diário</div><div class="qs">Registre memórias</div></div>
+    </div>
+    <div class="tip-box">
+      <div class="tip-tag" id="h-tip-tag">💡 Dica da Nalin</div>
+      <div class="tip-txt" id="h-tip">Carregando...</div>
+    </div>
+    <div class="consult-box">
+      <div class="consult-icon">📅</div>
+      <div>
+        <div class="consult-lbl">Próxima consulta</div>
+        <div class="consult-name">Pré-natal · 28 de Abril</div>
+        <div class="consult-time">Dr. Fernanda Santos · 10:00h</div>
+      </div>
+    </div>
+  </div>
+  <div class="bnav" id="bnav-home">
+    <div class="nitem active" onclick="navTo('home')"><div class="ni">🏠</div><div class="nl">Início</div></div>
+    <div class="nitem" onclick="navTo('gestacao')"><div class="ni">🤰</div><div class="nl">Gestação</div></div>
+    <div class="nitem" onclick="navTo('conteudo')"><div class="ni">🎬</div><div class="nl">Conteúdo</div></div>
+    <div class="nitem" onclick="navTo('diario')"><div class="ni">📝</div><div class="nl">Diário</div></div>
+    <div class="nitem" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════ CONTEÚDO ═══════════════ -->
+<div class="screen" id="conteudo">
+  <div class="sbar"><span>9:41</span><span>📶🔋</span></div>
+  <div class="scroll">
+    <div class="cont-hdr">
+      <h2>Conteúdos</h2>
+      <p>Materiais exclusivos da Nalin</p>
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(0,this)">🎬 Vídeos</div>
+        <div class="tab" onclick="switchTab(1,this)">📖 E-books</div>
+        <div class="tab" onclick="switchTab(2,this)">🎵 Meditações</div>
+        <div class="tab" onclick="switchTab(3,this)">📋 Outros</div>
+      </div>
+    </div>
+    <div class="cont-grid" id="cont-list"></div>
+    <div style="height:80px;"></div>
+  </div>
+  <div class="bnav">
+    <div class="nitem" onclick="navTo('home')"><div class="ni">🏠</div><div class="nl">Início</div></div>
+    <div class="nitem" onclick="navTo('gestacao')"><div class="ni">🤰</div><div class="nl">Gestação</div></div>
+    <div class="nitem active" onclick="navTo('conteudo')"><div class="ni">🎬</div><div class="nl">Conteúdo</div></div>
+    <div class="nitem" onclick="navTo('diario')"><div class="ni">📝</div><div class="nl">Diário</div></div>
+    <div class="nitem" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════ GESTAÇÃO ═══════════════ -->
+<div class="screen" id="gestacao">
+  <div class="sbar"><span>9:41</span><span>📶🔋</span></div>
+  <div class="scroll">
+    <div class="grav-hdr">
+      <h2>Jornada da Gestação</h2>
+      <p style="font-size:13px;color:var(--mid);margin-top:3px;">Semana a semana com amor 🌱</p>
+      <div class="tri-tabs">
+        <div class="ttab active" onclick="switchTri(1,this)">1º Trim.<small>1–13 sem</small></div>
+        <div class="ttab" onclick="switchTri(2,this)">2º Trim.<small>14–26 sem</small></div>
+        <div class="ttab" onclick="switchTri(3,this)">3º Trim.<small>27–42 sem</small></div>
+      </div>
+    </div>
+    <div class="wk-list" id="wk-list"></div>
+    <div style="height:80px;"></div>
+  </div>
+  <div class="bnav">
+    <div class="nitem" onclick="navTo('home')"><div class="ni">🏠</div><div class="nl">Início</div></div>
+    <div class="nitem active" onclick="navTo('gestacao')"><div class="ni">🤰</div><div class="nl">Gestação</div></div>
+    <div class="nitem" onclick="navTo('conteudo')"><div class="ni">🎬</div><div class="nl">Conteúdo</div></div>
+    <div class="nitem" onclick="navTo('diario')"><div class="ni">📝</div><div class="nl">Diário</div></div>
+    <div class="nitem" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════ DIÁRIO ═══════════════ -->
+<div class="screen" id="diario">
+  <div class="sbar"><span>9:41</span><span>📶🔋</span></div>
+  <div class="scroll">
+    <div class="diary-hdr">
+      <h2>Meu Diário</h2>
+      <p style="font-size:13px;color:var(--mid);margin-top:3px;">Registre cada momento especial 💕</p>
+    </div>
+    <div class="mood-row" id="mood-row">
+      <div class="moodbtn sel" onclick="selMood(this,'😊','Ótima')"><span>😊</span><span>Ótima</span></div>
+      <div class="moodbtn" onclick="selMood(this,'💕','Feliz')"><span>💕</span><span>Feliz</span></div>
+      <div class="moodbtn" onclick="selMood(this,'😴','Cansada')"><span>😴</span><span>Cansada</span></div>
+      <div class="moodbtn" onclick="selMood(this,'🤢','Enjoo')"><span>🤢</span><span>Enjoo</span></div>
+      <div class="moodbtn" onclick="selMood(this,'😢','Ansiosa')"><span>😢</span><span>Ansiosa</span></div>
+    </div>
+    <div class="diary-write">
+      <textarea class="dta" id="diary-txt" placeholder="O que você quer lembrar desse dia? Movimentos do bebê, sentimentos, desejos..."></textarea>
+      <div class="diary-acts">
+        <div class="dact">📸 Foto</div>
+        <div class="dact">🎵 Música</div>
+        <button class="dsave" onclick="saveEntry()">Salvar memória ✨</button>
+      </div>
+    </div>
+    <div class="sec-title" style="padding-top:0;">Memórias anteriores</div>
+    <div class="entries-list" id="entries-list"></div>
+    <div style="height:80px;"></div>
+  </div>
+  <div class="bnav">
+    <div class="nitem" onclick="navTo('home')"><div class="ni">🏠</div><div class="nl">Início</div></div>
+    <div class="nitem" onclick="navTo('gestacao')"><div class="ni">🤰</div><div class="nl">Gestação</div></div>
+    <div class="nitem" onclick="navTo('conteudo')"><div class="ni">🎬</div><div class="nl">Conteúdo</div></div>
+    <div class="nitem active" onclick="navTo('diario')"><div class="ni">📝</div><div class="nl">Diário</div></div>
+    <div class="nitem" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════ PERFIL ═══════════════ -->
+<div class="screen" id="perfil">
+  <div class="sbar"><span>9:41</span><span>📶🔋</span></div>
+  <div class="scroll">
+    <div class="perf-hero">
+      <div class="perf-avatar">🤰</div>
+      <div class="perf-name" id="p-nome">—</div>
+      <div class="perf-due" id="p-due">—</div>
+      <div class="perf-badge"><span>🌸</span><span id="p-tri">—</span></div>
+    </div>
+    <div class="stats-g">
+      <div class="scard"><div class="sval" id="p-dias">—</div><div class="slbl">dias restantes</div></div>
+      <div class="scard"><div class="sval" id="p-sem">—</div><div class="slbl">semanas gestadas</div></div>
+      <div class="scard"><div class="sval" id="p-entradas">0</div><div class="slbl">entradas no diário</div></div>
+    </div>
+    <div class="menu-list">
+      <div class="mitem"><div class="mico">📋</div><div class="mtext"><span>Plano de Parto</span><span>Crie seu plano personalizado</span></div><span class="marr">›</span></div>
+      <div class="mitem"><div class="mico">🛍</div><div class="mtext"><span>Lista do Enxoval</span><span>O que preparar para o bebê</span></div><span class="marr">›</span></div>
+      <div class="mitem"><div class="mico">🏥</div><div class="mtext"><span>Maternidade</span><span>Documentos e o que levar</span></div><span class="marr">›</span></div>
+      <div class="mitem" onclick="openWhatsapp()"><div class="mico">💬</div><div class="mtext"><span>Falar com a Nalin</span><span>Enviar mensagem via WhatsApp</span></div><span class="marr">›</span></div>
+    </div>
+    <div style="text-align:center;padding:4px 0 12px;">
+      <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;color:var(--light);">Nalin Nazareth — Doula</div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">Sair da conta</button>
+  </div>
+  <div class="bnav">
+    <div class="nitem" onclick="navTo('home')"><div class="ni">🏠</div><div class="nl">Início</div></div>
+    <div class="nitem" onclick="navTo('gestacao')"><div class="ni">🤰</div><div class="nl">Gestação</div></div>
+    <div class="nitem" onclick="navTo('conteudo')"><div class="ni">🎬</div><div class="nl">Conteúdo</div></div>
+    <div class="nitem" onclick="navTo('diario')"><div class="ni">📝</div><div class="nl">Diário</div></div>
+    <div class="nitem active" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════ STORAGE HELPERS ════
+const DB = {
+  get:(k)=>{ try{return JSON.parse(localStorage.getItem(k));}catch{return null;}},
+  set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
+  del:(k)=>localStorage.removeItem(k)
+};
+
+// ════ SEED DATA ════
+function seedData(){
+  if(!DB.get('nn_users')){
+    DB.set('nn_users',[
+      {id:1,nome:'Ana Clara',email:'ana@email.com',senha:'123456',bebe:'Aurora',semanas:24,dpp:'2025-07-15',parto:'normal',ativo:true,criadoEm:new Date().toISOString()},
+      {id:2,nome:'Mariana Silva',email:'mari@email.com',senha:'123456',bebe:'Miguel',semanas:32,dpp:'2025-06-01',parto:'normal',ativo:true,criadoEm:new Date().toISOString()}
+    ]);
+  }
+  if(!DB.get('nn_conteudos')){
+    DB.set('nn_conteudos',[
+      {id:1,titulo:'Pega Correta: Guia Completo',categoria:'video',subcategoria:'Amamentação',descricao:'Aprenda a técnica certa para amamentar sem dor.',duracao:'18 min',url:'https://youtube.com',cor:'#e8b4a0,#c9907a',emoji:'🤱',ativo:true},
+      {id:2,titulo:'Posturas para Aliviar Dores',categoria:'video',subcategoria:'Bem-estar',descricao:'Posições que aliviam dores lombares na gestação.',duracao:'24 min',url:'https://youtube.com',cor:'#d4a0b5,#b07090',emoji:'🧘‍♀️',ativo:true},
+      {id:3,titulo:'Plano de Parto — Modelo',categoria:'ebook',subcategoria:'Parto',descricao:'Modelo completo para montar seu plano de parto.',paginas:'14 pág',url:'#',cor:'#c9907a,#a96b55',emoji:'📋',ativo:true},
+      {id:4,titulo:'Meditação — Conexão Mãe & Bebê',categoria:'meditacao',subcategoria:'Relaxamento',descricao:'Guia para se conectar com seu bebê.',duracao:'12 min',url:'#',cor:'#b4c4d8,#8090a8',emoji:'🌙',ativo:true}
+    ]);
+  }
+}
+
+// ════ BABY DATA ════
+const babyMap={1:{e:'🌱',s:'menor que um grão de arroz'},4:{e:'🫐',s:'tamanho de uma semente'},6:{e:'🫐',s:'tamanho de uma ervilha'},8:{e:'🫘',s:'tamanho de um feijão'},10:{e:'🍓',s:'tamanho de um morango'},12:{e:'🍋',s:'tamanho de um limão'},14:{e:'🍋',s:'tamanho de um limão siciliano'},16:{e:'🥑',s:'tamanho de um abacate'},18:{e:'🥭',s:'tamanho de uma manga'},20:{e:'🍌',s:'tamanho de uma banana'},22:{e:'🌽',s:'espiga pequena de milho'},24:{e:'🌽',s:'espiga de milho'},26:{e:'🥦',s:'tamanho de um brócolis'},28:{e:'🥬',s:'tamanho de uma alface'},30:{e:'🥥',s:'tamanho de um coco'},32:{e:'🎃',s:'abóbora pequena'},34:{e:'🍈',s:'tamanho de um melão'},36:{e:'🥗',s:'quase pronto!'},38:{e:'🍉',s:'melancia pequena'},40:{e:'👶',s:'pronto para o mundo!'}};
+function getBaby(w){const ks=Object.keys(babyMap).map(Number).sort((a,b)=>a-b);let b=ks[0];for(const k of ks){if(k<=w)b=k;}return babyMap[b]||{e:'🌱',s:'crescendo com amor'};}
+function getTri(w){if(w<=13)return{n:1,l:'1º Trimestre'};if(w<=26)return{n:2,l:'2º Trimestre'};return{n:3,l:'3º Trimestre'};}
+
+const weeklyInfo={1:{t:'Fertilização',d:'O milagre começa.',e:'✨'},4:{t:'Formação',d:'Coração começa a se formar.',e:'💓'},6:{t:'Batimentos',d:'Primeiro batimento detectável!',e:'💗'},8:{t:'Órgãos',d:'Cérebro e coração em desenvolvimento.',e:'🫀'},10:{t:'Reflexos',d:'Bebê pode abrir e fechar os dedos.',e:'🤏'},12:{t:'Fim do 1º Trim.',d:'Risco de aborto reduz significativamente.',e:'🎉'},14:{t:'2º Trimestre',d:'Fase dourada! Enjoos diminuem.',e:'☀️'},16:{t:'Sexo do Bebê',d:'Possível descobrir na ultrassom!',e:'💕'},18:{t:'Primeiros Chutes',d:'Você começa a sentir os movimentos!',e:'🥊'},20:{t:'Metade da gestação',d:'Bebê ouve sons e sua voz.',e:'🎵'},22:{t:'Sobrevivência',d:'Bebê viável fora do útero com suporte.',e:'💪'},24:{t:'Audição',d:'Bebê ouve claramente você!',e:'👂'},26:{t:'Olhos Abrem',d:'Bebê já abre e fecha os olhos.',e:'👁️'},28:{t:'3º Trimestre',d:'Reta final! Bebê ganha peso.',e:'🚀'},30:{t:'Posição',d:'Bebê assume posição cefálica.',e:'🔄'},32:{t:'Sono REM',d:'Bebê tem sono REM e pode sonhar!',e:'💭'},34:{t:'Pulmões',d:'Pulmões quase completamente desenvolvidos.',e:'🫁'},36:{t:'Quase Pronto',d:'Bebê está desenvolvido.',e:'⏰'},38:{t:'A Termo',d:'Pronto para nascer a qualquer momento!',e:'🌟'},40:{t:'Parto Previsto',d:'Seu bebê está pronto para o mundo!',e:'👶'}};
+const tips={1:'Cuide bem de você! Tomar ácido fólico agora é essencial. 💊',4:'Beba muita água, mamãe. O corpo está trabalhando dobrado. 💧',8:'O enjoo é real, mas vai passar. Coma biscoito antes de levantar da cama. 🍪',12:'Você chegou ao fim do 1º trimestre! O risco diminui muito agora. 🎉',16:'Hora de pensar no plano de parto! Converse comigo quando quiser. 📋',20:'Na metade do caminho! Que tal registrar o ultrassom do bebê? 📸',24:'Seu bebê já ouve você! Cante, converse e leia histórias para ele. 🎵',28:'Reta final, mamãe! Prepare a bolsa da maternidade. 👜',32:'Faça os movimentos fetais diários: conte 10 movimentos por período. 🤰',36:'O bebê pode nascer a qualquer semana agora. Mantenha o saco pronto! ⏰',40:'É hoje? É amanhã? Cada contração é um passo mais perto. 💪'};
+function getTip(w){const ks=Object.keys(tips).map(Number).sort((a,b)=>a-b);let b=ks[0];for(const k of ks){if(k<=w)b=k;}return tips[b];}
+
+// ════ STATE ════
+let currentUser=null, currentMood='😊', currentTab=0;
+
+// ════ LOGIN ════
+function doLogin(){
+  const email=document.getElementById('l-email').value.trim().toLowerCase();
+  const senha=document.getElementById('l-senha').value;
+  const users=DB.get('nn_users')||[];
+  const u=users.find(x=>x.email.toLowerCase()===email && x.senha===senha && x.ativo);
+  if(u){
+    currentUser=u;
+    DB.set('nn_session',u.id);
+    document.getElementById('l-err').textContent='';
+    goApp();
+  } else {
+    document.getElementById('l-err').textContent='E-mail ou senha incorretos.';
+  }
+}
+function doLogout(){
+  DB.del('nn_session');
+  currentUser=null;
+  showScreen('login');
+}
+function openWhatsapp(){window.open('https://wa.me/5500000000000','_blank');}
+
+// ════ NAVIGATION ════
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function navTo(id){
+  showScreen(id);
+  if(id==='home')renderHome();
+  if(id==='conteudo')renderConteudo(currentTab);
+  if(id==='gestacao')renderGestacao(1);
+  if(id==='diario')renderDiario();
+  if(id==='perfil')renderPerfil();
+}
+
+// ════ APP INIT ════
+function goApp(){
+  navTo('home');
+}
+
+// ════ HOME ════
+function renderHome(){
+  if(!currentUser)return;
+  const u=currentUser;
+  document.getElementById('h-nome').textContent=u.nome;
+  document.getElementById('h-sem').textContent=u.semanas;
+  document.getElementById('h-bebe').textContent=`Bebê ${u.bebe} 💕`;
+  const pct=Math.round((u.semanas/40)*100);
+  document.getElementById('h-pct').textContent=pct+'%';
+  document.getElementById('h-bar').style.width=pct+'%';
+  const tri=getTri(u.semanas);
+  const rem=40-u.semanas;
+  document.getElementById('h-tri').textContent=`${tri.l} · ${rem} sem. restantes 🌟`;
+  const td=document.getElementById('h-tdots');td.innerHTML='';
+  for(let i=1;i<=3;i++){const d=document.createElement('div');d.className='tdot'+(i<=tri.n?' f':'');td.appendChild(d);}
+  const baby=getBaby(u.semanas);
+  document.getElementById('h-emoji').textContent=baby.e;
+  document.getElementById('h-size').textContent=baby.s.charAt(0).toUpperCase()+baby.s.slice(1);
+  document.getElementById('h-tip-tag').textContent=`💡 Dica da Nalin — Semana ${u.semanas}`;
+  document.getElementById('h-tip').textContent=getTip(u.semanas);
+  const conteudos=DB.get('nn_conteudos')||[];
+  document.getElementById('h-nvid').textContent=conteudos.filter(c=>c.categoria==='video'&&c.ativo).length+' aulas';
+  document.getElementById('h-nebook').textContent=conteudos.filter(c=>c.categoria==='ebook'&&c.ativo).length+' materiais';
+}
+
+// ════ CONTEÚDO ════
+const catMap={0:'video',1:'ebook',2:'meditacao',3:'outro'};
+function renderConteudo(idx){
+  currentTab=idx;
+  const cat=catMap[idx]||'video';
+  const conteudos=(DB.get('nn_conteudos')||[]).filter(c=>c.categoria===cat&&c.ativo);
+  const list=document.getElementById('cont-list');
+  list.innerHTML='';
+  if(!conteudos.length){
+    list.innerHTML=`<div class="empty-state"><div class="ei">📭</div><p>Nenhum conteúdo ainda.<br>A Nalin está preparando algo especial!</p></div>`;
+    return;
+  }
+  conteudos.forEach(c=>{
+    const isPlay=c.categoria!=='ebook';
+    const meta=c.duracao?`<span>⏱ ${c.duracao}</span>`:`<span>📄 ${c.paginas||'PDF'}</span>`;
+    list.innerHTML+=`
+    <div class="ccard" onclick="openConteudo('${c.url}')">
+      <div class="cthumb" style="background:linear-gradient(135deg,${c.cor||'#e8b4a0,#c9907a'})">
+        <div class="te">${c.emoji||'📄'}</div>
+        ${isPlay?'<div class="play-btn">▶</div>':''}
+      </div>
+      <div class="cinfo">
+        <div class="ctag">${c.subcategoria||''}</div>
+        <div class="ctitle">${c.titulo}</div>
+        <div class="cmeta">${meta}</div>
+      </div>
+    </div>`;
+  });
+}
+function switchTab(idx,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderConteudo(idx);
+}
+function openConteudo(url){if(url&&url!=='#')window.open(url,'_blank');}
+
+// ════ GESTAÇÃO ════
+function renderGestacao(tri){
+  const ranges={1:[1,13],2:[14,26],3:[27,42]};
+  const [s,e]=ranges[tri];
+  const list=document.getElementById('wk-list');list.innerHTML='';
+  for(let w=s;w<=e;w+=2){
+    const wd=weeklyInfo[w]||{t:`Semana ${w}`,d:'Desenvolvimento contínuo.',e:'🌱'};
+    const isCur=w===currentUser?.semanas||(w+1===currentUser?.semanas);
+    list.innerHTML+=`<div class="wkcard${isCur?' cur':''}">
+      <div class="wknum"><span>${w}</span><span>sem</span></div>
+      <div class="wkinfo">
+        <div class="wkt">${wd.t}${isCur?' <span style="font-size:10px;background:var(--rose);color:white;padding:2px 8px;border-radius:10px;font-weight:500;margin-left:4px">Você aqui!</span>':''}</div>
+        <div class="wkd">${wd.d}</div>
+      </div>
+      <div class="wke">${wd.e}</div>
+    </div>`;
+  }
+}
+function switchTri(t,el){
+  document.querySelectorAll('.ttab').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  renderGestacao(t);
+}
+
+// ════ DIÁRIO ════
+function selMood(el,emoji,label){
+  document.querySelectorAll('.moodbtn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  currentMood=emoji;
+}
+function saveEntry(){
+  const txt=document.getElementById('diary-txt').value.trim();
+  if(!txt){showToast('Escreva algo primeiro! 💕');return;}
+  const key=`nn_diary_${currentUser.id}`;
+  const entries=DB.get(key)||[];
+  entries.unshift({id:Date.now(),txt,mood:currentMood,semanas:currentUser.semanas,data:new Date().toLocaleDateString('pt-BR',{day:'numeric',month:'long'}),dia:new Date().toLocaleDateString('pt-BR',{weekday:'long'})});
+  DB.set(key,entries);
+  document.getElementById('diary-txt').value='';
+  renderDiario();
+  showToast('Memória salva! ✨');
+}
+function renderDiario(){
+  const key=`nn_diary_${currentUser?.id}`;
+  const entries=DB.get(key)||[];
+  document.getElementById('p-entradas').textContent=entries.length;
+  const list=document.getElementById('entries-list');list.innerHTML='';
+  if(!entries.length){list.innerHTML='<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Nenhuma memória ainda.<br>Escreva seu primeiro registro! 🌸</div>';return;}
+  entries.slice(0,10).forEach(e=>{
+    list.innerHTML+=`<div class="entry">
+      <div class="entry-hdr"><div class="entry-date">${e.data} · ${e.dia}</div><span style="font-size:20px">${e.mood}</span></div>
+      <div class="entry-txt">${e.txt}</div>
+      <div class="entry-wtag">Semana ${e.semanas}</div>
+    </div>`;
+  });
+}
+
+// ════ PERFIL ════
+function renderPerfil(){
+  if(!currentUser)return;
+  const u=currentUser;
+  document.getElementById('p-nome').textContent=u.nome;
+  document.getElementById('p-sem').textContent=u.semanas;
+  const tri=getTri(u.semanas);
+  document.getElementById('p-tri').textContent=`${tri.l} · Semana ${u.semanas}`;
+  if(u.dpp){
+    const dpp=new Date(u.dpp),now=new Date();
+    const diff=Math.max(0,Math.round((dpp-now)/(86400000)));
+    document.getElementById('p-dias').textContent=diff;
+    document.getElementById('p-due').textContent='Parto previsto: '+dpp.toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
+  }
+  const key=`nn_diary_${u.id}`;
+  document.getElementById('p-entradas').textContent=(DB.get(key)||[]).length;
+}
+
+// ════ TOAST ════
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ════ INIT ════
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('login').classList.contains('active'))doLogin();});
+seedData();
+const savedSession=DB.get('nn_session');
+if(savedSession){
+  const users=DB.get('nn_users')||[];
+  const u=users.find(x=>x.id===savedSession&&x.ativo);
+  if(u){currentUser=u;goApp();}
+}
+</script>
+</body>
+</html>
