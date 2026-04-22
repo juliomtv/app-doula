@@ -215,6 +215,8 @@ textarea.dta:focus{border-color:var(--rose);}
     <button class="btn-rose" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="l-err"></div>
     <div class="login-note">Não tem conta? Peça à sua doula para criar seu acesso 🌺</div>
+    <hr style="border:0;border-top:1px solid var(--rose-pale);margin:20px 0;">
+    <button class="btn-rose" style="background:var(--dark);margin-top:0;" onclick="window.location.href='admin.html'">Acesso Administrador 🔐</button>
   </div>
 </div>
 
@@ -527,11 +529,11 @@ const catMap={0:'video',1:'ebook',2:'meditacao',3:'outro'};
 	  conteudos.forEach(c=>{
 	    const isPlay=c.categoria!=='ebook';
 	    let meta = '';
-	    if (c.categoria === 'video' || c.categoria === 'meditacao') {
-	      meta = c.duracao ? `<span>⏱ ${c.duracao}</span>` : '';
-	    } else {
-	      meta = `<span>📄 ${c.paginas || 'PDF'}</span>`;
-	    }
+		    if (c.categoria === 'video' || c.categoria === 'meditacao') {
+		      meta = c.duracao ? `<span>⏱ ${c.duracao}</span>` : '';
+		    } else if (c.categoria === 'ebook') {
+		      meta = `<span>📄 ${c.paginas || 'PDF'}</span>`;
+		    }
 	    const ytId = getYTId(c.url);
 	    // Usando hqdefault para melhor qualidade
 	    const thumbImg = ytId ? `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="Capa">` : '';

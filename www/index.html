@@ -213,6 +213,8 @@ textarea.dta:focus{border-color:var(--rose);}
     <button class="btn-rose" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="l-err"></div>
     <div class="login-note">Não tem conta? Peça à sua doula para criar seu acesso 🌺</div>
+    <hr style="border:0;border-top:1px solid var(--rose-pale);margin:20px 0;">
+    <button class="btn-rose" style="background:var(--dark);margin-top:0;" onclick="window.location.href='admin.html'">Acesso Administrador 🔐</button>
   </div>
 </div>
 
@@ -517,7 +519,7 @@ function renderConteudo(idx){
   }
   conteudos.forEach(c=>{
     const isPlay=c.categoria!=='ebook';
-    const meta=c.duracao?`<span>⏱ ${c.duracao}</span>`:`<span>📄 ${c.paginas||'PDF'}</span>`;
+    const meta=c.categoria==='ebook'?(c.paginas?`<span>📄 ${c.paginas}</span>`:`<span>📄 PDF</span>`):(c.duracao?`<span>⏱ ${c.duracao}</span>`:'');
     list.innerHTML+=`
     <div class="ccard" onclick="openConteudo('${c.url}')">
       <div class="cthumb" style="background:linear-gradient(135deg,${c.cor||'#e8b4a0,#c9907a'})">

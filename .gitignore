@@ -1,6 +1,5 @@
 node_modules/
 dist/
-www/
 *.db
 android/app/build/
 android/.gradle/
