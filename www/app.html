@@ -526,7 +526,12 @@ const catMap={0:'video',1:'ebook',2:'meditacao',3:'outro'};
 	  }
 	  conteudos.forEach(c=>{
 	    const isPlay=c.categoria!=='ebook';
-	    const meta=c.duracao?`<span>⏱ ${c.duracao}</span>`:`<span>📄 ${c.paginas||'PDF'}</span>`;
+	    let meta = '';
+	    if (c.categoria === 'video' || c.categoria === 'meditacao') {
+	      meta = c.duracao ? `<span>⏱ ${c.duracao}</span>` : '';
+	    } else {
+	      meta = `<span>📄 ${c.paginas || 'PDF'}</span>`;
+	    }
 	    const ytId = getYTId(c.url);
 	    // Usando hqdefault para melhor qualidade
 	    const thumbImg = ytId ? `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="Capa">` : '';
