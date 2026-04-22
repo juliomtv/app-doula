@@ -7,7 +7,10 @@ import socket
 app = Flask(__name__)
 CORS(app)
 
-DATABASE = '../dados.db'
+# Configuração de caminhos baseada na localização do script
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATABASE = os.path.join(os.path.dirname(BASE_DIR), 'dados.db')
+SCHEMA_PATH = os.path.join(BASE_DIR, 'schema.sql')
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -25,9 +28,12 @@ def close_connection(exception):
 def init_db():
     with app.app_context():
         db = get_db()
-        with open('schema.sql', mode='r') as f:
-            db.cursor().executescript(f.read())
-        db.commit()
+        if os.path.exists(SCHEMA_PATH):
+            with open(SCHEMA_PATH, mode='r', encoding='utf-8') as f:
+                db.cursor().executescript(f.read())
+            db.commit()
+        else:
+            print(f"Erro: Arquivo {SCHEMA_PATH} não encontrado.")
 
 def get_local_ip():
     try:
@@ -139,6 +145,7 @@ if __name__ == '__main__':
     ip = get_local_ip()
     print(f"\n{'='*50}")
     print(f" API RODANDO LOCALMENTE")
+    print(f" Banco de dados: {DATABASE}")
     print(f" Endereço para os APKS: http://{ip}:5000")
     print(f"{'='*50}\n")
     
