@@ -376,10 +376,11 @@ tr:hover td{background:rgba(247,237,232,.5);}
         <label>Link / URL do conteúdo</label>
         <input type="url" id="mc-url" placeholder="https://youtube.com/watch?v=...">
       </div>
-      <div class="upload-area" onclick="showToastA('Upload disponível na versão hospedada! 🚀')">
+      <div class="upload-area" onclick="document.getElementById('mc-file').click()">
         <div class="ui">☁️</div>
-        <p>Ou arraste o arquivo aqui para fazer upload</p>
+        <p id="upload-label">Ou arraste o arquivo aqui para fazer upload</p>
         <small>MP4, PDF, MP3 · Máx. 500MB</small>
+        <input type="file" id="mc-file" style="display:none" onchange="handleFileSelect(this)">
       </div>
       <div class="mfield" style="margin-top:14px;">
         <label>Cor de fundo (gradiente CSS)</label>
@@ -610,7 +611,16 @@ function saveConteudo(){
   document.getElementById('mc-err').textContent='';
   const editId=document.getElementById('mc-id').value;
   const cat=document.getElementById('mc-cat').value;
-  const obj={titulo,categoria:cat,subcategoria:document.getElementById('mc-subcat').value,emoji:document.getElementById('mc-emoji').value||'📄',descricao:document.getElementById('mc-desc').value,duracao:document.getElementById('mc-dur').value,paginas:document.getElementById('mc-pag').value,url:document.getElementById('mc-url').value,cor:document.getElementById('mc-cor').value,ativo:true};
+  const fileInput = document.getElementById('mc-file');
+  let url = document.getElementById('mc-url').value;
+  
+  if (fileInput.files.length > 0) {
+    // Em uma versão real, aqui você faria o upload para o servidor
+    // Por enquanto, vamos simular o salvamento do nome do arquivo
+    url = "upload/" + fileInput.files[0].name;
+  }
+
+  const obj={titulo,categoria:cat,subcategoria:document.getElementById('mc-subcat').value,emoji:document.getElementById('mc-emoji').value||'📄',descricao:document.getElementById('mc-desc').value,duracao:document.getElementById('mc-dur').value,paginas:document.getElementById('mc-pag').value,url:url,cor:document.getElementById('mc-cor').value,ativo:true};
   let cont=DB.get('nn_conteudos')||[];
   if(editId){cont=cont.map(c=>c.id==editId?{...c,...obj}:c);showToastA('Conteúdo atualizado! ✨');}
   else{cont.push({...obj,id:Date.now()});showToastA('Conteúdo publicado! 🎉');}
@@ -661,6 +671,14 @@ function resetAll(){
 function showToastA(msg){
   const t=document.getElementById('toast-a');t.textContent=msg;t.style.opacity='1';t.style.transform='translateY(0)';
   setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(10px)';},2500);
+}
+
+function handleFileSelect(input) {
+  const file = input.files[0];
+  if (file) {
+    document.getElementById('upload-label').textContent = `Arquivo selecionado: ${file.name}`;
+    showToastA('Arquivo selecionado! Clique em salvar para processar.');
+  }
 }
 
 // ════ INIT ════
