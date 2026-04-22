@@ -7,7 +7,7 @@ import socket
 app = Flask(__name__)
 CORS(app)
 
-DATABASE = 'database.db'
+DATABASE = '../dados.db'
 
 def get_db():
     db = getattr(g, '_database', None)

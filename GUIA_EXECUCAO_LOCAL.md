@@ -40,6 +40,6 @@ const API_URL = "http://SEU_IP_AQUI:5000"; // Ex: http://192.168.1.15:5000
 ---
 
 ## 5. Vantagem do Banco de Dados Local
-- O arquivo `database.db` será criado automaticamente na pasta `nalin_api`.
+- O arquivo `dados.db` será criado automaticamente na pasta raiz do projeto.
 - Todas as clientes que você cadastrar no Admin ficarão salvas nesse arquivo no seu notebook.
-- Se você quiser fazer um backup, basta copiar o arquivo `database.db`.
+- Se você quiser fazer um backup, basta copiar o arquivo `dados.db`.
