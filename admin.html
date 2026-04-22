@@ -398,6 +398,7 @@ tr:hover td{background:rgba(247,237,232,.5);}
 
 <script>
 // ════ STORAGE ════
+const API_URL = "http://192.168.1.8:5000";
 const DB={get:k=>{try{return JSON.parse(localStorage.getItem(k));}catch{return null;}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),del:k=>localStorage.removeItem(k)};
 
 // ════ SEED ════
