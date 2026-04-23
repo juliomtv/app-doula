@@ -443,8 +443,29 @@ function goPage(id,el){
   if(renders[id])renders[id]();
 }
 
+// ════ API FETCH HELPERS ════
+async function apiFetch(endpoint, options = {}) {
+  try {
+    const res = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...options.headers }
+    });
+    return await res.json();
+  } catch (e) {
+    console.error("Erro na API:", e);
+    return null;
+  }
+}
+
 // ════ DASHBOARD ════
-function renderDashboard(){
+async function renderDashboard(){
+  // Tentar buscar dados reais da API
+  const apiUsers = await apiFetch('/api/users');
+  const apiCont = await apiFetch('/api/admin/conteudos');
+  
+  if(apiUsers) DB.set('nn_users', apiUsers);
+  if(apiCont) DB.set('nn_conteudos', apiCont);
+
   const users=DB.get('nn_users')||[];
   const cont=DB.get('nn_conteudos')||[];
   const active=users.filter(u=>u.ativo).length;
@@ -514,7 +535,7 @@ function editDoula(id){
   openModal('modal-doula');
 }
 
-function saveDoula(){
+async function saveDoula(){
   const nome=document.getElementById('md-nome').value.trim();
   const email=document.getElementById('md-email').value.trim();
   const senha=document.getElementById('md-senha').value;
@@ -524,30 +545,25 @@ function saveDoula(){
   const parto=document.getElementById('md-parto').value;
   const editId=document.getElementById('mdoula-id').value;
   if(!nome||!email||!senha){document.getElementById('md-err').textContent='Preencha nome, e-mail e senha.';return;}
-  document.getElementById('md-err').textContent='';
-  let users=DB.get('nn_users')||[];
-  if(editId){
-    users=users.map(u=>u.id==editId?{...u,nome,email,senha,bebe,semanas:sem,dpp,parto}:u);
-    showToastA('Doulânda atualizada! 🌸');
+  
+  const obj = {id:editId, nome, email, senha, bebe, semanas:sem, dpp, parto};
+  const res = await apiFetch('/api/users', { method: 'POST', body: JSON.stringify(obj) });
+  
+  if(res && res.status === 'success'){
+    showToastA(editId ? 'Doulânda atualizada! 🌸' : 'Doulânda cadastrada! 🎉');
+    closeModal('modal-doula');
+    renderDoulandas();
   } else {
-    const dup=users.find(u=>u.email.toLowerCase()===email.toLowerCase());
-    if(dup){document.getElementById('md-err').textContent='E-mail já cadastrado.';return;}
-    users.push({id:Date.now(),nome,email,senha,bebe,semanas:sem,dpp,parto,ativo:true,criadoEm:new Date().toISOString()});
-    showToastA('Doulânda cadastrada! 🎉');
+    document.getElementById('md-err').textContent = res?.message || 'Erro ao conectar com o servidor.';
   }
-  DB.set('nn_users',users);
-  closeModal('modal-doula');
-  renderDoulandas();
-  document.getElementById('mdoula-id').value='';
-  document.getElementById('mdoula-title').textContent='Nova Doulânda';
 }
 
-function toggleDoula(id){
-  let users=DB.get('nn_users')||[];
-  users=users.map(u=>u.id===id?{...u,ativo:!u.ativo}:u);
-  DB.set('nn_users',users);
-  renderDoulandas();
-  showToastA('Status atualizado!');
+async function toggleDoula(id){
+  const res = await apiFetch(`/api/users/${id}/toggle`, { method: 'POST' });
+  if(res && res.status === 'success'){
+    renderDoulandas();
+    showToastA('Status atualizado!');
+  }
 }
 
 // ════ CONTEÚDOS ════
@@ -600,41 +616,41 @@ function editConteudo(id){
   openModal('modal-cont');
 }
 
-function saveConteudo(){
+async function saveConteudo(){
   const titulo=document.getElementById('mc-titulo').value.trim();
   if(!titulo){document.getElementById('mc-err').textContent='Informe o título.';return;}
-  document.getElementById('mc-err').textContent='';
   const editId=document.getElementById('mc-id').value;
   const cat=document.getElementById('mc-cat').value;
   const url = document.getElementById('mc-url').value;
   if(!url){document.getElementById('mc-err').textContent='Informe o link do conteúdo.';return;}
 
-  const obj={titulo,categoria:cat,subcategoria:document.getElementById('mc-subcat').value,emoji:document.getElementById('mc-emoji').value||'📄',descricao:document.getElementById('mc-desc').value,duracao:document.getElementById('mc-dur').value,paginas:document.getElementById('mc-pag').value,url:url,cor:document.getElementById('mc-cor').value,ativo:true};
-  let cont=DB.get('nn_conteudos')||[];
-  if(editId){cont=cont.map(c=>c.id==editId?{...c,...obj}:c);showToastA('Conteúdo atualizado! ✨');}
-  else{cont.push({...obj,id:Date.now()});showToastA('Conteúdo publicado! 🎉');}
-  DB.set('nn_conteudos',cont);
-  closeModal('modal-cont');
-  renderConteudoTable(cat);
+  const obj={id:editId, titulo,categoria:cat,subcategoria:document.getElementById('mc-subcat').value,emoji:document.getElementById('mc-emoji').value||'📄',descricao:document.getElementById('mc-desc').value,duracao:document.getElementById('mc-dur').value,paginas:document.getElementById('mc-pag').value,url:url,cor:document.getElementById('mc-cor').value};
+  const res = await apiFetch('/api/conteudos', { method: 'POST', body: JSON.stringify(obj) });
+  
+  if(res && res.status === 'success'){
+    showToastA(editId ? 'Conteúdo atualizado! ✨' : 'Conteúdo publicado! 🎉');
+    closeModal('modal-cont');
+    renderConteudoTable(cat);
+  } else {
+    document.getElementById('mc-err').textContent = 'Erro ao salvar no servidor.';
+  }
 }
 
-function toggleConteudo(id){
-  let cont=DB.get('nn_conteudos')||[];
-  cont=cont.map(c=>c.id===id?{...c,ativo:!c.ativo}:c);
-  DB.set('nn_conteudos',cont);
-  const cat=cont.find(c=>c.id===id)?.categoria;
-  if(cat)renderConteudoTable(cat);
-  showToastA('Status atualizado!');
+async function toggleConteudo(id){
+  const res = await apiFetch(`/api/conteudos/${id}/toggle`, { method: 'POST' });
+  if(res && res.status === 'success'){
+    renderConteudoTable(DB.get('nn_conteudos').find(c=>c.id===id)?.categoria);
+    showToastA('Status atualizado!');
+  }
 }
 
-function deleteConteudo(id){
+async function deleteConteudo(id){
   if(!confirm('Excluir este conteúdo permanentemente?'))return;
-  let cont=DB.get('nn_conteudos')||[];
-  const cat=cont.find(c=>c.id===id)?.categoria;
-  cont=cont.filter(c=>c.id!==id);
-  DB.set('nn_conteudos',cont);
-  if(cat)renderConteudoTable(cat);
-  showToastA('Conteúdo excluído.');
+  const res = await apiFetch(`/api/conteudos/${id}`, { method: 'DELETE' });
+  if(res && res.status === 'success'){
+    showToastA('Conteúdo excluído.');
+    location.reload(); // Simplificado para atualizar a lista
+  }
 }
 
 // ════ CONFIG ════
