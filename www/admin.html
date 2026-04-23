@@ -22,671 +22,173 @@ a{text-decoration:none;color:inherit;}
 #admin-login{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--rose-p) 0%,var(--cream) 100%);}
 .alog-card{background:white;border-radius:24px;padding:40px;width:100%;max-width:400px;box-shadow:0 16px 60px var(--shadow);}
 .alog-logo{text-align:center;margin-bottom:28px;}
-.alog-logo .brand{font-family:'Cormorant Garamond',serif;font-size:28px;font-style:italic;color:var(--dark);}
-.alog-logo .sub{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--lite);margin-top:4px;}
-.alog-logo .badge{display:inline-block;background:var(--rose-p);color:var(--rose-d);font-size:11px;padding:4px 14px;border-radius:20px;margin-top:10px;font-weight:500;}
+.brand{font-family:'Cormorant Garamond',serif;font-size:28px;font-style:italic;color:var(--dark);}
 .afield{margin-bottom:16px;}
 .afield label{display:block;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--lite);font-weight:500;margin-bottom:7px;}
-.afield input{width:100%;border:1.5px solid var(--rose-p);border-radius:12px;padding:12px 16px;font-size:15px;color:var(--dark);background:var(--warm);outline:none;transition:border-color .2s;}
-.afield input:focus{border-color:var(--rose);}
-.abtn{width:100%;background:var(--dark);color:white;border:none;border-radius:50px;padding:14px;font-size:15px;font-weight:500;cursor:pointer;margin-top:8px;transition:background .2s;}
-.abtn:hover{background:var(--sidebar-l);}
-.aerr{color:var(--err);font-size:13px;text-align:center;margin-top:10px;min-height:16px;}
+.afield input{width:100%;border:1.5px solid var(--rose-p);border-radius:12px;padding:12px 16px;font-size:15px;color:var(--dark);background:var(--warm);outline:none;}
+.abtn{width:100%;background:var(--dark);color:white;border:none;border-radius:50px;padding:14px;font-size:15px;font-weight:500;cursor:pointer;margin-top:8px;}
 
 /* ════ SHELL ════ */
 #admin-shell{display:none;min-height:100vh;flex-direction:row;}
 #admin-shell.active{display:flex;}
-
-/* SIDEBAR */
 .sidebar{width:240px;background:var(--sidebar);display:flex;flex-direction:column;min-height:100vh;flex-shrink:0;position:sticky;top:0;height:100vh;}
-.sb-brand{padding:28px 24px 20px;border-bottom:1px solid rgba(255,255,255,.08);}
-.sb-brand .b1{font-family:'Cormorant Garamond',serif;font-size:20px;font-style:italic;color:white;}
-.sb-brand .b2{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-top:3px;}
-.sb-brand .b3{display:inline-flex;align-items:center;gap:5px;background:rgba(201,144,122,.2);color:var(--rose-l);font-size:11px;padding:4px 10px;border-radius:20px;margin-top:10px;}
+.sb-brand{padding:28px 24px 20px;border-bottom:1px solid rgba(255,255,255,.08);color:white;}
 .sb-nav{flex:1;padding:16px 12px;overflow-y:auto;}
-.sb-sect{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);padding:12px 12px 6px;font-weight:600;}
-.sb-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:background .15s;color:rgba(255,255,255,.65);font-size:13px;font-weight:500;margin-bottom:2px;}
-.sb-item:hover{background:rgba(255,255,255,.07);color:white;}
-.sb-item.active{background:rgba(201,144,122,.2);color:var(--rose-l);}
-.sb-item .si{font-size:17px;width:22px;text-align:center;}
-.sb-footer{padding:16px;border-top:1px solid rgba(255,255,255,.08);}
-.sb-user{display:flex;align-items:center;gap:10px;}
-.sb-avatar{width:34px;height:34px;border-radius:50%;background:var(--rose-d);display:flex;align-items:center;justify-content:center;font-size:14px;color:white;flex-shrink:0;}
-.sb-uname{font-size:13px;color:white;font-weight:500;}
-.sb-urole{font-size:11px;color:rgba(255,255,255,.4);}
-.sb-logout{margin-top:8px;width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);border-radius:8px;padding:8px;font-size:12px;cursor:pointer;transition:background .15s;}
-.sb-logout:hover{background:rgba(255,255,255,.12);}
+.sb-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;color:rgba(255,255,255,.65);font-size:13px;margin-bottom:2px;}
+.sb-item:hover, .sb-item.active{background:rgba(255,255,255,.07);color:white;}
+.sb-logout{margin:16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:white;border-radius:8px;padding:8px;cursor:pointer;}
 
-/* MAIN */
-.main{flex:1;overflow-y:auto;max-height:100vh;}
-.page{display:none;padding:32px;}
+.main{flex:1;overflow-y:auto;padding:32px;}
+.page{display:none;}
 .page.active{display:block;}
-.page-hdr{margin-bottom:28px;}
-.page-hdr h1{font-family:'Cormorant Garamond',serif;font-size:30px;font-style:italic;color:var(--dark);}
-.page-hdr p{font-size:14px;color:var(--mid);margin-top:4px;}
-
-/* CARDS */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
-.stat-c{background:white;border-radius:16px;padding:20px;box-shadow:0 2px 12px var(--shadow);}
-.stat-c .sv{font-family:'Cormorant Garamond',serif;font-size:36px;color:var(--rose-d);}
-.stat-c .sl{font-size:12px;color:var(--lite);margin-top:2px;text-transform:uppercase;letter-spacing:1px;}
-.stat-c .si{font-size:28px;float:right;margin-top:-30px;}
-
-/* TABLES */
-.table-card{background:white;border-radius:16px;box-shadow:0 2px 12px var(--shadow);overflow:hidden;margin-bottom:24px;}
-.tc-hdr{padding:18px 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--rose-p);}
-.tc-hdr h3{font-size:15px;font-weight:600;color:var(--dark);}
-.btn-sm{padding:8px 16px;border-radius:50px;border:none;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;}
-.btn-rose-sm{background:var(--rose);color:white;}
-.btn-rose-sm:hover{background:var(--rose-d);}
-.btn-ghost{background:var(--rose-p);color:var(--rose-d);}
-.btn-ghost:hover{background:var(--rose-l);}
-.btn-danger{background:#fde8e8;color:var(--err);}
-.btn-danger:hover{background:#fac5c5;}
+.table-card{background:white;border-radius:16px;box-shadow:0 2px 12px var(--shadow);overflow:hidden;margin-top:20px;}
 table{width:100%;border-collapse:collapse;}
-th{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--lite);font-weight:600;padding:12px 20px;text-align:left;background:var(--bg);}
-td{padding:14px 20px;border-top:1px solid var(--rose-p);font-size:13px;color:var(--mid);vertical-align:middle;}
-tr:hover td{background:rgba(247,237,232,.5);}
-.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;}
-.badge-ok{background:#e8f8ef;color:var(--ok);}
-.badge-warn{background:#fef3e2;color:var(--warn);}
-.badge-err{background:#fde8e8;color:var(--err);}
-.badge-rose{background:var(--rose-p);color:var(--rose-d);}
-.td-name{font-weight:500;color:var(--dark);}
-.td-actions{display:flex;gap:6px;flex-wrap:wrap;}
+th{font-size:11px;text-transform:uppercase;color:var(--lite);padding:12px 20px;text-align:left;background:var(--bg);}
+td{padding:14px 20px;border-top:1px solid var(--rose-p);font-size:13px;}
+.btn-sm{padding:6px 12px;border-radius:50px;border:none;font-size:11px;cursor:pointer;}
+.btn-rose-sm{background:var(--rose);color:white;}
 
 /* MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(58,40,32,.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:1000;}
 .modal-overlay.open{display:flex;}
-.modal{background:white;border-radius:20px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
-.modal-hdr{padding:24px 24px 16px;border-bottom:1px solid var(--rose-p);display:flex;align-items:center;justify-content:space-between;}
-.modal-hdr h3{font-family:'Cormorant Garamond',serif;font-size:22px;font-style:italic;color:var(--dark);}
-.modal-close{width:32px;height:32px;border-radius:50%;border:none;background:var(--rose-p);cursor:pointer;font-size:16px;color:var(--mid);}
-.modal-body{padding:24px;}
+.modal{background:white;border-radius:20px;width:100%;max-width:500px;padding:24px;}
 .mfield{margin-bottom:16px;}
-.mfield label{display:block;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--lite);font-weight:500;margin-bottom:6px;}
-.mfield input,.mfield select,.mfield textarea{width:100%;border:1.5px solid var(--rose-p);border-radius:12px;padding:11px 14px;font-size:14px;color:var(--dark);background:var(--warm);outline:none;transition:border-color .2s;-webkit-appearance:none;}
-.mfield input:focus,.mfield select:focus,.mfield textarea:focus{border-color:var(--rose);}
-.mfield textarea{resize:vertical;min-height:80px;}
-.mrow{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-.modal-footer{padding:0 24px 24px;display:flex;gap:10px;justify-content:flex-end;}
-.btn-full{padding:12px 28px;border-radius:50px;border:none;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s;}
-.btn-cancel{background:var(--rose-p);color:var(--mid);}
+.mfield label{display:block;font-size:11px;text-transform:uppercase;color:var(--lite);margin-bottom:6px;}
+.mfield input, .mfield textarea{width:100%;border:1.5px solid var(--rose-p);border-radius:12px;padding:10px;outline:none;}
+.upload-area{border:2px dashed var(--rose-l);border-radius:14px;padding:20px;text-align:center;cursor:pointer;background:var(--rose-p);}
+.btn-full{width:100%;padding:12px;border-radius:50px;border:none;font-weight:500;cursor:pointer;margin-top:10px;}
 .btn-save{background:var(--rose);color:white;}
-.btn-save:hover{background:var(--rose-d);}
 
-/* SEARCH */
-.search-bar{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
-.search-bar input{flex:1;border:1.5px solid var(--rose-p);border-radius:50px;padding:10px 18px;font-size:14px;color:var(--dark);background:white;outline:none;transition:border-color .2s;}
-.search-bar input:focus{border-color:var(--rose);}
-
-/* UPLOAD AREA */
-.upload-area{border:2px dashed var(--rose-l);border-radius:14px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;background:var(--rose-p);}
-.upload-area:hover{border-color:var(--rose);background:var(--rose-l);}
-.upload-area .ui{font-size:32px;margin-bottom:8px;}
-.upload-area p{font-size:13px;color:var(--mid);}
-.upload-area small{font-size:11px;color:var(--lite);margin-top:4px;display:block;}
-
-/* ACTIVITY */
-.act-list{display:flex;flex-direction:column;gap:0;}
-.act-item{display:flex;align-items:flex-start;gap:12px;padding:14px 22px;border-top:1px solid var(--rose-p);}
-.act-dot{width:8px;height:8px;border-radius:50%;background:var(--rose);flex-shrink:0;margin-top:5px;}
-.act-txt{font-size:13px;color:var(--mid);line-height:1.5;}
-.act-time{font-size:11px;color:var(--lite);margin-top:2px;}
-
-/* RESPONSIVE */
-@media(max-width:768px){
-  .sidebar{width:60px;}
-  .sb-brand .b1,.sb-brand .b2,.sb-brand .b3,.sb-item span:last-child,.sb-uname,.sb-urole,.sb-logout,.sb-sect{display:none;}
-  .sb-item{justify-content:center;padding:12px;}
-  .stats-row{grid-template-columns:1fr 1fr;}
-  .main{overflow-x:hidden;}
-  .page{padding:16px;}
-}
+#toast-a{position:fixed;bottom:24px;right:24px;background:var(--dark);color:white;padding:12px 22px;border-radius:50px;opacity:0;transition:0.3s;}
 </style>
 </head>
 <body>
 
-<!-- ════════════ ADMIN LOGIN ════════════ -->
 <div id="admin-login">
   <div class="alog-card">
-    <div class="alog-logo">
-      <div style="font-size:36px;margin-bottom:8px;">🌸</div>
-      <div class="brand">Nalin Nazareth</div>
-      <div class="sub">Painel Administrativo</div>
-      <div class="badge">🔐 Acesso restrito</div>
-    </div>
-    <div class="afield">
-      <label>Usuário admin</label>
-      <input type="email" id="a-user" placeholder="login admin" value="">
-    </div>
-    <div class="afield">
-      <label>Senha</label>
-      <input type="password" id="a-pass" placeholder="••••••••" value="">
-    </div>
-    <button class="abtn" onclick="adminLogin()">Entrar no painel</button>
-    <div class="aerr" id="a-err"></div>
-    <div style="text-align:center;margin-top:20px;">
-      <a href="app.html" style="font-size:12px;color:var(--lite);">← Voltar ao app das doulandas</a>
-    </div>
+    <div class="brand" style="text-align:center;margin-bottom:20px;">Nalin Nazareth</div>
+    <div class="afield"><label>Usuário</label><input type="email" id="a-user" value="admin@nalinnazareth.com"></div>
+    <div class="afield"><label>Senha</label><input type="password" id="a-pass" value="admin123"></div>
+    <button class="abtn" onclick="adminLogin()">Entrar</button>
+    <div id="a-err" style="color:var(--err);text-align:center;margin-top:10px;"></div>
   </div>
 </div>
 
-<!-- ════════════ ADMIN SHELL ════════════ -->
 <div id="admin-shell">
-
-  <!-- SIDEBAR -->
   <div class="sidebar">
-    <div class="sb-brand">
-      <div class="b1">Nalin Nazareth</div>
-      <div class="b2">Doula · Admin</div>
-      <div class="b3">🔐 Admin</div>
-    </div>
+    <div class="sb-brand"><div class="brand">Nalin Admin</div></div>
     <div class="sb-nav">
-      <div class="sb-sect">Geral</div>
-      <div class="sb-item active" onclick="goPage('dashboard',this)"><span class="si">📊</span><span>Dashboard</span></div>
-      <div class="sb-sect">Usuárias</div>
-      <div class="sb-item" onclick="goPage('doulandas',this)"><span class="si">🤰</span><span>Doulandas</span></div>
-      <div class="sb-sect">Conteúdo</div>
-      <div class="sb-item" onclick="goPage('videos',this)"><span class="si">🎬</span><span>Vídeos</span></div>
-      <div class="sb-item" onclick="goPage('ebooks',this)"><span class="si">📖</span><span>E-books</span></div>
-      <div class="sb-item" onclick="goPage('meditacoes',this)"><span class="si">🎵</span><span>Meditações</span></div>
-      <div class="sb-sect">Config.</div>
-      <div class="sb-item" onclick="goPage('config',this)"><span class="si">⚙️</span><span>Configurações</span></div>
+      <div class="sb-item active" onclick="goPage('dashboard',this)">📊 Dashboard</div>
+      <div class="sb-item" onclick="goPage('ebooks',this)">📖 E-books</div>
     </div>
-    <div class="sb-footer">
-      <div class="sb-user">
-        <div class="sb-avatar">N</div>
-        <div><div class="sb-uname">Nalin Nazareth</div><div class="sb-urole">Administradora</div></div>
-      </div>
-      <button class="sb-logout" onclick="adminLogout()">Sair do painel</button>
-    </div>
+    <button class="sb-logout" onclick="adminLogout()">Sair</button>
   </div>
-
-  <!-- MAIN CONTENT -->
   <div class="main">
-
-    <!-- ── DASHBOARD ── -->
-    <div class="page active" id="p-dashboard">
-      <div class="page-hdr">
-        <h1>Dashboard</h1>
-        <p>Visão geral do seu app em tempo real</p>
-      </div>
-      <div class="stats-row" id="stat-row"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-        <div class="table-card">
-          <div class="tc-hdr"><h3>Doulandas Recentes</h3></div>
-          <div id="dash-recent"></div>
-        </div>
-        <div class="table-card">
-          <div class="tc-hdr"><h3>Atividade Recente</h3></div>
-          <div class="act-list" id="dash-activity"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── DOULANDAS ── -->
-    <div class="page" id="p-doulandas">
-      <div class="page-hdr" style="display:flex;align-items:flex-start;justify-content:space-between;">
-        <div><h1>Doulandas</h1><p>Gerencie todas as suas gestantes</p></div>
-        <button class="btn-sm btn-rose-sm" onclick="openModal('modal-doula')">+ Nova Doulânda</button>
-      </div>
-      <div class="search-bar">
-        <input type="text" id="search-doula" placeholder="🔍 Buscar por nome ou e-mail..." oninput="renderDoulandas()">
-      </div>
-      <div class="table-card">
-        <table>
-          <thead><tr><th>Nome</th><th>Semanas</th><th>Bebê</th><th>Parto Previsto</th><th>Status</th><th>Ações</th></tr></thead>
-          <tbody id="doulandas-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ── VÍDEOS ── -->
-    <div class="page" id="p-videos">
-      <div class="page-hdr" style="display:flex;align-items:flex-start;justify-content:space-between;">
-        <div><h1>Videoaulas</h1><p>Gerencie seus vídeos</p></div>
-        <button class="btn-sm btn-rose-sm" onclick="openAddConteudo('video')">+ Adicionar Vídeo</button>
-      </div>
-      <div class="table-card">
-        <table>
-          <thead><tr><th>Título</th><th>Categoria</th><th>Duração</th><th>Status</th><th>Ações</th></tr></thead>
-          <tbody id="videos-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ── EBOOKS ── -->
+    <div class="page active" id="p-dashboard"><h1>Dashboard</h1><div id="stat-row"></div></div>
     <div class="page" id="p-ebooks">
-      <div class="page-hdr" style="display:flex;align-items:flex-start;justify-content:space-between;">
-        <div><h1>E-books</h1><p>Gerencie seus materiais PDF</p></div>
-        <button class="btn-sm btn-rose-sm" onclick="openAddConteudo('ebook')">+ Adicionar E-book</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h1>E-books</h1>
+        <button class="btn-sm btn-rose-sm" onclick="openModal('modal-ebook')">+ Adicionar E-book</button>
       </div>
-      <div class="table-card">
-        <table>
-          <thead><tr><th>Título</th><th>Categoria</th><th>Páginas</th><th>Status</th><th>Ações</th></tr></thead>
-          <tbody id="ebooks-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ── MEDITAÇÕES ── -->
-    <div class="page" id="p-meditacoes">
-      <div class="page-hdr" style="display:flex;align-items:flex-start;justify-content:space-between;">
-        <div><h1>Meditações</h1><p>Áudios e práticas guiadas</p></div>
-        <button class="btn-sm btn-rose-sm" onclick="openAddConteudo('meditacao')">+ Adicionar Meditação</button>
-      </div>
-      <div class="table-card">
-        <table>
-          <thead><tr><th>Título</th><th>Tipo</th><th>Duração</th><th>Status</th><th>Ações</th></tr></thead>
-          <tbody id="meditacoes-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ── CONFIG ── -->
-    <div class="page" id="p-config">
-      <div class="page-hdr"><h1>Configurações</h1><p>Ajustes gerais do sistema</p></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-        <div class="table-card">
-          <div class="tc-hdr"><h3>🔐 Senha do Admin</h3></div>
-          <div style="padding:20px;display:flex;flex-direction:column;gap:12px;">
-            <div class="mfield"><label>Senha atual</label><input type="password" id="cfg-old" placeholder="••••••••"></div>
-            <div class="mfield"><label>Nova senha</label><input type="password" id="cfg-new" placeholder="••••••••"></div>
-            <div class="mfield"><label>Confirmar senha</label><input type="password" id="cfg-conf" placeholder="••••••••"></div>
-            <button class="btn-sm btn-rose-sm" style="align-self:flex-end" onclick="changeAdminPass()">Salvar senha</button>
-            <div id="cfg-msg" style="font-size:13px;min-height:16px;color:var(--ok);"></div>
-          </div>
-        </div>
-        <div class="table-card">
-          <div class="tc-hdr"><h3>📱 Dados do App</h3></div>
-          <div style="padding:20px;display:flex;flex-direction:column;gap:12px;">
-            <div class="mfield"><label>WhatsApp da Nalin</label><input type="text" id="cfg-wa" placeholder="5511999999999"></div>
-            <div class="mfield"><label>Mensagem de boas-vindas</label><textarea class="mfield" placeholder="Mensagem exibida no app..." style="width:100%;border:1.5px solid var(--rose-p);border-radius:12px;padding:11px 14px;font-size:14px;color:var(--dark);background:var(--warm);outline:none;min-height:80px;resize:vertical;"></textarea></div>
-            <button class="btn-sm btn-rose-sm" style="align-self:flex-end" onclick="showToastA('Configurações salvas! ✨')">Salvar</button>
-          </div>
-        </div>
-        <div class="table-card" style="grid-column:1/-1;">
-          <div class="tc-hdr"><h3>🗑️ Zona de Perigo</h3></div>
-          <div style="padding:20px;display:flex;gap:12px;flex-wrap:wrap;">
-            <button class="btn-sm btn-danger" onclick="if(confirm('Resetar todos os dados?'))resetAll()">Resetar todos os dados</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- /main -->
-</div><!-- /shell -->
-
-<!-- ════════════ MODAL — NOVA DOULÂNDA ════════════ -->
-<div class="modal-overlay" id="modal-doula">
-  <div class="modal">
-    <div class="modal-hdr">
-      <h3 id="mdoula-title">Nova Doulânda</h3>
-      <button class="modal-close" onclick="closeModal('modal-doula')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="mdoula-id">
-      <div class="mrow">
-        <div class="mfield"><label>Nome completo</label><input type="text" id="md-nome" placeholder="Maria Silva"></div>
-        <div class="mfield"><label>E-mail</label><input type="email" id="md-email" placeholder="maria@email.com"></div>
-      </div>
-      <div class="mrow">
-        <div class="mfield"><label>Senha de acesso</label><input type="password" id="md-senha" placeholder="Mínimo 6 caracteres"></div>
-        <div class="mfield"><label>Nome do bebê</label><input type="text" id="md-bebe" placeholder="Ainda não sei / Maria"></div>
-      </div>
-      <div class="mrow">
-        <div class="mfield"><label>Semanas gestacionais</label><input type="number" id="md-sem" placeholder="Ex: 20" min="1" max="42"></div>
-        <div class="mfield"><label>Data prevista do parto</label><input type="date" id="md-dpp"></div>
-      </div>
-      <div class="mfield">
-        <label>Tipo de parto desejado</label>
-        <select id="md-parto"><option value="normal">Parto Normal / Humanizado</option><option value="cesarea">Cesárea</option><option value="agua">Parto na Água</option><option value="domiciliar">Parto Domiciliar</option></select>
-      </div>
-      <div id="md-err" style="color:var(--err);font-size:13px;min-height:16px;margin-top:4px;"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-full btn-cancel" onclick="closeModal('modal-doula')">Cancelar</button>
-      <button class="btn-full btn-save" onclick="saveDoula()">Salvar doulânda 🌸</button>
+      <div class="table-card"><table><thead><tr><th>Título</th><th>Descrição</th><th>Data</th><th>Ações</th></tr></thead><tbody id="ebooks-tbody"></tbody></table></div>
     </div>
   </div>
 </div>
 
-<!-- ════════════ MODAL — CONTEÚDO ════════════ -->
-<div class="modal-overlay" id="modal-cont">
+<div class="modal-overlay" id="modal-ebook">
   <div class="modal">
-    <div class="modal-hdr">
-      <h3 id="mcont-title">Novo Conteúdo</h3>
-      <button class="modal-close" onclick="closeModal('modal-cont')">✕</button>
+    <h3>Enviar E-book (PDF)</h3>
+    <div class="mfield"><label>Título</label><input type="text" id="eb-titulo"></div>
+    <div class="mfield"><label>Descrição</label><textarea id="eb-desc"></textarea></div>
+    <div class="mfield">
+      <label>Arquivo PDF</label>
+      <div class="upload-area" onclick="document.getElementById('eb-file').click()">📄 Clique para selecionar</div>
+      <input type="file" id="eb-file" accept=".pdf" style="display:none;" onchange="handleFileSelect()">
     </div>
-    <div class="modal-body">
-      <input type="hidden" id="mc-id">
-      <input type="hidden" id="mc-cat">
-      <div class="mfield"><label>Título</label><input type="text" id="mc-titulo" placeholder="Ex: Técnicas de respiração..."></div>
-      <div class="mrow">
-        <div class="mfield"><label>Subcategoria / Tema</label><input type="text" id="mc-subcat" placeholder="Ex: Amamentação, Parto..."></div>
-        <div class="mfield"><label>Emoji do conteúdo</label><input type="text" id="mc-emoji" placeholder="🎬" maxlength="4"></div>
-      </div>
-      <div class="mfield"><label>Descrição</label><textarea id="mc-desc" placeholder="Descreva o conteúdo..."></textarea></div>
-      <div class="mrow">
-        <div class="mfield" id="mc-dur-wrap"><label>Duração</label><input type="text" id="mc-dur" placeholder="Ex: 18 min"></div>
-        <div class="mfield" id="mc-pag-wrap"><label>Páginas</label><input type="text" id="mc-pag" placeholder="Ex: 14 pág"></div>
-      </div>
-      <div class="mfield">
-        <label>Link / URL do conteúdo</label>
-        <input type="url" id="mc-url" placeholder="https://youtube.com/watch?v=...">
-      </div>
-      <!-- Área de upload removida para focar em links externos (YouTube/Vimeo) -->
-      <div class="mfield" style="margin-top:14px;">
-        <label>Cor de fundo (gradiente CSS)</label>
-        <input type="text" id="mc-cor" placeholder="Ex: #e8b4a0,#c9907a" value="#e8b4a0,#c9907a">
-      </div>
-      <div id="mc-err" style="color:var(--err);font-size:13px;min-height:16px;margin-top:4px;"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-full btn-cancel" onclick="closeModal('modal-cont')">Cancelar</button>
-      <button class="btn-full btn-save" onclick="saveConteudo()">Salvar conteúdo ✨</button>
-    </div>
+    <div id="eb-file-name" style="font-size:12px;margin-bottom:10px;"></div>
+    <div id="eb-err" style="color:var(--err);font-size:12px;"></div>
+    <button class="btn-full btn-save" id="eb-submit" onclick="uploadEbook()">Enviar 🚀</button>
+    <button class="btn-full" onclick="closeModal('modal-ebook')">Cancelar</button>
   </div>
 </div>
 
-<div id="toast-a" style="position:fixed;bottom:24px;right:24px;background:var(--dark);color:white;padding:12px 22px;border-radius:50px;font-size:14px;opacity:0;transition:all .3s;pointer-events:none;z-index:9999;transform:translateY(10px);">...</div>
+<div id="toast-a">...</div>
 
 <script>
-// ════ STORAGE ════
 const API_URL = "http://192.168.1.8:5000";
-const DB={get:k=>{try{return JSON.parse(localStorage.getItem(k));}catch{return null;}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),del:k=>localStorage.removeItem(k)};
+const DB={get:k=>JSON.parse(localStorage.getItem(k)),set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),del:k=>localStorage.removeItem(k)};
 
-// ════ SEED ════
-function seed(){
-  if(!DB.get('nn_admin')){DB.set('nn_admin',{user:'admin@nalinnazareth.com',pass:'admin123'});}
-  if(!DB.get('nn_users')){
-    DB.set('nn_users',[
-      {id:1,nome:'Ana Clara',email:'ana@email.com',senha:'123456',bebe:'Aurora',semanas:24,dpp:'2025-07-15',parto:'normal',ativo:true,criadoEm:new Date().toISOString()},
-      {id:2,nome:'Mariana Silva',email:'mari@email.com',senha:'123456',bebe:'Miguel',semanas:32,dpp:'2025-06-01',parto:'normal',ativo:true,criadoEm:new Date().toISOString()},
-      {id:3,nome:'Juliana Pereira',email:'ju@email.com',senha:'123456',bebe:'Sophia',semanas:16,dpp:'2025-09-10',parto:'cesarea',ativo:true,criadoEm:new Date().toISOString()}
-    ]);
-  }
-  if(!DB.get('nn_conteudos')){
-    DB.set('nn_conteudos',[
-      {id:1,titulo:'Pega Correta: Guia Completo',categoria:'video',subcategoria:'Amamentação',descricao:'Aprenda a técnica certa.',duracao:'18 min',url:'https://youtube.com',cor:'#e8b4a0,#c9907a',emoji:'🤱',ativo:true},
-      {id:2,titulo:'Posturas para Aliviar Dores',categoria:'video',subcategoria:'Bem-estar',descricao:'Alívio de dores lombares.',duracao:'24 min',url:'https://youtube.com',cor:'#d4a0b5,#b07090',emoji:'🧘‍♀️',ativo:true},
-      {id:3,titulo:'Plano de Parto — Modelo',categoria:'ebook',subcategoria:'Parto',descricao:'Modelo completo.',paginas:'14 pág',url:'#',cor:'#c9907a,#a96b55',emoji:'📋',ativo:true},
-      {id:4,titulo:'Conexão Mãe & Bebê',categoria:'meditacao',subcategoria:'Relaxamento',descricao:'Meditação guiada.',duracao:'12 min',url:'#',cor:'#b4c4d8,#8090a8',emoji:'🌙',ativo:true}
-    ]);
-  }
-}
-
-// ════ ADMIN LOGIN ════
 function adminLogin(){
-  const user=document.getElementById('a-user').value.trim().toLowerCase();
+  const user=document.getElementById('a-user').value;
   const pass=document.getElementById('a-pass').value;
-  const admin=DB.get('nn_admin')||{user:'admin@nalinnazareth.com',pass:'admin123'};
-  if(user===admin.user.toLowerCase()&&pass===admin.pass){
+  if(user==="admin@nalinnazareth.com" && pass==="admin123"){
     DB.set('nn_admin_session',true);
-    document.getElementById('admin-login').style.display='none';
-    document.getElementById('admin-shell').classList.add('active');
-    renderDashboard();
-  } else {
-    document.getElementById('a-err').textContent='Usuário ou senha incorretos.';
-  }
+    location.reload();
+  } else { document.getElementById('a-err').textContent='Erro.'; }
 }
 function adminLogout(){DB.del('nn_admin_session');location.reload();}
 
-// ════ NAVIGATION ════
 function goPage(id,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
   document.getElementById('p-'+id).classList.add('active');
   el.classList.add('active');
-  const renders={dashboard:renderDashboard,doulandas:renderDoulandas,videos:()=>renderConteudoTable('video'),ebooks:()=>renderConteudoTable('ebook'),meditacoes:()=>renderConteudoTable('meditacao')};
-  if(renders[id])renders[id]();
-}
-
-// ════ API FETCH HELPERS ════
-async function apiFetch(endpoint, options = {}) {
-  try {
-    const res = await fetch(`${API_URL}${endpoint}`, {
-      ...options,
-      headers: { 'Content-Type': 'application/json', ...options.headers }
-    });
-    return await res.json();
-  } catch (e) {
-    console.error("Erro na API:", e);
-    return null;
-  }
-}
-
-// ════ DASHBOARD ════
-async function renderDashboard(){
-  // Tentar buscar dados reais da API
-  const apiUsers = await apiFetch('/api/users');
-  const apiCont = await apiFetch('/api/admin/conteudos');
-  
-  if(apiUsers) DB.set('nn_users', apiUsers);
-  if(apiCont) DB.set('nn_conteudos', apiCont);
-
-  const users=DB.get('nn_users')||[];
-  const cont=DB.get('nn_conteudos')||[];
-  const active=users.filter(u=>u.ativo).length;
-  const stats=[
-    {v:active,l:'Doulandas Ativas',i:'🤰'},
-    {v:cont.filter(c=>c.categoria==='video'&&c.ativo).length,l:'Vídeos Publicados',i:'🎬'},
-    {v:cont.filter(c=>c.categoria==='ebook'&&c.ativo).length,l:'E-books',i:'📖'},
-    {v:cont.filter(c=>c.ativo).length,l:'Total de Conteúdos',i:'✨'}
-  ];
-  document.getElementById('stat-row').innerHTML=stats.map(s=>`
-    <div class="stat-c"><div class="si">${s.i}</div><div class="sv">${s.v}</div><div class="sl">${s.l}</div></div>
-  `).join('');
-  // Recent users
-  const recent=users.slice(-4).reverse();
-  document.getElementById('dash-recent').innerHTML=`<table><thead><tr><th>Nome</th><th>Semanas</th><th>Status</th></tr></thead><tbody>${
-    recent.map(u=>`<tr><td class="td-name">${u.nome}</td><td>${u.semanas} sem</td><td><span class="badge badge-ok">Ativa</span></td></tr>`).join('')
-  }</tbody></table>`;
-  // Activity
-  const acts=[
-    {t:`${users[users.length-1]?.nome||'—'} entrou no app`,tm:'Hoje'},
-    {t:'Novo vídeo publicado: '+cont.filter(c=>c.categoria==='video').slice(-1)[0]?.titulo,tm:'Hoje'},
-    {t:'Entrada no diário salva',tm:'Ontem'},
-    {t:'Nova doulânda cadastrada',tm:'2 dias atrás'},
-    {t:'E-book atualizado',tm:'3 dias atrás'}
-  ];
-  document.getElementById('dash-activity').innerHTML=acts.map(a=>`
-    <div class="act-item"><div class="act-dot"></div><div><div class="act-txt">${a.t||'—'}</div><div class="act-time">${a.tm}</div></div></div>
-  `).join('');
-}
-
-// ════ DOULANDAS ════
-function renderDoulandas(){
-  const q=(document.getElementById('search-doula')?.value||'').toLowerCase();
-  let users=DB.get('nn_users')||[];
-  if(q)users=users.filter(u=>u.nome.toLowerCase().includes(q)||u.email.toLowerCase().includes(q));
-  document.getElementById('doulandas-tbody').innerHTML=users.map(u=>`
-    <tr>
-      <td><div class="td-name">${u.nome}</div><div style="font-size:11px;color:var(--lite);">${u.email}</div></td>
-      <td>${u.semanas} sem</td>
-      <td>${u.bebe||'—'}</td>
-      <td>${u.dpp?new Date(u.dpp).toLocaleDateString('pt-BR'):'—'}</td>
-      <td><span class="badge ${u.ativo?'badge-ok':'badge-err'}">${u.ativo?'Ativa':'Inativa'}</span></td>
-      <td><div class="td-actions">
-        <button class="btn-sm btn-ghost" onclick="editDoula(${u.id})">✏️ Editar</button>
-        <button class="btn-sm btn-danger" onclick="toggleDoula(${u.id})">${u.ativo?'🚫 Desativar':'✅ Ativar'}</button>
-      </div></td>
-    </tr>
-  `).join('');
+  if(id==='ebooks') loadEbooks();
 }
 
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
-function editDoula(id){
-  const users=DB.get('nn_users')||[];
-  const u=users.find(x=>x.id===id);
-  if(!u)return;
-  document.getElementById('mdoula-title').textContent='Editar Doulânda';
-  document.getElementById('mdoula-id').value=u.id;
-  document.getElementById('md-nome').value=u.nome;
-  document.getElementById('md-email').value=u.email;
-  document.getElementById('md-senha').value=u.senha;
-  document.getElementById('md-bebe').value=u.bebe||'';
-  document.getElementById('md-sem').value=u.semanas||'';
-  document.getElementById('md-dpp').value=u.dpp||'';
-  document.getElementById('md-parto').value=u.parto||'normal';
-  openModal('modal-doula');
-}
-
-async function saveDoula(){
-  const nome=document.getElementById('md-nome').value.trim();
-  const email=document.getElementById('md-email').value.trim();
-  const senha=document.getElementById('md-senha').value;
-  const bebe=document.getElementById('md-bebe').value.trim();
-  const sem=parseInt(document.getElementById('md-sem').value)||0;
-  const dpp=document.getElementById('md-dpp').value;
-  const parto=document.getElementById('md-parto').value;
-  const editId=document.getElementById('mdoula-id').value;
-  if(!nome||!email||!senha){document.getElementById('md-err').textContent='Preencha nome, e-mail e senha.';return;}
-  
-  const obj = {id:editId, nome, email, senha, bebe, semanas:sem, dpp, parto};
-  const res = await apiFetch('/api/users', { method: 'POST', body: JSON.stringify(obj) });
-  
-  if(res && res.status === 'success'){
-    showToastA(editId ? 'Doulânda atualizada! 🌸' : 'Doulânda cadastrada! 🎉');
-    closeModal('modal-doula');
-    renderDoulandas();
-  } else {
-    document.getElementById('md-err').textContent = res?.message || 'Erro ao conectar com o servidor.';
-  }
-}
-
-async function toggleDoula(id){
-  const res = await apiFetch(`/api/users/${id}/toggle`, { method: 'POST' });
-  if(res && res.status === 'success'){
-    renderDoulandas();
-    showToastA('Status atualizado!');
-  }
-}
-
-// ════ CONTEÚDOS ════
-function renderConteudoTable(cat){
-  const cont=(DB.get('nn_conteudos')||[]).filter(c=>c.categoria===cat);
-  const tbodyId={video:'videos-tbody',ebook:'ebooks-tbody',meditacao:'meditacoes-tbody'}[cat];
-  if(!tbodyId)return;
-  document.getElementById(tbodyId).innerHTML=cont.map(c=>`
-    <tr>
-      <td><div class="td-name">${c.emoji||''} ${c.titulo}</div><div style="font-size:11px;color:var(--lite);">${c.descricao||''}</div></td>
-      <td><span class="badge badge-rose">${c.subcategoria||'—'}</span></td>
-      <td>${c.duracao||c.paginas||'—'}</td>
-      <td><span class="badge ${c.ativo?'badge-ok':'badge-err'}">${c.ativo?'Publicado':'Oculto'}</span></td>
-      <td><div class="td-actions">
-        <button class="btn-sm btn-ghost" onclick="editConteudo(${c.id})">✏️ Editar</button>
-        <button class="btn-sm btn-danger" onclick="toggleConteudo(${c.id})">${c.ativo?'🚫 Ocultar':'✅ Publicar'}</button>
-        <button class="btn-sm btn-danger" onclick="deleteConteudo(${c.id})">🗑️</button>
-      </div></td>
-    </tr>
-  `).join('');
-}
-
-function openAddConteudo(cat){
-  document.getElementById('mcont-title').textContent={video:'Novo Vídeo',ebook:'Novo E-book',meditacao:'Nova Meditação'}[cat]||'Novo Conteúdo';
-  document.getElementById('mc-cat').value=cat;
-  document.getElementById('mc-id').value='';
-  ['mc-titulo','mc-subcat','mc-emoji','mc-desc','mc-dur','mc-pag','mc-url'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('mc-cor').value='#e8b4a0,#c9907a';
-  document.getElementById('mc-dur-wrap').style.display=cat!=='ebook'?'block':'none';
-  document.getElementById('mc-pag-wrap').style.display=cat==='ebook'?'block':'none';
-  openModal('modal-cont');
-}
-
-function editConteudo(id){
-  const cont=DB.get('nn_conteudos')||[];
-  const c=cont.find(x=>x.id===id);if(!c)return;
-  document.getElementById('mcont-title').textContent='Editar Conteúdo';
-  document.getElementById('mc-id').value=c.id;
-  document.getElementById('mc-cat').value=c.categoria;
-  document.getElementById('mc-titulo').value=c.titulo||'';
-  document.getElementById('mc-subcat').value=c.subcategoria||'';
-  document.getElementById('mc-emoji').value=c.emoji||'';
-  document.getElementById('mc-desc').value=c.descricao||'';
-  document.getElementById('mc-dur').value=c.duracao||'';
-  document.getElementById('mc-pag').value=c.paginas||'';
-  document.getElementById('mc-url').value=c.url||'';
-  document.getElementById('mc-cor').value=c.cor||'#e8b4a0,#c9907a';
-  document.getElementById('mc-dur-wrap').style.display=c.categoria!=='ebook'?'block':'none';
-  document.getElementById('mc-pag-wrap').style.display=c.categoria==='ebook'?'block':'none';
-  openModal('modal-cont');
-}
-
-async function saveConteudo(){
-  const titulo=document.getElementById('mc-titulo').value.trim();
-  if(!titulo){document.getElementById('mc-err').textContent='Informe o título.';return;}
-  const editId=document.getElementById('mc-id').value;
-  const cat=document.getElementById('mc-cat').value;
-  const url = document.getElementById('mc-url').value;
-  if(!url){document.getElementById('mc-err').textContent='Informe o link do conteúdo.';return;}
-
-  const obj={id:editId, titulo,categoria:cat,subcategoria:document.getElementById('mc-subcat').value,emoji:document.getElementById('mc-emoji').value||'📄',descricao:document.getElementById('mc-desc').value,duracao:document.getElementById('mc-dur').value,paginas:document.getElementById('mc-pag').value,url:url,cor:document.getElementById('mc-cor').value};
-  const res = await apiFetch('/api/conteudos', { method: 'POST', body: JSON.stringify(obj) });
-  
-  if(res && res.status === 'success'){
-    showToastA(editId ? 'Conteúdo atualizado! ✨' : 'Conteúdo publicado! 🎉');
-    closeModal('modal-cont');
-    renderConteudoTable(cat);
-  } else {
-    document.getElementById('mc-err').textContent = 'Erro ao salvar no servidor.';
-  }
-}
-
-async function toggleConteudo(id){
-  const res = await apiFetch(`/api/conteudos/${id}/toggle`, { method: 'POST' });
-  if(res && res.status === 'success'){
-    renderConteudoTable(DB.get('nn_conteudos').find(c=>c.id===id)?.categoria);
-    showToastA('Status atualizado!');
-  }
-}
-
-async function deleteConteudo(id){
-  if(!confirm('Excluir este conteúdo permanentemente?'))return;
-  const res = await apiFetch(`/api/conteudos/${id}`, { method: 'DELETE' });
-  if(res && res.status === 'success'){
-    showToastA('Conteúdo excluído.');
-    location.reload(); // Simplificado para atualizar a lista
-  }
-}
-
-// ════ CONFIG ════
-function changeAdminPass(){
-  const admin=DB.get('nn_admin')||{};
-  const old=document.getElementById('cfg-old').value;
-  const nw=document.getElementById('cfg-new').value;
-  const cf=document.getElementById('cfg-conf').value;
-  const msg=document.getElementById('cfg-msg');
-  if(old!==admin.pass){msg.style.color='var(--err)';msg.textContent='Senha atual incorreta.';return;}
-  if(nw.length<6){msg.style.color='var(--err)';msg.textContent='Nova senha muito curta.';return;}
-  if(nw!==cf){msg.style.color='var(--err)';msg.textContent='Senhas não coincidem.';return;}
-  DB.set('nn_admin',{...admin,pass:nw});
-  msg.style.color='var(--ok)';msg.textContent='Senha alterada com sucesso!';
-}
-
-function resetAll(){
-  ['nn_users','nn_conteudos','nn_admin','nn_admin_session','nn_session'].forEach(k=>DB.del(k));
-  location.reload();
-}
-
-// ════ TOAST ════
 function showToastA(msg){
-  const t=document.getElementById('toast-a');t.textContent=msg;t.style.opacity='1';t.style.transform='translateY(0)';
-  setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(10px)';},2500);
+  const t=document.getElementById('toast-a');t.textContent=msg;t.style.opacity='1';
+  setTimeout(()=>t.style.opacity='0',2000);
 }
 
-// Função de upload removida para focar em links externos
+let selectedFile = null;
+function handleFileSelect(){
+  const file=document.getElementById('eb-file').files[0];
+  if(file && file.type==='application/pdf'){
+    selectedFile=file;
+    document.getElementById('eb-file-name').textContent='✓ '+file.name;
+  }
+}
 
-// ════ INIT ════
-document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('admin-login').style.display!=='none')adminLogin();});
-seed();
+function uploadEbook(){
+  const titulo=document.getElementById('eb-titulo').value;
+  if(!titulo || !selectedFile){ alert('Preencha tudo.'); return; }
+  const formData=new FormData();
+  formData.append('titulo',titulo);
+  formData.append('descricao',document.getElementById('eb-desc').value);
+  formData.append('file',selectedFile);
+  document.getElementById('eb-submit').disabled=true;
+  fetch(`${API_URL}/api/admin/upload_ebook`,{method:'POST',body:formData})
+    .then(r=>r.json()).then(data=>{
+      document.getElementById('eb-submit').disabled=false;
+      if(data.status==='success'){
+        showToastA('Enviado!');
+        closeModal('modal-ebook');
+        loadEbooks();
+      } else { alert(data.message); }
+    }).catch(()=>alert('Erro de conexão.'));
+}
+
+function loadEbooks(){
+  fetch(`${API_URL}/api/ebooks`).then(r=>r.json()).then(data=>{
+    document.getElementById('ebooks-tbody').innerHTML=data.map(e=>`
+      <tr><td>${e.titulo}</td><td>${e.descricao}</td><td>${new Date(e.data_upload).toLocaleDateString()}</td>
+      <td><button class="btn-sm" onclick="window.open('${API_URL}${e.url_pdf}')">Ver</button>
+      <button class="btn-sm" onclick="deleteEbook(${e.id})">Excluir</button></td></tr>
+    `).join('');
+  });
+}
+
+function deleteEbook(id){
+  if(confirm('Excluir?')) fetch(`${API_URL}/api/ebook/${id}`,{method:'DELETE'}).then(()=>loadEbooks());
+}
+
 if(DB.get('nn_admin_session')){
   document.getElementById('admin-login').style.display='none';
   document.getElementById('admin-shell').classList.add('active');
-  renderDashboard();
 }
 </script>
 </body>
