@@ -330,7 +330,28 @@ textarea.dta:focus{border-color:var(--rose);}
   </div>
 </div>
 
-<!-- ═══════════════ DIÁRIO ═══════════════ -->
+<!-- ═══════════ AGENDA ═══════════ -->
+<div class="screen" id="agenda">
+  <div class="sbar"><span>9:41</span><span>📶🔋</span></div>
+  <div class="scroll">
+    <div style="padding:20px;">
+      <h2 style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:28px;color:var(--dark);margin-bottom:8px;">Minha Agenda</h2>
+      <p style="font-size:13px;color:var(--mid);margin-bottom:20px;">Consultas, compromissos e lembretes 📅</p>
+      <button style="width:100%;background:var(--rose);color:white;border:none;border-radius:50px;padding:12px;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:20px;" onclick="openModal('modal-agenda')">+ Adicionar Compromisso</button>
+    </div>
+    <div id="agenda-list" style="padding:0 20px;"></div>
+    <div style="height:80px;"></div>
+  </div>
+  <div class="bnav">
+    <div class="nitem" onclick="navTo('home')"><div class="ni">🏫</div><div class="nl">Início</div></div>
+    <div class="nitem" onclick="navTo('gestacao')"><div class="ni">🤰</div><div class="nl">Gestação</div></div>
+    <div class="nitem" onclick="navTo('conteudo')"><div class="ni">🎬</div><div class="nl">Conteúdo</div></div>
+    <div class="nitem active" onclick="navTo('agenda')"><div class="ni">📅</div><div class="nl">Agenda</div></div>
+    <div class="nitem" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
+  </div>
+</div>
+
+<!-- ═══════════ DIÁRIO ═══════════ -->
 <div class="screen" id="diario">
   <div class="sbar"><span>9:41</span><span>📶🔋</span></div>
   <div class="scroll">
@@ -401,6 +422,60 @@ textarea.dta:focus{border-color:var(--rose);}
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-agenda">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-hdr"><h3>Adicionar Compromisso</h3><button class="modal-close" onclick="closeModal('modal-agenda')">✕</button></div>
+    <div class="modal-body">
+      <div class="mfield"><label>Tipo de Compromisso</label><select id="ag-tipo" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;font-size:14px;"><option value="">Selecione...</option><option value="Consulta Pré-natal">Consulta Pré-natal</option><option value="Ultrassom">Ultrassom</option><option value="Exame">Exame</option><option value="Dentista">Dentista</option><option value="Compromisso">Outro Compromisso</option></select></div>
+      <div class="mfield"><label>Data</label><input type="date" id="ag-data" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;"></div>
+      <div class="mfield"><label>Hora</label><input type="time" id="ag-hora" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;"></div>
+      <div class="mfield"><label>Descrição (Opcional)</label><textarea id="ag-desc" placeholder="Ex: Dr. Fernanda Santos, Consultório no Centro" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;height:60px;resize:vertical;"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn-full btn-cancel" onclick="closeModal('modal-agenda')">Cancelar</button><button class="btn-full btn-save" onclick="saveAgenda()">Salvar Compromisso</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-plano-parto">
+  <div class="modal">
+    <div class="modal-hdr"><h3>Plano de Parto</h3><button class="modal-close" onclick="closeModal('modal-plano-parto')">✕</button></div>
+    <div class="modal-body">
+      <textarea id="pp-txt" placeholder="Descreva seu plano de parto: tipo de parto desejado, presença de acompanhante, preferências de medicação, etc." style="width:100%;height:150px;padding:12px;border:1px solid var(--rose-pale);border-radius:8px;resize:vertical;"></textarea>
+      <div id="pp-msg" style="font-size:13px;min-height:16px;color:var(--ok);margin-top:8px;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-full btn-cancel" onclick="closeModal('modal-plano-parto')">Fechar</button><button class="btn-full btn-save" onclick="savePlanoParto()">Salvar Plano</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-enxoval">
+  <div class="modal">
+    <div class="modal-hdr"><h3>Lista de Enxoval</h3><button class="modal-close" onclick="closeModal('modal-enxoval')">✕</button></div>
+    <div class="modal-body">
+      <div style="margin-bottom:12px;">
+        <input type="text" id="enx-item" placeholder="Ex: Fralda tamanho RN" style="width:calc(100% - 50px);padding:8px;border:1px solid var(--rose-pale);border-radius:8px;">
+        <button style="width:40px;margin-left:8px;background:var(--rose);color:white;border:none;border-radius:8px;cursor:pointer;" onclick="addEnxovalItem()">+</button>
+      </div>
+      <div id="enx-list" style="max-height:200px;overflow-y:auto;"></div>
+      <div id="enx-msg" style="font-size:13px;min-height:16px;color:var(--ok);margin-top:8px;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-full btn-cancel" onclick="closeModal('modal-enxoval')">Fechar</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-maternidade">
+  <div class="modal">
+    <div class="modal-hdr"><h3>Maternidade</h3><button class="modal-close" onclick="closeModal('modal-maternidade')">✕</button></div>
+    <div class="modal-body">
+      <div class="mfield"><label>Nome da Maternidade</label><input type="text" id="mat-nome" placeholder="Ex: Hospital Santa Maria" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;"></div>
+      <div class="mfield"><label>Endereço</label><input type="text" id="mat-endereco" placeholder="Rua, número, bairro" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;"></div>
+      <div class="mfield"><label>Telefone</label><input type="tel" id="mat-tel" placeholder="(11) 99999-9999" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;"></div>
+      <div class="mfield"><label>Plano de Saúde / Convênio</label><input type="text" id="mat-plano" placeholder="Ex: Unimed" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;"></div>
+      <div class="mfield"><label>Observações</label><textarea id="mat-obs" placeholder="Informações adicionais..." style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;height:80px;resize:vertical;"></textarea></div>
+      <div id="mat-msg" style="font-size:13px;min-height:16px;color:var(--ok);"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-full btn-cancel" onclick="closeModal('modal-maternidade')">Fechar</button><button class="btn-full btn-save" onclick="saveMaternidade()">Salvar Informações</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -438,13 +513,17 @@ function getTri(w){if(w<=13)return{n:1,l:'1º Trimestre'};if(w<=26)return{n:2,l:
 const weeklyInfo={1:{t:'Fertilização',d:'O milagre começa.',e:'✨'},4:{t:'Formação',d:'Coração começa a se formar.',e:'💓'},6:{t:'Batimentos',d:'Primeiro batimento detectável!',e:'💗'},8:{t:'Órgãos',d:'Cérebro e coração em desenvolvimento.',e:'🫀'},10:{t:'Reflexos',d:'Bebê pode abrir e fechar os dedos.',e:'🤏'},12:{t:'Fim do 1º Trim.',d:'Risco de aborto reduz significativamente.',e:'🎉'},14:{t:'2º Trimestre',d:'Fase dourada! Enjoos diminuem.',e:'☀️'},16:{t:'Sexo do Bebê',d:'Possível descobrir na ultrassom!',e:'💕'},18:{t:'Primeiros Chutes',d:'Você começa a sentir os movimentos!',e:'🥊'},20:{t:'Metade da gestação',d:'Bebê ouve sons e sua voz.',e:'🎵'},22:{t:'Sobrevivência',d:'Bebê viável fora do útero com suporte.',e:'💪'},24:{t:'Audição',d:'Bebê ouve claramente você!',e:'👂'},26:{t:'Olhos Abrem',d:'Bebê já abre e fecha os olhos.',e:'👁️'},28:{t:'3º Trimestre',d:'Reta final! Bebê ganha peso.',e:'🚀'},30:{t:'Posição',d:'Bebê assume posição cefálica.',e:'🔄'},32:{t:'Sono REM',d:'Bebê tem sono REM e pode sonhar!',e:'💭'},34:{t:'Pulmões',d:'Pulmões quase completamente desenvolvidos.',e:'🫁'},36:{t:'Quase Pronto',d:'Bebê está desenvolvido.',e:'⏰'},38:{t:'A Termo',d:'Pronto para nascer a qualquer momento!',e:'🌟'},40:{t:'Parto Previsto',d:'Seu bebê está pronto para o mundo!',e:'👶'}};
 const tips={1:'Cuide bem de você! Tomar ácido fólico agora é essencial. 💊',4:'Beba muita água, mamãe. O corpo está trabalhando dobrado. 💧',8:'O enjoo é real, mas vai passar. Coma biscoito antes de levantar da cama. 🍪',12:'Você chegou ao fim do 1º trimestre! O risco diminui muito agora. 🎉',16:'Hora de pensar no plano de parto! Converse comigo quando quiser. 📋',20:'Na metade do caminho! Que tal registrar o ultrassom do bebê? 📸',24:'Seu bebê já ouve você! Cante, converse e leia histórias para ele. 🎵',28:'Reta final, mamãe! Prepare a bolsa da maternidade. 👜',32:'Faça os movimentos fetais diários: conte 10 movimentos por período. 🤰',36:'O bebê pode nascer a qualquer semana agora. Mantenha o saco pronto! ⏰',40:'É hoje? É amanhã? Cada contração é um passo mais perto. 💪'};
 let dicasCache = null;
-async function getTip(w){
-  if (!dicasCache) {
-    dicasCache = await apiFetch('/api/dicas') || [];
+function getTip(w){
+  if (!dicasCache || dicasCache.length === 0) {
+    const ks=Object.keys(tips).map(Number).sort((a,b)=>a-b);let b=ks[0];for(const k of ks){if(k<=w)b=k;}return tips[b];
   }
   const dica = dicasCache.find(d => d.semana == w);
   if (dica) return dica.dica;
   const ks=Object.keys(tips).map(Number).sort((a,b)=>a-b);let b=ks[0];for(const k of ks){if(k<=w)b=k;}return tips[b];
+}
+
+async function loadDicas(){
+  dicasCache = await apiFetch('/api/dicas') || [];
 }
 
 // ════ STATE ════
@@ -517,6 +596,7 @@ function navTo(id){
   if(id==='home')renderHome();
   if(id==='conteudo')renderConteudo(currentTab);
   if(id==='gestacao')renderGestacao(1);
+  if(id==='agenda')renderAgenda();
   if(id==='diario')renderDiario();
   if(id==='perfil')renderPerfil();
 }
@@ -692,6 +772,61 @@ function renderDiario(){
   });
 }
 
+// ════ AGENDA ════
+function renderAgenda(){
+  if(!currentUser)return;
+  const key=`nn_agenda_${currentUser.id}`;
+  const compromissos=(DB.get(key)||[]).sort((a,b)=>new Date(a.data+' '+a.hora)-new Date(b.data+' '+b.hora));
+  const list=document.getElementById('agenda-list');list.innerHTML='';
+  if(!compromissos.length){list.innerHTML='<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Nenhum compromisso agendado.<br>Clique em "+ Adicionar Compromisso" para criar um! 📅</div>';return;}
+  compromissos.forEach((c,i)=>{
+    const dataObj=new Date(c.data);
+    const dataFormatada=dataObj.toLocaleDateString('pt-BR',{day:'numeric',month:'short'});
+    list.innerHTML+=`<div style="background:var(--rose-pale);border-radius:12px;padding:16px;margin-bottom:12px;border-left:4px solid var(--rose);">
+      <div style="display:flex;justify-content:space-between;align-items:start;">
+        <div>
+          <div style="font-weight:600;color:var(--dark);font-size:15px;">${c.tipo} • ${c.hora}</div>
+          <div style="color:var(--mid);font-size:13px;margin-top:4px;">${dataFormatada}</div>
+          <div style="color:var(--dark);font-size:13px;margin-top:6px;">${c.descricao}</div>
+        </div>
+        <button style="background:var(--err);color:white;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:12px;" onclick="deleteAgenda(${i})">✕</button>
+      </div>
+    </div>`;
+  });
+}
+
+function saveAgenda(){
+  const tipo=document.getElementById('ag-tipo').value;
+  const data=document.getElementById('ag-data').value;
+  const hora=document.getElementById('ag-hora').value;
+  const descricao=document.getElementById('ag-desc').value;
+  
+  if(!tipo||!data||!hora){alert('Preencha todos os campos!');return;}
+  
+  const key=`nn_agenda_${currentUser.id}`;
+  const compromissos=DB.get(key)||[];
+  compromissos.push({tipo,data,hora,descricao});
+  DB.set(key,compromissos);
+  
+  closeModal('modal-agenda');
+  renderAgenda();
+  document.getElementById('ag-tipo').value='';
+  document.getElementById('ag-data').value='';
+  document.getElementById('ag-hora').value='';
+  document.getElementById('ag-desc').value='';
+  showToast('Compromisso adicionado! 📅');
+}
+
+function deleteAgenda(i){
+  if(!confirm('Deletar este compromisso?'))return;
+  const key=`nn_agenda_${currentUser.id}`;
+  const compromissos=DB.get(key)||[];
+  compromissos.splice(i,1);
+  DB.set(key,compromissos);
+  renderAgenda();
+  showToast('Compromisso deletado!');
+}
+
 // ════ PERFIL ════
 function renderPerfil(){
   if(!currentUser)return;
@@ -710,8 +845,94 @@ function renderPerfil(){
   document.getElementById('p-entradas').textContent=(DB.get(key)||[]).length;
 }
 
+// ════ PLANEJAMENTO ════
+function savePlanoParto(){
+  const txt=document.getElementById('pp-txt').value;
+  if(!txt){alert('Escreva seu plano de parto!');return;}
+  const key=`nn_pp_${currentUser.id}`;
+  DB.set(key,txt);
+  document.getElementById('pp-msg').textContent='Plano salvo com sucesso!';
+  document.getElementById('pp-msg').style.color='var(--ok)';
+  setTimeout(()=>{document.getElementById('pp-msg').textContent='';},2000);
+}
+
+function addEnxovalItem(){
+  const item=document.getElementById('enx-item').value.trim();
+  if(!item){alert('Digite um item!');return;}
+  const key=`nn_enx_${currentUser.id}`;
+  const items=DB.get(key)||[];
+  items.push({id:Date.now(),nome:item,comprado:false});
+  DB.set(key,items);
+  document.getElementById('enx-item').value='';
+  renderEnxovalList();
+}
+
+function renderEnxovalList(){
+  const key=`nn_enx_${currentUser.id}`;
+  const items=DB.get(key)||[];
+  const list=document.getElementById('enx-list');list.innerHTML='';
+  if(!items.length){list.innerHTML='<div style="text-align:center;color:var(--light);font-size:13px;padding:20px;">Nenhum item adicionado ainda.</div>';return;}
+  items.forEach((item,i)=>{
+    list.innerHTML+=`<div style="display:flex;align-items:center;padding:8px;border-bottom:1px solid var(--rose-pale);">
+      <input type="checkbox" ${item.comprado?'checked':''} onchange="toggleEnxovalItem(${i})" style="width:18px;height:18px;cursor:pointer;">
+      <span style="margin-left:10px;flex:1;${item.comprado?'text-decoration:line-through;color:var(--light);':''}">  ${item.nome}</span>
+      <button style="background:var(--err);color:white;border:none;border-radius:4px;width:24px;height:24px;cursor:pointer;font-size:11px;" onclick="deleteEnxovalItem(${i})">✕</button>
+    </div>`;
+  });
+}
+
+function toggleEnxovalItem(i){
+  const key=`nn_enx_${currentUser.id}`;
+  const items=DB.get(key)||[];
+  items[i].comprado=!items[i].comprado;
+  DB.set(key,items);
+  renderEnxovalList();
+}
+
+function deleteEnxovalItem(i){
+  const key=`nn_enx_${currentUser.id}`;
+  const items=DB.get(key)||[];
+  items.splice(i,1);
+  DB.set(key,items);
+  renderEnxovalList();
+}
+
+function saveMaternidade(){
+  const mat={
+    nome:document.getElementById('mat-nome').value,
+    endereco:document.getElementById('mat-endereco').value,
+    tel:document.getElementById('mat-tel').value,
+    plano:document.getElementById('mat-plano').value,
+    obs:document.getElementById('mat-obs').value
+  };
+  if(!mat.nome){alert('Preencha o nome da maternidade!');return;}
+  const key=`nn_mat_${currentUser.id}`;
+  DB.set(key,mat);
+  document.getElementById('mat-msg').textContent='Informações salvas com sucesso!';
+  document.getElementById('mat-msg').style.color='var(--ok)';
+  setTimeout(()=>{document.getElementById('mat-msg').textContent='';},2000);
+}
+
+function loadPlanejamento(){
+  const ppKey=`nn_pp_${currentUser.id}`;
+  const ppTxt=DB.get(ppKey)||'';
+  document.getElementById('pp-txt').value=ppTxt;
+  
+  const enxKey=`nn_enx_${currentUser.id}`;
+  renderEnxovalList();
+  
+  const matKey=`nn_mat_${currentUser.id}`;
+  const mat=DB.get(matKey)||{};
+  document.getElementById('mat-nome').value=mat.nome||'';
+  document.getElementById('mat-endereco').value=mat.endereco||'';
+  document.getElementById('mat-tel').value=mat.tel||'';
+  document.getElementById('mat-plano').value=mat.plano||'';
+  document.getElementById('mat-obs').value=mat.obs||'';
+}
+
 // ════ MODALS ════
 function openModal(id){
+  if(id==='modal-plano-parto'||id==='modal-enxoval'||id==='modal-maternidade')loadPlanejamento();
   document.getElementById(id)?.classList.add('active');
 }
 function closeModal(id){
@@ -742,6 +963,7 @@ async function syncUserData(){
 // ════ INIT ════
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('login').classList.contains('active'))doLogin();});
 seedData();
+loadDicas();
 const savedSession=DB.get('nn_session');
 if(savedSession){
   const users=DB.get('nn_users')||[];
@@ -749,6 +971,7 @@ if(savedSession){
   if(u){currentUser=u;goApp();syncUserData();}
 }
 setInterval(syncUserData, 30000);
+setInterval(loadDicas, 60000);
 </script>
 </body>
 </html>
