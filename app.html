@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Nalin Nazareth — Doula</title>
+<title>Doula Nalin Nazareth</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -111,18 +111,17 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif;}
 .tab{flex-shrink:0;padding:8px 18px;border-radius:50px;border:1.5px solid var(--rose-pale);font-size:13px;font-weight:500;color:var(--mid);cursor:pointer;background:white;transition:all .2s;}
 .tab.active{background:var(--rose);color:white;border-color:var(--rose);}
 
-	.cont-grid{padding:18px 22px;display:grid;grid-template-columns:repeat(2, 1fr);gap:16px;}
-	.ccard{background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 12px var(--shadow-soft);cursor:pointer;transition:all .2s;display:flex;flex-direction:column;}
-	.ccard:active{transform:scale(.96);}
-	.cthumb{width:100%;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:var(--rose-pale);}
-	.cthumb .te{font-size:32px;z-index:1;}
-	.cthumb img{position:absolute;width:100%;height:100%;object-fit:cover;transition:transform .4s;}
-	.ccard:hover .cthumb img{transform:scale(1.08);}
-	.play-btn{position:absolute;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.95);display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:2;color:var(--rose-deep);}
-	.cinfo{padding:12px;flex:1;display:flex;flex-direction:column;}
-	.ctag{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--rose);font-weight:600;margin-bottom:4px;}
-	.ctitle{font-size:13px;font-weight:600;color:var(--dark);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;height:34px;}
-	.cmeta{font-size:11px;color:var(--light);margin-top:auto;padding-top:8px;display:flex;align-items:center;gap:4px;}
+.cont-grid{padding:18px 12px;display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;}
+.ccard{background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px var(--shadow-soft);cursor:pointer;transition:transform .15s;display:flex;flex-direction:column;}
+.ccard:active{transform:scale(.96);}
+.cthumb{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:var(--rose-pale);}
+.cthumb .te{font-size:28px;z-index:1;}
+.cthumb img{position:absolute;width:100%;height:100%;object-fit:cover;}
+.play-btn{position:absolute;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-size:10px;box-shadow:0 2px 8px rgba(0,0,0,.15);z-index:2;}
+.cinfo{padding:8px;flex:1;display:flex;flex-direction:column;}
+.ctag{font-size:8px;letter-spacing:0.5px;text-transform:uppercase;color:var(--rose);font-weight:600;margin-bottom:2px;}
+.ctitle{font-size:11px;font-weight:500;color:var(--dark);line-height:1.2;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.cmeta{font-size:9px;color:var(--light);margin-top:4px;display:flex;gap:6px;}
 .empty-state{text-align:center;padding:48px 22px;color:var(--light);}
 .empty-state .ei{font-size:48px;margin-bottom:12px;}
 .empty-state p{font-size:14px;}
@@ -206,15 +205,17 @@ textarea.dta:focus{border-color:var(--rose);}
     <h3>Bem-vinda de volta 💕</h3>
     <div class="field">
       <label>E-mail</label>
-      <input type="email" id="l-email" placeholder="seu@email.com" value="ana@email.com">
+      <input type="email" id="l-email" placeholder="seu@email.com" value="">
     </div>
     <div class="field">
       <label>Senha</label>
-      <input type="password" id="l-senha" placeholder="••••••••" value="123456">
+      <input type="password" id="l-senha" placeholder="••••••••" value="">
     </div>
     <button class="btn-rose" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="l-err"></div>
     <div class="login-note">Não tem conta? Peça à sua doula para criar seu acesso 🌺</div>
+    <hr style="border:0;border-top:1px solid var(--rose-pale);margin:20px 0;">
+    <button class="btn-rose" style="background:var(--dark);margin-top:0;" onclick="window.location.href='admin.html'">Acesso Administrador 🔐</button>
   </div>
 </div>
 
@@ -439,25 +440,54 @@ function getTip(w){const ks=Object.keys(tips).map(Number).sort((a,b)=>a-b);let b
 // ════ STATE ════
 let currentUser=null, currentMood='😊', currentTab=0;
 
+// ════ API FETCH HELPERS ════
+async function apiFetch(endpoint, options = {}) {
+  try {
+    const res = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...options.headers }
+    });
+    return await res.json();
+  } catch (e) {
+    console.error("Erro na API:", e);
+    return null;
+  }
+}
+
 // ════ LOGIN ════
-function doLogin(){
+async function doLogin(){
   const email=document.getElementById('l-email').value.trim().toLowerCase();
   const senha=document.getElementById('l-senha').value;
-  const users=DB.get('nn_users')||[];
-  const u=users.find(x=>x.email.toLowerCase()===email && x.senha===senha && x.ativo);
-  if(u){
-    currentUser=u;
-    DB.set('nn_session',u.id);
+  
+  // Tentar login via API
+  const res = await apiFetch('/api/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, senha })
+  });
+
+  if(res && res.status === 'success'){
+    currentUser = res.user;
+    DB.set('nn_session', currentUser.id);
     document.getElementById('l-err').textContent='';
     goApp();
   } else {
-    document.getElementById('l-err').textContent='E-mail ou senha incorretos.';
+    // Fallback para localStorage se API falhar (modo offline parcial)
+    const users=DB.get('nn_users')||[];
+    const u=users.find(x=>x.email.toLowerCase()===email && x.senha===senha && x.ativo);
+    if(u){
+      currentUser=u;
+      DB.set('nn_session',u.id);
+      document.getElementById('l-err').textContent='';
+      goApp();
+    } else {
+      document.getElementById('l-err').textContent= res?.message || 'E-mail ou senha incorretos.';
+    }
   }
 }
 function doLogout(){
   DB.del('nn_session');
   currentUser=null;
-  showScreen('login');
+  location.reload(); // Recarrega para garantir que a tela de login volte ao estado inicial limpo com o botão Admin
 }
 function openWhatsapp(){window.open('https://wa.me/5500000000000','_blank');}
 
@@ -481,7 +511,7 @@ function goApp(){
 }
 
 // ════ HOME ════
-function renderHome(){
+async function renderHome(){
   if(!currentUser)return;
   const u=currentUser;
   document.getElementById('h-nome').textContent=u.nome;
@@ -500,57 +530,72 @@ function renderHome(){
   document.getElementById('h-size').textContent=baby.s.charAt(0).toUpperCase()+baby.s.slice(1);
   document.getElementById('h-tip-tag').textContent=`💡 Dica da Nalin — Semana ${u.semanas}`;
   document.getElementById('h-tip').textContent=getTip(u.semanas);
-  const conteudos=DB.get('nn_conteudos')||[];
-  document.getElementById('h-nvid').textContent=conteudos.filter(c=>c.categoria==='video'&&c.ativo).length+' aulas';
-  document.getElementById('h-nebook').textContent=conteudos.filter(c=>c.categoria==='ebook'&&c.ativo).length+' materiais';
+  
+  // Buscar dados atualizados da API para os contadores
+  const apiCont = await apiFetch('/api/conteudos') || [];
+  const apiEbooks = await apiFetch('/api/ebooks') || [];
+  
+  document.getElementById('h-nvid').textContent=apiCont.filter(c=>c.categoria==='video'&&c.ativo).length+' aulas';
+  document.getElementById('h-nebook').textContent=apiEbooks.length+' materiais';
 }
 
 // ════ CONTEÚDO ════
 const catMap={0:'video',1:'ebook',2:'meditacao',3:'outro'};
-	function getYTId(url) {
-	  if (!url) return null;
-	  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-	  const match = url.match(regExp);
-	  return (match && match[2].length === 11) ? match[2] : null;
-	}
+function getYTId(url) {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+}
+async function renderConteudo(idx){
+  currentTab=idx;
+  const cat=catMap[idx]||'video';
+  
+  // Sincronizar conteúdos da API (Vídeos, Meditações e E-books)
+  const apiCont = await apiFetch('/api/conteudos') || [];
+  const apiEbooks = await apiFetch('/api/ebooks') || [];
+  
+  const mappedEbooks = apiEbooks.map(e => ({
+    id: 'eb'+e.id, 
+    titulo: e.titulo, 
+    categoria: 'ebook', 
+    subcategoria: e.descricao || 'Material exclusivo',
+    url: API_URL + e.url_pdf, 
+    cor: '#c9907a,#a96b55', 
+    emoji: '📖', 
+    ativo: 1
+  }));
 
-	function renderConteudo(idx){
-	  currentTab=idx;
-	  const cat=catMap[idx]||'video';
-	  const conteudos=(DB.get('nn_conteudos')||[]).filter(c=>c.categoria===cat&&c.ativo);
-	  const list=document.getElementById('cont-list');
-	  list.innerHTML='';
-	  if(!conteudos.length){
-	    list.innerHTML=`<div class="empty-state"><div class="ei">📭</div><p>Nenhum conteúdo ainda.<br>A Nalin está preparando algo especial!</p></div>`;
-	    return;
-	  }
-	  conteudos.forEach(c=>{
-	    const isPlay=c.categoria!=='ebook';
-	    let meta = '';
-	    if (c.categoria === 'video' || c.categoria === 'meditacao') {
-	      meta = c.duracao ? `<span>⏱ ${c.duracao}</span>` : '';
-	    } else {
-	      meta = `<span>📄 ${c.paginas || 'PDF'}</span>`;
-	    }
-	    const ytId = getYTId(c.url);
-	    // Usando hqdefault para melhor qualidade
-	    const thumbImg = ytId ? `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="Capa">` : '';
-	    
-	    list.innerHTML+=`
-	    <div class="ccard" onclick="openConteudo('${c.url}')">
-	      <div class="cthumb" style="background:linear-gradient(135deg,${c.cor||'#e8b4a0,#c9907a'})">
-	        ${thumbImg}
-	        <div class="te" style="${thumbImg ? 'opacity:0.15' : ''}">${c.emoji||'📄'}</div>
-	        ${isPlay?'<div class="play-btn">▶</div>':''}
-	      </div>
-	      <div class="cinfo">
-	        <div class="ctag">${c.subcategoria||''}</div>
-	        <div class="ctitle">${c.titulo}</div>
-	        <div class="cmeta">${meta}</div>
-	      </div>
-	    </div>`;
-	  });
-	}
+  const allCont = [...apiCont, ...mappedEbooks];
+  DB.set('nn_conteudos', allCont);
+
+  const conteudos = allCont.filter(c => c.categoria === cat && c.ativo);
+  const list=document.getElementById('cont-list');
+  list.innerHTML='';
+  if(!conteudos.length){
+    list.innerHTML=`<div class="empty-state"><div class="ei">📭</div><p>Nenhum conteúdo ainda.<br>A Nalin está preparando algo especial!</p></div>`;
+    return;
+  }
+  conteudos.forEach(c=>{
+    const isPlay=c.categoria!=='ebook';
+    const meta=c.categoria==='ebook'?(c.paginas?`<span>📄 ${c.paginas}</span>`:`<span>📄 PDF</span>`):(c.duracao?`<span>⏱ ${c.duracao}</span>`:'');
+    const ytId = getYTId(c.url);
+    const thumbImg = ytId ? `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="Capa">` : '';
+    list.innerHTML+=`
+    <div class="ccard" onclick="openConteudo('${c.url}')">
+      <div class="cthumb" style="background:linear-gradient(135deg,${c.cor||'#e8b4a0,#c9907a'})">
+        ${thumbImg}
+        <div class="te" style="${thumbImg ? 'opacity:0.2' : ''}">${c.emoji||'📄'}</div>
+        ${isPlay?'<div class="play-btn">▶</div>':''}
+      </div>
+      <div class="cinfo">
+        <div class="ctag">${c.subcategoria||''}</div>
+        <div class="ctitle">${c.titulo}</div>
+        <div class="cmeta">${meta}</div>
+      </div>
+    </div>`;
+  });
+}
 function switchTab(idx,el){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');

@@ -487,7 +487,7 @@ async function doLogin(){
 function doLogout(){
   DB.del('nn_session');
   currentUser=null;
-  showScreen('login');
+  location.reload(); // Recarrega para garantir que a tela de login volte ao estado inicial limpo com o botão Admin
 }
 function openWhatsapp(){window.open('https://wa.me/5500000000000','_blank');}
 
@@ -511,7 +511,7 @@ function goApp(){
 }
 
 // ════ HOME ════
-function renderHome(){
+async function renderHome(){
   if(!currentUser)return;
   const u=currentUser;
   document.getElementById('h-nome').textContent=u.nome;
@@ -530,9 +530,13 @@ function renderHome(){
   document.getElementById('h-size').textContent=baby.s.charAt(0).toUpperCase()+baby.s.slice(1);
   document.getElementById('h-tip-tag').textContent=`💡 Dica da Nalin — Semana ${u.semanas}`;
   document.getElementById('h-tip').textContent=getTip(u.semanas);
-  const conteudos=DB.get('nn_conteudos')||[];
-  document.getElementById('h-nvid').textContent=conteudos.filter(c=>c.categoria==='video'&&c.ativo).length+' aulas';
-  document.getElementById('h-nebook').textContent=conteudos.filter(c=>c.categoria==='ebook'&&c.ativo).length+' materiais';
+  
+  // Buscar dados atualizados da API para os contadores
+  const apiCont = await apiFetch('/api/conteudos') || [];
+  const apiEbooks = await apiFetch('/api/ebooks') || [];
+  
+  document.getElementById('h-nvid').textContent=apiCont.filter(c=>c.categoria==='video'&&c.ativo).length+' aulas';
+  document.getElementById('h-nebook').textContent=apiEbooks.length+' materiais';
 }
 
 // ════ CONTEÚDO ════
@@ -547,11 +551,25 @@ async function renderConteudo(idx){
   currentTab=idx;
   const cat=catMap[idx]||'video';
   
-  // Sincronizar conteúdos da API
-  const apiCont = await apiFetch('/api/conteudos');
-  if(apiCont) DB.set('nn_conteudos', apiCont);
+  // Sincronizar conteúdos da API (Vídeos, Meditações e E-books)
+  const apiCont = await apiFetch('/api/conteudos') || [];
+  const apiEbooks = await apiFetch('/api/ebooks') || [];
+  
+  const mappedEbooks = apiEbooks.map(e => ({
+    id: 'eb'+e.id, 
+    titulo: e.titulo, 
+    categoria: 'ebook', 
+    subcategoria: e.descricao || 'Material exclusivo',
+    url: API_URL + e.url_pdf, 
+    cor: '#c9907a,#a96b55', 
+    emoji: '📖', 
+    ativo: 1
+  }));
 
-  const conteudos=(DB.get('nn_conteudos')||[]).filter(c=>c.categoria===cat&&c.ativo);
+  const allCont = [...apiCont, ...mappedEbooks];
+  DB.set('nn_conteudos', allCont);
+
+  const conteudos = allCont.filter(c => c.categoria === cat && c.ativo);
   const list=document.getElementById('cont-list');
   list.innerHTML='';
   if(!conteudos.length){
