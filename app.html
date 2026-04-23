@@ -451,7 +451,7 @@ textarea.dta:focus{border-color:var(--rose);}
       <div class="mfield"><label>Hora</label><input type="time" id="ag-hora" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;"></div>
       <div class="mfield"><label>Descrição (Opcional)</label><textarea id="ag-desc" placeholder="Ex: Dr. Fernanda Santos, Consultório no Centro" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;height:60px;resize:vertical;"></textarea></div>
     </div>
-    <div class="modal-footer"><button class="btn-full btn-cancel" onclick="closeModal('modal-agenda')">Cancelar</button><button class="btn-full btn-save" onclick="saveAgenda()">Salvar Compromisso</button></div>
+    <div class="modal-footer"><button class="btn-full btn-cancel" onclick="closeModal('modal-agenda')">Cancelar</button><button class="btn-full btn-save" id="btn-save-agenda" onclick="saveAgenda()">Salvar Compromisso</button></div>
   </div>
 </div>
 
@@ -547,7 +547,7 @@ async function loadDicas(){
 }
 
 // ════ STATE ════
-let currentUser=null, currentMood='😊', currentTab=0;
+let currentUser=null, currentMood='😊', currentTab=0, editingAgendaIndex=null;
 
 // ════ API FETCH HELPERS ════
 async function apiFetch(endpoint, options = {}) {
@@ -816,11 +816,11 @@ function renderAgenda(){
   const list=document.getElementById('agenda-list');list.innerHTML='';
   if(!compromissos.length){list.innerHTML='<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Nenhum compromisso agendado.<br>Clique em "+ Adicionar Compromisso" para criar um! 📅</div>';return;}
   compromissos.forEach((c,i)=>{
-    const dataObj=new Date(c.data);
+    const dataObj=new Date(c.data + 'T00:00:00');
     const dataFormatada=dataObj.toLocaleDateString('pt-BR',{day:'numeric',month:'short'});
     list.innerHTML+=`<div style="background:var(--rose-pale);border-radius:12px;padding:16px;margin-bottom:12px;border-left:4px solid var(--rose);">
       <div style="display:flex;justify-content:space-between;align-items:start;">
-        <div>
+        <div onclick="editAgenda(${i})" style="flex:1;cursor:pointer;">
           <div style="font-weight:600;color:var(--dark);font-size:15px;">${c.tipo} • ${c.hora}</div>
           <div style="color:var(--mid);font-size:13px;margin-top:4px;">${dataFormatada}</div>
           <div style="color:var(--dark);font-size:13px;margin-top:6px;">${c.descricao}</div>
@@ -829,6 +829,23 @@ function renderAgenda(){
       </div>
     </div>`;
   });
+}
+
+function editAgenda(i){
+  const key=`nn_agenda_${currentUser.id}`;
+  const compromissos=(DB.get(key)||[]).sort((a,b)=>new Date(a.data+' '+a.hora)-new Date(b.data+' '+b.hora));
+  const c = compromissos[i];
+  if(!c) return;
+  
+  editingAgendaIndex = i;
+  document.getElementById('ag-tipo').value = c.tipo;
+  document.getElementById('ag-data').value = c.data;
+  document.getElementById('ag-hora').value = c.hora;
+  document.getElementById('ag-desc').value = c.descricao;
+  
+  document.querySelector('#modal-agenda h3').textContent = 'Editar Compromisso';
+  document.getElementById('btn-save-agenda').textContent = 'Atualizar Compromisso';
+  openModal('modal-agenda');
 }
 
 function saveAgenda(){
@@ -840,10 +857,23 @@ function saveAgenda(){
   if(!tipo||!data||!hora){alert('Preencha todos os campos!');return;}
   
   const key=`nn_agenda_${currentUser.id}`;
-  const compromissos=DB.get(key)||[];
-  compromissos.push({tipo,data,hora,descricao});
-  DB.set(key,compromissos);
+  let compromissos=DB.get(key)||[];
   
+  if(editingAgendaIndex !== null) {
+    let sortedCompromissos = [...compromissos].sort((a,b)=>new Date(a.data+' '+a.hora)-new Date(b.data+' '+b.hora));
+    const oldItem = sortedCompromissos[editingAgendaIndex];
+    const originalIdx = compromissos.findIndex(c => c.tipo === oldItem.tipo && c.data === oldItem.data && c.hora === oldItem.hora);
+    if(originalIdx !== -1) {
+      compromissos[originalIdx] = {tipo,data,hora,descricao};
+    }
+    editingAgendaIndex = null;
+    showToast('Compromisso atualizado! 📅');
+  } else {
+    compromissos.push({tipo,data,hora,descricao});
+    showToast('Compromisso adicionado! 📅');
+  }
+  
+  DB.set(key,compromissos);
   closeModal('modal-agenda');
   renderAgenda();
   renderHome();
@@ -851,7 +881,6 @@ function saveAgenda(){
   document.getElementById('ag-data').value='';
   document.getElementById('ag-hora').value='';
   document.getElementById('ag-desc').value='';
-  showToast('Compromisso adicionado! 📅');
 }
 
 function deleteAgenda(i){
@@ -971,9 +1000,18 @@ function loadPlanejamento(){
 // ════ MODALS ════
 function openModal(id){
   if(id==='modal-plano-parto'||id==='modal-enxoval'||id==='modal-maternidade')loadPlanejamento();
+  if(id === 'modal-agenda' && editingAgendaIndex === null) {
+    document.querySelector('#modal-agenda h3').textContent = 'Adicionar Compromisso';
+    document.getElementById('btn-save-agenda').textContent = 'Salvar Compromisso';
+    document.getElementById('ag-tipo').value='';
+    document.getElementById('ag-data').value='';
+    document.getElementById('ag-hora').value='';
+    document.getElementById('ag-desc').value='';
+  }
   document.getElementById(id)?.classList.add('active');
 }
 function closeModal(id){
+  if(id === 'modal-agenda') editingAgendaIndex = null;
   document.getElementById(id)?.classList.remove('active');
 }
 
