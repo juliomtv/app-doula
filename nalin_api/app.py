@@ -1,10 +1,25 @@
 import sqlite3
-from flask import Flask, request, jsonify, g
+from flask import Flask, request, jsonify, g, send_from_directory
 from flask_cors import CORS
 import os
 import socket
+from werkzeug.utils import secure_filename
+
+UPLOAD_FOLDER = os.path.join(os.path.dirname(BASE_DIR), 'uploads')
+ALLOWED_EXTENSIONS = {'pdf'}
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Criar o diretório de uploads se não existir
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 app = Flask(__name__)
+app.add_url_rule("/uploads/<path:filename>", endpoint="uploads", view_func=lambda filename: send_from_directory(app.config["UPLOAD_FOLDER"], filename))
 CORS(app)
 
 # Configuração de caminhos baseada na localização do script
@@ -150,3 +165,54 @@ if __name__ == '__main__':
     print(f"{'='*50}\n")
     
     app.run(host='0.0.0.0', port=5000, debug=True)
+
+@app.route("/api/admin/upload_ebook", methods=["POST"])
+def upload_ebook():
+    # Verificar se a requisição tem o arquivo
+    if "file" not in request.files:
+        return jsonify({"status": "error", "message": "Nenhum arquivo enviado."}), 400
+    file = request.files["file"]
+    
+    # Se o usuário não selecionar um arquivo, o navegador envia um arquivo vazio sem nome.
+    if file.filename == "":
+        return jsonify({"status": "error", "message": "Nenhum arquivo selecionado."}), 400
+    
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        file.save(filepath)
+        
+        titulo = request.form.get("titulo")
+        descricao = request.form.get("descricao", "")
+        
+        if not titulo:
+            os.remove(filepath) # Remover o arquivo se o título não for fornecido
+            return jsonify({"status": "error", "message": "Título do eBook é obrigatório."}), 400
+
+        db = get_db()
+        try:
+            db.execute(
+                "INSERT INTO ebooks (titulo, descricao, url_pdf) VALUES (?, ?, ?)",
+                (titulo, descricao, f"/uploads/{filename}"),
+            )
+            db.commit()
+            return jsonify({"status": "success", "message": "eBook enviado com sucesso!"}), 201
+        except Exception as e:
+            os.remove(filepath) # Remover o arquivo em caso de erro no DB
+            return jsonify({"status": "error", "message": f"Erro ao salvar eBook no banco de dados: {str(e)}"}), 500
+    else:
+        return jsonify({"status": "error", "message": "Tipo de arquivo não permitido. Apenas PDFs são aceitos."}), 400
+
+@app.route("/api/ebooks", methods=["GET"])
+def list_ebooks():
+    db = get_db()
+    ebooks = db.execute("SELECT id, titulo, descricao, url_pdf, data_upload FROM ebooks WHERE ativo = 1 ORDER BY data_upload DESC").fetchall()
+    return jsonify([dict(e) for e in ebooks])
+
+@app.route("/api/ebook/<int:ebook_id>", methods=["GET"])
+def get_ebook(ebook_id):
+    db = get_db()
+    ebook = db.execute("SELECT id, titulo, descricao, url_pdf, data_upload FROM ebooks WHERE id = ? AND ativo = 1", (ebook_id,)).fetchone()
+    if ebook:
+        return jsonify(dict(ebook))
+    return jsonify({"status": "error", "message": "eBook não encontrado."}), 404

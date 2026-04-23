@@ -549,7 +549,25 @@ const catMap={0:'video',1:'ebook',2:'meditacao',3:'outro'};
 		  const apiCont = await apiFetch('/api/conteudos');
 		  if(apiCont) DB.set('nn_conteudos', apiCont);
 
-		  const conteudos=(DB.get('nn_conteudos')||[]).filter(c=>c.categoria===cat&&c.ativo);
+		  let conteudos=(DB.get('nn_conteudos')||[]).filter(c=>c.categoria===cat&&c.ativo);
+		  
+		  // Carregar eBooks da API se for a aba de eBooks
+		  if(cat === 'ebook') {
+		    const apiEbooks = await apiFetch('/api/ebooks');
+		    if(apiEbooks && apiEbooks.length > 0) {
+		      conteudos = apiEbooks.map(e => ({
+		        id: e.id,
+		        titulo: e.titulo,
+		        categoria: 'ebook',
+		        subcategoria: e.descricao || 'Material exclusivo',
+		        descricao: e.descricao || '',
+		        url: API_URL + e.url_pdf,
+		        cor: '#c9907a,#a96b55',
+		        emoji: '📖',
+		        ativo: true
+		      }));
+		    }
+		  }
 	  const list=document.getElementById('cont-list');
 	  list.innerHTML='';
 	  if(!conteudos.length){

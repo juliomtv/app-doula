@@ -34,3 +34,12 @@ CREATE TABLE IF NOT EXISTS admin_config (
 
 -- Inserir admin padrão se não existir
 INSERT OR IGNORE INTO admin_config (id, username, password) VALUES (1, 'admin@nalinnazareth.com', 'admin123');
+
+CREATE TABLE IF NOT EXISTS ebooks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    titulo TEXT NOT NULL,
+    descricao TEXT,
+    url_pdf TEXT NOT NULL,
+    data_upload TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ativo BOOLEAN DEFAULT 1
+);
