@@ -446,7 +446,7 @@ textarea.dta:focus{border-color:var(--rose);}
   <div class="modal" style="max-width:500px;">
     <div class="modal-hdr"><h3>Adicionar Compromisso</h3><button class="modal-close" onclick="closeModal('modal-agenda')">✕</button></div>
     <div class="modal-body">
-      <div class="mfield"><label>Tipo de Compromisso</label><select id="ag-tipo" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;font-size:14px;"><option value="">Selecione...</option><option value="Consulta Pré-natal">Consulta Pré-natal</option><option value="Ultrassom">Ultrassom</option><option value="Exame">Exame</option><option value="Dentista">Dentista</option><option value="Compromisso">Outro Compromisso</option></select></div>
+      <div class="mfield"><label>Tipo de Compromisso</label><input type="text" id="ag-tipo" placeholder="Ex: Consulta Pré-natal, Ultrassom..." style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;font-size:14px;"></div>
       <div class="mfield"><label>Data</label><input type="date" id="ag-data" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;"></div>
       <div class="mfield"><label>Hora</label><input type="time" id="ag-hora" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;"></div>
       <div class="mfield"><label>Descrição (Opcional)</label><textarea id="ag-desc" placeholder="Ex: Dr. Fernanda Santos, Consultório no Centro" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;height:60px;resize:vertical;"></textarea></div>
