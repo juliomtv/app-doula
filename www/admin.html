@@ -328,22 +328,33 @@ tr:hover td{background:rgba(247,237,232,.5);}
 const API_URL = "http://192.168.1.8:5000";
 const DB={get:k=>{try{return JSON.parse(localStorage.getItem(k));}catch{return null;}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),del:k=>localStorage.removeItem(k)};
 
-function seed(){
-  if(!DB.get('nn_admin')){DB.set('nn_admin',{user:'admin@nalinnazareth.com',pass:'admin123'});}
-  if(!DB.get('nn_users')){DB.set('nn_users',[{id:1,nome:'Ana Clara',email:'ana@email.com',senha:'123456',bebe:'Aurora',semanas:24,dpp:'2025-07-15',parto:'normal',ativo:true,criadoEm:new Date().toISOString()}]);}
-  if(!DB.get('nn_conteudos')){DB.set('nn_conteudos',[{id:1,titulo:'Pega Correta',categoria:'video',subcategoria:'Amamentação',descricao:'Técnica certa.',duracao:'18 min',url:'https://youtube.com',cor:'#e8b4a0,#c9907a',emoji:'🤱',ativo:true}]);}
+async function apiFetch(endpoint, options = {}) {
+  try {
+    const res = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...options.headers }
+    });
+    return await res.json();
+  } catch (e) {
+    console.error("Erro na API:", e);
+    return null;
+  }
 }
 
 function adminLogin(){
   const user=document.getElementById('a-user').value.trim().toLowerCase();
   const pass=document.getElementById('a-pass').value;
-  const admin=DB.get('nn_admin')||{user:'admin@nalinnazareth.com',pass:'admin123'};
-  if(user===admin.user.toLowerCase()&&pass===admin.pass){
-    DB.set('nn_admin_session',true);
-    document.getElementById('admin-login').style.display='none';
-    document.getElementById('admin-shell').classList.add('active');
-    renderDashboard();
-  } else { document.getElementById('a-err').textContent='Incorreto.'; }
+  apiFetch('/api/admin/login', {
+    method: 'POST',
+    body: JSON.stringify({ user, pass })
+  }).then(res => {
+    if(res && res.status === 'success'){
+      DB.set('nn_admin_session',true);
+      document.getElementById('admin-login').style.display='none';
+      document.getElementById('admin-shell').classList.add('active');
+      renderDashboard();
+    } else { document.getElementById('a-err').textContent='Incorreto.'; }
+  });
 }
 function adminLogout(){DB.del('nn_admin_session');location.reload();}
 
@@ -356,32 +367,33 @@ function goPage(id,el){
   if(renders[id])renders[id]();
 }
 
-function renderDashboard(){
-  const users=DB.get('nn_users')||[];
-  const cont=DB.get('nn_conteudos')||[];
-  const stats=[{v:users.length,l:'Doulandas',i:'🤰'},{v:cont.length,l:'Conteúdos',i:'✨'}];
+async function renderDashboard(){
+  const users = await apiFetch('/api/users') || [];
+  const cont = await apiFetch('/api/admin/conteudos') || [];
+  const ebooks = await apiFetch('/api/ebooks') || [];
+  
+  const stats=[{v:users.length,l:'Doulandas',i:'🤰'},{v:cont.length + ebooks.length,l:'Conteúdos',i:'✨'}];
   document.getElementById('stat-row').innerHTML=stats.map(s=>`<div class="stat-c"><div class="si">${s.i}</div><div class="sv">${s.v}</div><div class="sl">${s.l}</div></div>`).join('');
   
-  const recent=users.slice(-4).reverse();
+  const recent=users.slice(0, 4);
   document.getElementById('dash-recent').innerHTML=`<table><thead><tr><th>Nome</th><th>Semanas</th><th>Status</th></tr></thead><tbody>${
     recent.map(u=>`<tr><td class="td-name">${u.nome}</td><td>${u.semanas} sem</td><td><span class="badge badge-ok">Ativa</span></td></tr>`).join('')
   }</tbody></table>`;
   
   const acts=[
-    {t:`${users[users.length-1]?.nome||'—'} entrou no app`,tm:'Hoje'},
-    {t:'Novo vídeo publicado: '+cont.filter(c=>c.categoria==='video').slice(-1)[0]?.titulo,tm:'Hoje'},
+    {t:`${users[0]?.nome||'—'} entrou no app`,tm:'Hoje'},
+    {t:'Novo conteúdo publicado: '+cont[0]?.titulo,tm:'Hoje'},
     {t:'Entrada no diário salva',tm:'Ontem'},
-    {t:'Nova doulânda cadastrada',tm:'2 dias atrás'},
-    {t:'E-book atualizado',tm:'3 dias atrás'}
+    {t:'Nova doulânda cadastrada',tm:'2 dias atrás'}
   ];
   document.getElementById('dash-activity').innerHTML=acts.map(a=>`
     <div class="act-item"><div class="act-dot"></div><div><div class="act-txt">${a.t||'—'}</div><div class="act-time">${a.tm}</div></div></div>
   `).join('');
 }
 
-function renderDoulandas(){
+async function renderDoulandas(){
   const q=(document.getElementById('search-doula')?.value||'').toLowerCase();
-  let users=DB.get('nn_users')||[];
+  let users = await apiFetch('/api/users') || [];
   if(q)users=users.filter(u=>u.nome.toLowerCase().includes(q)||u.email.toLowerCase().includes(q));
   document.getElementById('doulandas-tbody').innerHTML=users.map(u=>`
     <tr>
@@ -401,8 +413,8 @@ function renderDoulandas(){
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
-function editDoula(id){
-  const users=DB.get('nn_users')||[];
+async function editDoula(id){
+  const users = await apiFetch('/api/users') || [];
   const u=users.find(x=>x.id===id);
   if(!u)return;
   document.getElementById('mdoula-title').textContent='Editar Doulânda';
@@ -417,7 +429,7 @@ function editDoula(id){
   openModal('modal-doula');
 }
 
-function saveDoula(){
+async function saveDoula(){
   const nome=document.getElementById('md-nome').value.trim();
   const email=document.getElementById('md-email').value.trim();
   const senha=document.getElementById('md-senha').value;
@@ -427,37 +439,33 @@ function saveDoula(){
   const parto=document.getElementById('md-parto').value;
   const editId=document.getElementById('mdoula-id').value;
   if(!nome||!email||!senha){document.getElementById('md-err').textContent='Preencha nome, e-mail e senha.';return;}
-  document.getElementById('md-err').textContent='';
-  let users=DB.get('nn_users')||[];
-  if(editId){
-    users=users.map(u=>u.id==editId?{...u,nome,email,senha,bebe,semanas:sem,dpp,parto}:u);
-    showToastA('Doulânda atualizada! 🌸');
+  
+  const res = await apiFetch('/api/users', {
+    method: 'POST',
+    body: JSON.stringify({ id: editId, nome, email, senha, bebe, semanas: sem, dpp, parto })
+  });
+
+  if(res && res.status === 'success'){
+    showToastA(editId ? 'Doulânda atualizada! 🌸' : 'Doulânda cadastrada! 🎉');
+    closeModal('modal-doula');
+    renderDoulandas();
   } else {
-    const dup=users.find(u=>u.email.toLowerCase()===email.toLowerCase());
-    if(dup){document.getElementById('md-err').textContent='E-mail já cadastrado.';return;}
-    users.push({id:Date.now(),nome,email,senha,bebe,semanas:sem,dpp,parto,ativo:true,criadoEm:new Date().toISOString()});
-    showToastA('Doulânda cadastrada! 🎉');
+    document.getElementById('md-err').textContent = res?.message || 'Erro ao salvar.';
   }
-  DB.set('nn_users',users);
-  closeModal('modal-doula');
-  renderDoulandas();
-  document.getElementById('mdoula-id').value='';
-  document.getElementById('mdoula-title').textContent='Nova Doulânda';
 }
 
-function toggleDoula(id){
-  let users=DB.get('nn_users')||[];
-  users=users.map(u=>u.id===id?{...u,ativo:!u.ativo}:u);
-  DB.set('nn_users',users);
+async function toggleDoula(id){
+  await apiFetch(`/api/users/${id}/toggle`, { method: 'POST' });
   renderDoulandas();
   showToastA('Status atualizado!');
 }
 
-function renderConteudoTable(cat){
-  const cont=(DB.get('nn_conteudos')||[]).filter(c=>c.categoria===cat);
+async function renderConteudoTable(cat){
+  const cont = await apiFetch('/api/admin/conteudos') || [];
+  const filtered = cont.filter(c=>c.categoria===cat);
   const tbodyId={video:'videos-tbody',ebook:'ebooks-tbody',meditacao:'meditacoes-tbody'}[cat];
   if(!tbodyId)return;
-  document.getElementById(tbodyId).innerHTML=cont.map(c=>`
+  document.getElementById(tbodyId).innerHTML=filtered.map(c=>`
     <tr>
       <td><div class="td-name">${c.emoji||''} ${c.titulo}</div><div style="font-size:11px;color:var(--lite);">${c.descricao||''}</div></td>
       <td><span class="badge badge-rose">${c.subcategoria||'—'}</span></td>
@@ -483,8 +491,8 @@ function openAddConteudo(cat){
   openModal('modal-cont');
 }
 
-function editConteudo(id){
-  const cont=DB.get('nn_conteudos')||[];
+async function editConteudo(id){
+  const cont = await apiFetch('/api/admin/conteudos') || [];
   const c=cont.find(x=>x.id===id);if(!c)return;
   document.getElementById('mcont-title').textContent='Editar Conteúdo';
   document.getElementById('mc-id').value=c.id;
@@ -502,54 +510,62 @@ function editConteudo(id){
   openModal('modal-cont');
 }
 
-function saveConteudo(){
+async function saveConteudo(){
   const titulo=document.getElementById('mc-titulo').value.trim();
-  if(!titulo){document.getElementById('mc-err').textContent='Informe o título.';return;}
-  document.getElementById('mc-err').textContent='';
-  const editId=document.getElementById('mc-id').value;
-  const cat=document.getElementById('mc-cat').value;
   const url = document.getElementById('mc-url').value;
-  if(!url){document.getElementById('mc-err').textContent='Informe o link do conteúdo.';return;}
+  if(!titulo || !url){document.getElementById('mc-err').textContent='Preencha título e URL.';return;}
+  
+  const obj={
+    id: document.getElementById('mc-id').value,
+    titulo,
+    categoria:document.getElementById('mc-cat').value,
+    subcategoria:document.getElementById('mc-subcat').value,
+    emoji:document.getElementById('mc-emoji').value||'📄',
+    descricao:document.getElementById('mc-desc').value,
+    duracao:document.getElementById('mc-dur').value,
+    paginas:document.getElementById('mc-pag').value,
+    url:url,
+    cor:document.getElementById('mc-cor').value
+  };
 
-  const obj={titulo,categoria:cat,subcategoria:document.getElementById('mc-subcat').value,emoji:document.getElementById('mc-emoji').value||'📄',descricao:document.getElementById('mc-desc').value,duracao:document.getElementById('mc-dur').value,paginas:document.getElementById('mc-pag').value,url:url,cor:document.getElementById('mc-cor').value,ativo:true};
-  let cont=DB.get('nn_conteudos')||[];
-  if(editId){cont=cont.map(c=>c.id==editId?{...c,...obj}:c);showToastA('Conteúdo atualizado! ✨');}
-  else{cont.push({...obj,id:Date.now()});showToastA('Conteúdo publicado! 🎉');}
-  DB.set('nn_conteudos',cont);
-  closeModal('modal-cont');
-  renderConteudoTable(cat);
+  const res = await apiFetch('/api/conteudos', {
+    method: 'POST',
+    body: JSON.stringify(obj)
+  });
+
+  if(res && res.status === 'success'){
+    showToastA('Conteúdo salvo! ✨');
+    closeModal('modal-cont');
+    renderConteudoTable(obj.categoria);
+  }
 }
 
-function toggleConteudo(id){
-  let cont=DB.get('nn_conteudos')||[];
-  cont=cont.map(c=>c.id===id?{...c,ativo:!c.ativo}:c);
-  DB.set('nn_conteudos',cont);
-  const cat=cont.find(c=>c.id===id)?.categoria;
-  if(cat)renderConteudoTable(cat);
+async function toggleConteudo(id){
+  await apiFetch(`/api/conteudos/${id}/toggle`, { method: 'POST' });
+  const cont = await apiFetch('/api/admin/conteudos') || [];
+  const cat = cont.find(c=>c.id===id)?.categoria;
+  if(cat) renderConteudoTable(cat);
   showToastA('Status atualizado!');
 }
 
-function deleteConteudo(id){
-  if(!confirm('Excluir este conteúdo permanentemente?'))return;
-  let cont=DB.get('nn_conteudos')||[];
-  const cat=cont.find(c=>c.id===id)?.categoria;
-  cont=cont.filter(c=>c.id!==id);
-  DB.set('nn_conteudos',cont);
-  if(cat)renderConteudoTable(cat);
-  showToastA('Conteúdo excluído.');
+async function deleteConteudo(id){
+  if(!confirm('Excluir permanentemente?'))return;
+  const cont = await apiFetch('/api/admin/conteudos') || [];
+  const cat = cont.find(c=>c.id===id)?.categoria;
+  await apiFetch(`/api/conteudos/${id}`, { method: 'DELETE' });
+  if(cat) renderConteudoTable(cat);
+  showToastA('Excluído.');
 }
 
-function changeAdminPass(){
-  const admin=DB.get('nn_admin')||{};
+async function changeAdminPass(){
   const old=document.getElementById('cfg-old').value;
   const nw=document.getElementById('cfg-new').value;
   const cf=document.getElementById('cfg-conf').value;
   const msg=document.getElementById('cfg-msg');
-  if(old!==admin.pass){msg.style.color='var(--err)';msg.textContent='Senha atual incorreta.';return;}
-  if(nw.length<6){msg.style.color='var(--err)';msg.textContent='Nova senha muito curta.';return;}
   if(nw!==cf){msg.style.color='var(--err)';msg.textContent='Senhas não coincidem.';return;}
-  DB.set('nn_admin',{...admin,pass:nw});
-  msg.style.color='var(--ok)';msg.textContent='Senha alterada com sucesso!';
+  
+  // Aqui você pode implementar um endpoint de troca de senha se desejar
+  msg.style.color='var(--ok)';msg.textContent='Funcionalidade em breve!';
 }
 
 function showToastA(msg){
@@ -592,31 +608,30 @@ function uploadEbook() {
     });
 }
 
-function loadEbooks() {
-  fetch(`${API_URL}/api/ebooks`).then(r => r.json()).then(ebooks => {
-    document.getElementById('ebooks-tbody').innerHTML = ebooks.map(e => `
-      <tr>
-        <td><div class="td-name">📖 ${e.titulo}</div></td>
-        <td>${e.descricao || '-'}</td>
-        <td>${new Date(e.data_upload).toLocaleDateString('pt-BR')}</td>
-        <td><span class="badge badge-ok">✓ Ativo</span></td>
-        <td class="td-actions">
-          <button class="btn-sm btn-ghost" onclick="window.open('${API_URL}${e.url_pdf}', '_blank')">Ver</button>
-          <button class="btn-sm btn-danger" onclick="deleteEbook(${e.id})">Excluir</button>
-        </td>
-      </tr>
-    `).join('');
-  });
+async function loadEbooks() {
+  const ebooks = await apiFetch('/api/ebooks') || [];
+  document.getElementById('ebooks-tbody').innerHTML = ebooks.map(e => `
+    <tr>
+      <td><div class="td-name">📖 ${e.titulo}</div></td>
+      <td>${e.descricao || '-'}</td>
+      <td>${new Date(e.data_upload).toLocaleDateString('pt-BR')}</td>
+      <td><span class="badge badge-ok">✓ Ativo</span></td>
+      <td class="td-actions">
+        <button class="btn-sm btn-ghost" onclick="window.open('${API_URL}${e.url_pdf}', '_blank')">Ver</button>
+        <button class="btn-sm btn-danger" onclick="deleteEbook(${e.id})">Excluir</button>
+      </td>
+    </tr>
+  `).join('');
 }
 
-function deleteEbook(id) {
+async function deleteEbook(id) {
   if (!confirm('Excluir?')) return;
-  fetch(`${API_URL}/api/ebook/${id}`, { method: 'DELETE' }).then(() => loadEbooks());
+  await apiFetch(`/api/ebook/${id}`, { method: 'DELETE' });
+  loadEbooks();
 }
 
 function renderEbooksPage() { loadEbooks(); }
 
-seed();
 if(DB.get('nn_admin_session')){
   document.getElementById('admin-login').style.display='none';
   document.getElementById('admin-shell').classList.add('active');

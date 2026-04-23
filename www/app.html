@@ -111,17 +111,17 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif;}
 .tab{flex-shrink:0;padding:8px 18px;border-radius:50px;border:1.5px solid var(--rose-pale);font-size:13px;font-weight:500;color:var(--mid);cursor:pointer;background:white;transition:all .2s;}
 .tab.active{background:var(--rose);color:white;border-color:var(--rose);}
 
-		.cont-grid{padding:18px 12px;display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;}
-		.ccard{background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px var(--shadow-soft);cursor:pointer;transition:transform .15s;display:flex;flex-direction:column;}
-		.ccard:active{transform:scale(.96);}
-		.cthumb{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:var(--rose-pale);}
-		.cthumb .te{font-size:28px;z-index:1;}
-		.cthumb img{position:absolute;width:100%;height:100%;object-fit:cover;}
-		.play-btn{position:absolute;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-size:10px;box-shadow:0 2px 8px rgba(0,0,0,.15);z-index:2;}
-		.cinfo{padding:8px;flex:1;display:flex;flex-direction:column;}
-		.ctag{font-size:8px;letter-spacing:0.5px;text-transform:uppercase;color:var(--rose);font-weight:600;margin-bottom:2px;}
-		.ctitle{font-size:11px;font-weight:500;color:var(--dark);line-height:1.2;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-		.cmeta{font-size:9px;color:var(--light);margin-top:4px;display:flex;gap:6px;}
+.cont-grid{padding:18px 12px;display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;}
+.ccard{background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px var(--shadow-soft);cursor:pointer;transition:transform .15s;display:flex;flex-direction:column;}
+.ccard:active{transform:scale(.96);}
+.cthumb{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:var(--rose-pale);}
+.cthumb .te{font-size:28px;z-index:1;}
+.cthumb img{position:absolute;width:100%;height:100%;object-fit:cover;}
+.play-btn{position:absolute;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-size:10px;box-shadow:0 2px 8px rgba(0,0,0,.15);z-index:2;}
+.cinfo{padding:8px;flex:1;display:flex;flex-direction:column;}
+.ctag{font-size:8px;letter-spacing:0.5px;text-transform:uppercase;color:var(--rose);font-weight:600;margin-bottom:2px;}
+.ctitle{font-size:11px;font-weight:500;color:var(--dark);line-height:1.2;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.cmeta{font-size:9px;color:var(--light);margin-top:4px;display:flex;gap:6px;}
 .empty-state{text-align:center;padding:48px 22px;color:var(--light);}
 .empty-state .ei{font-size:48px;margin-bottom:12px;}
 .empty-state p{font-size:14px;}
@@ -134,267 +134,201 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif;}
 .ttab{flex:1;padding:10px 6px;border-radius:13px;border:1.5px solid var(--rose-pale);font-size:12px;font-weight:500;color:var(--mid);cursor:pointer;background:white;text-align:center;transition:all .2s;}
 .ttab small{display:block;font-size:10px;opacity:.7;margin-top:2px;}
 .ttab.active{background:var(--rose);color:white;border-color:var(--rose);}
-.wk-list{padding:18px 22px;display:flex;flex-direction:column;gap:13px;}
-.wkcard{background:white;border-radius:18px;padding:16px;box-shadow:0 2px 10px var(--shadow-soft);display:flex;gap:13px;align-items:flex-start;border-left:4px solid transparent;}
-.wkcard.cur{border-left-color:var(--rose);}
-.wknum{width:42px;height:42px;border-radius:11px;background:var(--rose-pale);flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-.wknum span:first-child{font-size:17px;font-weight:600;color:var(--rose-deep);}
-.wknum span:last-child{font-size:9px;color:var(--light);text-transform:uppercase;letter-spacing:1px;}
+.wk-list{padding:18px 22px;display:flex;flex-direction:column;gap:12px;}
+.wkcard{background:white;border-radius:18px;padding:14px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px var(--shadow-soft);border:1px solid transparent;}
+.wkcard.cur{border-color:var(--rose-light);background:var(--rose-pale);}
+.wknum{width:44px;height:44px;border-radius:12px;background:var(--rose-pale);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;}
+.wknum span:first-child{font-size:18px;font-weight:600;color:var(--rose-deep);line-height:1;}
+.wknum span:last-child{font-size:9px;color:var(--mid);text-transform:uppercase;}
 .wkinfo{flex:1;}
 .wkt{font-size:14px;font-weight:500;color:var(--dark);}
-.wkd{font-size:12px;color:var(--mid);margin-top:3px;line-height:1.5;}
-.wke{font-size:28px;flex-shrink:0;}
+.wkd{font-size:12px;color:var(--mid);margin-top:2px;line-height:1.4;}
+.wke{font-size:24px;}
 
 /* ══════════════════════ DIÁRIO ══════════════════════ */
 #diario .scroll{overflow-y:auto;flex:1;}
 .diary-hdr{background:linear-gradient(135deg,var(--rose-pale),var(--cream));padding:16px 22px 22px;}
 .diary-hdr h2{font-family:'Cormorant Garamond',serif;font-size:28px;font-style:italic;color:var(--dark);}
-.mood-row{display:flex;gap:8px;padding:16px 22px 0;}
-.moodbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:11px 4px;border-radius:14px;background:white;border:1.5px solid var(--rose-pale);cursor:pointer;transition:all .2s;}
-.moodbtn.sel{background:var(--rose-pale);border-color:var(--rose);}
-.moodbtn span:first-child{font-size:22px;}
-.moodbtn span:last-child{font-size:10px;color:var(--mid);}
-.diary-write{padding:16px 22px;}
-textarea.dta{width:100%;border:1.5px solid var(--rose-pale);border-radius:16px;padding:14px;font-size:14px;color:var(--dark);background:white;outline:none;resize:none;height:110px;line-height:1.6;}
-textarea.dta:focus{border-color:var(--rose);}
-.diary-acts{display:flex;gap:8px;margin-top:10px;}
-.dact{flex:1;padding:11px;border-radius:13px;border:1.5px solid var(--rose-pale);background:white;font-size:12px;font-weight:500;color:var(--mid);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;}
-.dsave{flex:2;padding:11px;border-radius:13px;background:var(--rose);border:none;font-size:13px;font-weight:500;color:white;cursor:pointer;}
-.entries-list{padding:0 22px 24px;display:flex;flex-direction:column;gap:11px;}
-.entry{background:white;border-radius:16px;padding:14px;box-shadow:0 2px 10px var(--shadow-soft);}
-.entry-hdr{display:flex;justify-content:space-between;margin-bottom:7px;}
-.entry-date{font-size:11px;color:var(--light);letter-spacing:1px;text-transform:uppercase;}
-.entry-txt{font-size:13px;color:var(--mid);line-height:1.6;}
-.entry-wtag{display:inline-block;background:var(--rose-pale);color:var(--rose-deep);font-size:10px;padding:3px 10px;border-radius:20px;margin-top:7px;}
+.diary-input{margin:18px 22px;background:white;border-radius:22px;padding:18px;box-shadow:0 4px 20px var(--shadow-soft);}
+.mood-sel{display:flex;justify-content:space-between;margin-bottom:16px;}
+.moodbtn{width:44px;height:44px;border-radius:50%;border:1.5px solid var(--rose-pale);background:var(--warm);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:all .2s;}
+.moodbtn.sel{background:var(--rose);border-color:var(--rose);transform:scale(1.1);}
+.diary-input textarea{width:100%;border:none;background:var(--warm);border-radius:14px;padding:14px;font-size:14px;color:var(--dark);resize:none;outline:none;min-height:100px;}
+.entries-list{padding:0 22px 24px;}
+.entry{background:white;border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 2px 10px var(--shadow-soft);}
+.entry-hdr{display:flex;justify-content:space-between;margin-bottom:8px;}
+.entry-date{font-size:11px;color:var(--light);text-transform:uppercase;letter-spacing:1px;}
+.entry-txt{font-size:14px;color:var(--dark);line-height:1.5;}
+.entry-wtag{display:inline-block;margin-top:10px;font-size:10px;background:var(--rose-pale);color:var(--rose-deep);padding:3px 10px;border-radius:20px;font-weight:500;}
 
 /* ══════════════════════ PERFIL ══════════════════════ */
 #perfil .scroll{overflow-y:auto;flex:1;}
-.perf-hero{background:linear-gradient(160deg,var(--rose-pale),var(--cream));padding:16px 22px 28px;text-align:center;}
-.perf-avatar{width:86px;height:86px;border-radius:50%;background:linear-gradient(135deg,var(--rose-light),var(--rose));margin:16px auto 12px;display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:0 6px 20px rgba(169,107,85,.25);}
-.perf-name{font-family:'Cormorant Garamond',serif;font-size:26px;font-style:italic;color:var(--dark);}
-.perf-due{font-size:13px;color:var(--mid);margin-top:3px;}
-.perf-badge{display:inline-flex;align-items:center;gap:6px;background:white;border-radius:50px;padding:6px 16px;margin-top:10px;box-shadow:0 2px 10px var(--shadow-soft);font-size:12px;color:var(--mid);}
-.stats-g{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;padding:18px 22px 0;}
-.scard{background:white;border-radius:16px;padding:14px 10px;box-shadow:0 2px 10px var(--shadow-soft);text-align:center;}
-.sval{font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--rose-deep);}
-.slbl{font-size:10px;color:var(--light);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
-.menu-list{padding:18px 22px 20px;display:flex;flex-direction:column;gap:10px;}
-.mitem{background:white;border-radius:15px;padding:15px 16px;box-shadow:0 2px 8px var(--shadow-soft);display:flex;align-items:center;gap:13px;cursor:pointer;transition:transform .15s;}
-.mitem:active{transform:scale(.98);}
-.mico{width:38px;height:38px;background:var(--rose-pale);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
-.mtext{flex:1;}
-.mtext span{display:block;}
-.mtext span:first-child{font-size:14px;font-weight:500;color:var(--dark);}
-.mtext span:last-child{font-size:11px;color:var(--light);margin-top:1px;}
-.marr{color:var(--light);font-size:18px;}
-.logout-btn{margin:0 22px 32px;width:calc(100% - 44px);border:1.5px solid var(--rose-pale);background:white;border-radius:50px;padding:13px;font-size:14px;color:var(--mid);cursor:pointer;font-weight:500;}
+.prof-hdr{background:linear-gradient(135deg,var(--rose-pale),var(--cream));padding:32px 22px 24px;text-align:center;}
+.prof-avatar{width:80px;height:80px;border-radius:50%;background:var(--rose);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:32px;color:white;box-shadow:0 8px 20px rgba(169,107,85,.3);border:3px solid white;}
+.prof-name{font-family:'Cormorant Garamond',serif;font-size:26px;font-style:italic;color:var(--dark);}
+.prof-sub{font-size:13px;color:var(--mid);margin-top:2px;}
+.prof-stats{display:flex;margin:24px 22px;gap:12px;}
+.ps-card{flex:1;background:white;border-radius:18px;padding:14px;text-align:center;box-shadow:0 2px 10px var(--shadow-soft);}
+.ps-val{font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--rose-deep);line-height:1;}
+.ps-lbl{font-size:10px;color:var(--light);text-transform:uppercase;margin-top:4px;}
+.prof-menu{margin:0 22px 24px;background:white;border-radius:22px;overflow:hidden;box-shadow:0 2px 10px var(--shadow-soft);}
+.pitem{display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid var(--rose-pale);cursor:pointer;}
+.pitem:last-child{border-bottom:none;}
+.pitem .pi{font-size:20px;}
+.pitem .pl{flex:1;font-size:14px;color:var(--dark);font-weight:500;}
+.pitem .pa{color:var(--light);font-size:12px;}
 
-/* Toasts */
-.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--dark);color:white;padding:10px 20px;border-radius:50px;font-size:13px;opacity:0;transition:all .3s;z-index:999;pointer-events:none;white-space:nowrap;}
+/* ── TOAST ── */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(58,40,32,.9);color:white;padding:10px 24px;border-radius:50px;font-size:13px;opacity:0;transition:all .3s;z-index:1000;pointer-events:none;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
 </style>
 </head>
 <body>
 
-<!-- ═══════════════ LOGIN ═══════════════ -->
+<!-- ════════════ LOGIN SCREEN ════════════ -->
 <div class="screen active" id="login">
   <div class="login-blob"><div class="login-logo">🌸</div></div>
   <div class="login-title">Nalin Nazareth</div>
-  <div class="login-sub">Doula · Educadora Perinatal</div>
+  <div class="login-sub">Doula & Acompanhamento</div>
   <div class="login-card">
-    <h3>Bem-vinda de volta 💕</h3>
-    <div class="field">
-      <label>E-mail</label>
-      <input type="email" id="l-email" placeholder="seu@email.com" value="ana@email.com">
-    </div>
-    <div class="field">
-      <label>Senha</label>
-      <input type="password" id="l-senha" placeholder="••••••••" value="123456">
-    </div>
-    <button class="btn-rose" onclick="doLogin()">Entrar</button>
+    <h3>Bem-vinda, mamãe</h3>
+    <div class="field"><label>E-mail</label><input type="email" id="l-email" placeholder="seu@email.com"></div>
+    <div class="field"><label>Senha</label><input type="password" id="l-senha" placeholder="••••••••"></div>
+    <button class="btn-rose" onclick="doLogin()">Entrar no App</button>
     <div class="login-err" id="l-err"></div>
-    <div class="login-note">Não tem conta? Peça à sua doula para criar seu acesso 🌺</div>
-    <hr style="border:0;border-top:1px solid var(--rose-pale);margin:20px 0;">
-    <button class="btn-rose" style="background:var(--dark);margin-top:0;" onclick="window.location.href='admin.html'">Acesso Administrador 🔐</button>
   </div>
+  <p class="login-note">Ainda não tem acesso? <br>Entre em contato com a Nalin.</p>
 </div>
 
-<!-- ═══════════════ HOME ═══════════════ -->
+<!-- ════════════ HOME SCREEN ════════════ -->
 <div class="screen" id="home">
-  <div class="sbar"><span>9:41</span><span>📶🔋</span></div>
   <div class="scroll">
     <div class="home-hdr">
       <div class="hdr-top">
-        <div>
-          <div class="greet-sub">Olá, mamãe 🌸</div>
-          <div class="greet-name" id="h-nome">Carregando...</div>
-        </div>
-        <button class="notif">🔔<div class="ndot"></div></button>
+        <div><div class="greet-sub">Olá, mamãe</div><div class="greet-name" id="h-nome">...</div></div>
+        <button class="notif" onclick="openWhatsapp()">🔔<div class="ndot"></div></button>
       </div>
       <div class="preg-card">
-        <div class="pc-label">Semana da gestação</div>
-        <div class="pc-week"><span id="h-sem">—</span> <small>semanas</small></div>
-        <div class="pc-bebe" id="h-bebe">Bebê...</div>
-        <div class="prog-lbl"><span>Progresso</span><span id="h-pct">—%</span></div>
+        <div class="pc-label">Você está com</div>
+        <div class="pc-week"><span id="h-sem">0</span><small>sem</small></div>
+        <div class="pc-bebe" id="h-bebe">Bebê crescendo 💕</div>
+        <div class="prog-lbl"><span>Progresso</span><span id="h-pct">0%</span></div>
         <div class="prog-bar"><div class="prog-fill" id="h-bar" style="width:0%"></div></div>
         <div class="tri-dots" id="h-tdots"></div>
-        <div class="tri-lbl" id="h-tri"></div>
+        <div class="tri-lbl" id="h-tri">...</div>
       </div>
     </div>
-    <div class="size-box">
-      <div class="se" id="h-emoji">🌱</div>
-      <div>
-        <p>Tamanho do bebê esta semana</p>
-        <p id="h-size">Carregando...</p>
-      </div>
-    </div>
-    <div class="sec-title">O que deseja hoje?</div>
+    <div class="size-box"><div class="se" id="h-emoji">🌱</div><div><p>Seu bebê tem o</p><p id="h-size">...</p></div></div>
+    <div class="sec-title">Acesso Rápido</div>
     <div class="qgrid">
-      <div class="qcard" onclick="navTo('conteudo')"><div class="qi">🎬</div><div class="qt">Videoaulas</div><div class="qs" id="h-nvid">— aulas</div></div>
-      <div class="qcard" onclick="navTo('conteudo')"><div class="qi">📖</div><div class="qt">E-books</div><div class="qs" id="h-nebook">— materiais</div></div>
-      <div class="qcard" onclick="navTo('gestacao')"><div class="qi">🤰</div><div class="qt">Jornada</div><div class="qs">Semana a semana</div></div>
-      <div class="qcard" onclick="navTo('diario')"><div class="qi">📝</div><div class="qt">Diário</div><div class="qs">Registre memórias</div></div>
+      <div class="qcard" onclick="navTo('conteudo')"><div class="qi">🎬</div><div class="qt">Videoaulas</div><div class="qs" id="h-nvid">...</div></div>
+      <div class="qcard" onclick="navTo('conteudo');renderConteudo(1)"><div class="qi">📖</div><div class="qt">E-books</div><div class="qs" id="h-nebook">...</div></div>
+      <div class="qcard" onclick="navTo('diario')"><div class="qi">✍️</div><div class="qt">Meu Diário</div><div class="qs">Registros</div></div>
+      <div class="qcard" onclick="openWhatsapp()"><div class="qi">💬</div><div class="qt">Falar com Nalin</div><div class="qs">WhatsApp</div></div>
     </div>
-    <div class="tip-box">
-      <div class="tip-tag" id="h-tip-tag">💡 Dica da Nalin</div>
-      <div class="tip-txt" id="h-tip">Carregando...</div>
-    </div>
-    <div class="consult-box">
-      <div class="consult-icon">📅</div>
-      <div>
-        <div class="consult-lbl">Próxima consulta</div>
-        <div class="consult-name">Pré-natal · 28 de Abril</div>
-        <div class="consult-time">Dr. Fernanda Santos · 10:00h</div>
-      </div>
-    </div>
+    <div class="tip-box"><div class="tip-tag" id="h-tip-tag">Dica do dia</div><div class="tip-txt" id="h-tip">...</div></div>
+    <div class="sec-title">Próxima Consulta</div>
+    <div class="consult-box"><div class="consult-icon">👩‍⚕️</div><div><div class="consult-lbl">Pré-natal</div><div class="consult-name">Dra. Helena (Obstetra)</div><div class="consult-time">Quinta, 14:30h</div></div></div>
   </div>
-  <div class="bnav" id="bnav-home">
+  <div class="bnav">
     <div class="nitem active" onclick="navTo('home')"><div class="ni">🏠</div><div class="nl">Início</div></div>
+    <div class="nitem" onclick="navTo('conteudo')"><div class="ni">✨</div><div class="nl">Conteúdo</div></div>
     <div class="nitem" onclick="navTo('gestacao')"><div class="ni">🤰</div><div class="nl">Gestação</div></div>
-    <div class="nitem" onclick="navTo('conteudo')"><div class="ni">🎬</div><div class="nl">Conteúdo</div></div>
-    <div class="nitem" onclick="navTo('diario')"><div class="ni">📝</div><div class="nl">Diário</div></div>
+    <div class="nitem" onclick="navTo('diario')"><div class="ni">📖</div><div class="nl">Diário</div></div>
     <div class="nitem" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
   </div>
 </div>
 
-<!-- ═══════════════ CONTEÚDO ═══════════════ -->
+<!-- ════════════ CONTEÚDO SCREEN ════════════ -->
 <div class="screen" id="conteudo">
-  <div class="sbar"><span>9:41</span><span>📶🔋</span></div>
-  <div class="scroll">
-    <div class="cont-hdr">
-      <h2>Conteúdos</h2>
-      <p>Materiais exclusivos da Nalin</p>
-      <div class="tabs">
-        <div class="tab active" onclick="switchTab(0,this)">🎬 Vídeos</div>
-        <div class="tab" onclick="switchTab(1,this)">📖 E-books</div>
-        <div class="tab" onclick="switchTab(2,this)">🎵 Meditações</div>
-        <div class="tab" onclick="switchTab(3,this)">📋 Outros</div>
-      </div>
+  <div class="cont-hdr"><h2>Conteúdo</h2><p>Materiais exclusivos para sua jornada</p>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab(0,this)">Vídeos</div>
+      <div class="tab" onclick="switchTab(1,this)">E-books</div>
+      <div class="tab" onclick="switchTab(2,this)">Meditações</div>
     </div>
-    <div class="cont-grid" id="cont-list"></div>
-    <div style="height:80px;"></div>
   </div>
+  <div class="scroll"><div class="cont-grid" id="cont-list"></div></div>
   <div class="bnav">
     <div class="nitem" onclick="navTo('home')"><div class="ni">🏠</div><div class="nl">Início</div></div>
+    <div class="nitem active" onclick="navTo('conteudo')"><div class="ni">✨</div><div class="nl">Conteúdo</div></div>
     <div class="nitem" onclick="navTo('gestacao')"><div class="ni">🤰</div><div class="nl">Gestação</div></div>
-    <div class="nitem active" onclick="navTo('conteudo')"><div class="ni">🎬</div><div class="nl">Conteúdo</div></div>
-    <div class="nitem" onclick="navTo('diario')"><div class="ni">📝</div><div class="nl">Diário</div></div>
+    <div class="nitem" onclick="navTo('diario')"><div class="ni">📖</div><div class="nl">Diário</div></div>
     <div class="nitem" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
   </div>
 </div>
 
-<!-- ═══════════════ GESTAÇÃO ═══════════════ -->
+<!-- ════════════ GESTAÇÃO SCREEN ════════════ -->
 <div class="screen" id="gestacao">
-  <div class="sbar"><span>9:41</span><span>📶🔋</span></div>
-  <div class="scroll">
-    <div class="grav-hdr">
-      <h2>Jornada da Gestação</h2>
-      <p style="font-size:13px;color:var(--mid);margin-top:3px;">Semana a semana com amor 🌱</p>
-      <div class="tri-tabs">
-        <div class="ttab active" onclick="switchTri(1,this)">1º Trim.<small>1–13 sem</small></div>
-        <div class="ttab" onclick="switchTri(2,this)">2º Trim.<small>14–26 sem</small></div>
-        <div class="ttab" onclick="switchTri(3,this)">3º Trim.<small>27–42 sem</small></div>
-      </div>
+  <div class="grav-hdr"><h2>Minha Gestação</h2>
+    <div class="tri-tabs">
+      <div class="ttab active" onclick="switchTri(1,this)">1º Tri<small>1-13 sem</small></div>
+      <div class="ttab" onclick="switchTri(2,this)">2º Tri<small>14-26 sem</small></div>
+      <div class="ttab" onclick="switchTri(3,this)">3º Tri<small>27-42 sem</small></div>
     </div>
-    <div class="wk-list" id="wk-list"></div>
-    <div style="height:80px;"></div>
   </div>
+  <div class="scroll"><div class="wk-list" id="wk-list"></div></div>
   <div class="bnav">
     <div class="nitem" onclick="navTo('home')"><div class="ni">🏠</div><div class="nl">Início</div></div>
+    <div class="nitem" onclick="navTo('conteudo')"><div class="ni">✨</div><div class="nl">Conteúdo</div></div>
     <div class="nitem active" onclick="navTo('gestacao')"><div class="ni">🤰</div><div class="nl">Gestação</div></div>
-    <div class="nitem" onclick="navTo('conteudo')"><div class="ni">🎬</div><div class="nl">Conteúdo</div></div>
-    <div class="nitem" onclick="navTo('diario')"><div class="ni">📝</div><div class="nl">Diário</div></div>
+    <div class="nitem" onclick="navTo('diario')"><div class="ni">📖</div><div class="nl">Diário</div></div>
     <div class="nitem" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
   </div>
 </div>
 
-<!-- ═══════════════ DIÁRIO ═══════════════ -->
+<!-- ════════════ DIÁRIO SCREEN ════════════ -->
 <div class="screen" id="diario">
-  <div class="sbar"><span>9:41</span><span>📶🔋</span></div>
+  <div class="diary-hdr"><h2>Meu Diário</h2><p>Registre suas emoções e memórias</p></div>
   <div class="scroll">
-    <div class="diary-hdr">
-      <h2>Meu Diário</h2>
-      <p style="font-size:13px;color:var(--mid);margin-top:3px;">Registre cada momento especial 💕</p>
-    </div>
-    <div class="mood-row" id="mood-row">
-      <div class="moodbtn sel" onclick="selMood(this,'😊','Ótima')"><span>😊</span><span>Ótima</span></div>
-      <div class="moodbtn" onclick="selMood(this,'💕','Feliz')"><span>💕</span><span>Feliz</span></div>
-      <div class="moodbtn" onclick="selMood(this,'😴','Cansada')"><span>😴</span><span>Cansada</span></div>
-      <div class="moodbtn" onclick="selMood(this,'🤢','Enjoo')"><span>🤢</span><span>Enjoo</span></div>
-      <div class="moodbtn" onclick="selMood(this,'😢','Ansiosa')"><span>😢</span><span>Ansiosa</span></div>
-    </div>
-    <div class="diary-write">
-      <textarea class="dta" id="diary-txt" placeholder="O que você quer lembrar desse dia? Movimentos do bebê, sentimentos, desejos..."></textarea>
-      <div class="diary-acts">
-        <div class="dact">📸 Foto</div>
-        <div class="dact">🎵 Música</div>
-        <button class="dsave" onclick="saveEntry()">Salvar memória ✨</button>
+    <div class="diary-input">
+      <div class="mood-sel">
+        <div class="moodbtn sel" onclick="selMood(this,'😊','Feliz')">😊</div>
+        <div class="moodbtn" onclick="selMood(this,'🥰','Amada')">🥰</div>
+        <div class="moodbtn" onclick="selMood(this,'😴','Cansada')">😴</div>
+        <div class="moodbtn" onclick="selMood(this,'🤢','Enjoada')">🤢</div>
+        <div class="moodbtn" onclick="selMood(this,'🥺','Sensível')">🥺</div>
       </div>
+      <textarea id="diary-txt" placeholder="Como você está se sentindo hoje?"></textarea>
+      <button class="btn-rose" onclick="saveEntry()">Salvar no Diário</button>
     </div>
-    <div class="sec-title" style="padding-top:0;">Memórias anteriores</div>
+    <div class="sec-title">Registros Recentes</div>
     <div class="entries-list" id="entries-list"></div>
-    <div style="height:80px;"></div>
   </div>
   <div class="bnav">
     <div class="nitem" onclick="navTo('home')"><div class="ni">🏠</div><div class="nl">Início</div></div>
+    <div class="nitem" onclick="navTo('conteudo')"><div class="ni">✨</div><div class="nl">Conteúdo</div></div>
     <div class="nitem" onclick="navTo('gestacao')"><div class="ni">🤰</div><div class="nl">Gestação</div></div>
-    <div class="nitem" onclick="navTo('conteudo')"><div class="ni">🎬</div><div class="nl">Conteúdo</div></div>
-    <div class="nitem active" onclick="navTo('diario')"><div class="ni">📝</div><div class="nl">Diário</div></div>
+    <div class="nitem active" onclick="navTo('diario')"><div class="ni">📖</div><div class="nl">Diário</div></div>
     <div class="nitem" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
   </div>
 </div>
 
-<!-- ═══════════════ PERFIL ═══════════════ -->
+<!-- ════════════ PERFIL SCREEN ════════════ -->
 <div class="screen" id="perfil">
-  <div class="sbar"><span>9:41</span><span>📶🔋</span></div>
   <div class="scroll">
-    <div class="perf-hero">
-      <div class="perf-avatar">🤰</div>
-      <div class="perf-name" id="p-nome">—</div>
-      <div class="perf-due" id="p-due">—</div>
-      <div class="perf-badge"><span>🌸</span><span id="p-tri">—</span></div>
+    <div class="prof-hdr">
+      <div class="prof-avatar">🤰</div>
+      <div class="prof-name" id="p-nome">...</div>
+      <div class="prof-sub" id="p-tri">...</div>
     </div>
-    <div class="stats-g">
-      <div class="scard"><div class="sval" id="p-dias">—</div><div class="slbl">dias restantes</div></div>
-      <div class="scard"><div class="sval" id="p-sem">—</div><div class="slbl">semanas gestadas</div></div>
-      <div class="scard"><div class="sval" id="p-entradas">0</div><div class="slbl">entradas no diário</div></div>
+    <div class="prof-stats">
+      <div class="ps-card"><div class="ps-val" id="p-sem">0</div><div class="ps-lbl">Semanas</div></div>
+      <div class="ps-card"><div class="ps-val" id="p-dias">0</div><div class="ps-lbl">Dias para o Parto</div></div>
+      <div class="ps-card"><div class="ps-val" id="p-entradas">0</div><div class="ps-lbl">Memórias</div></div>
     </div>
-    <div class="menu-list">
-      <div class="mitem"><div class="mico">📋</div><div class="mtext"><span>Plano de Parto</span><span>Crie seu plano personalizado</span></div><span class="marr">›</span></div>
-      <div class="mitem"><div class="mico">🛍</div><div class="mtext"><span>Lista do Enxoval</span><span>O que preparar para o bebê</span></div><span class="marr">›</span></div>
-      <div class="mitem"><div class="mico">🏥</div><div class="mtext"><span>Maternidade</span><span>Documentos e o que levar</span></div><span class="marr">›</span></div>
-      <div class="mitem" onclick="openWhatsapp()"><div class="mico">💬</div><div class="mtext"><span>Falar com a Nalin</span><span>Enviar mensagem via WhatsApp</span></div><span class="marr">›</span></div>
+    <div class="prof-menu">
+      <div class="pitem"><div class="pi">📅</div><div class="pl" id="p-due">Parto previsto: ...</div></div>
+      <div class="pitem" onclick="openWhatsapp()"><div class="pi">💬</div><div class="pl">Suporte via WhatsApp</div><div class="pa">❯</div></div>
+      <div class="pitem" onclick="doLogout()"><div class="pi">🚪</div><div class="pl" style="color:#c0392b">Sair do App</div></div>
     </div>
-    <div style="text-align:center;padding:4px 0 12px;">
-      <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;color:var(--light);">Nalin Nazareth — Doula</div>
-    </div>
-    <button class="logout-btn" onclick="doLogout()">Sair da conta</button>
   </div>
   <div class="bnav">
     <div class="nitem" onclick="navTo('home')"><div class="ni">🏠</div><div class="nl">Início</div></div>
+    <div class="nitem" onclick="navTo('conteudo')"><div class="ni">✨</div><div class="nl">Conteúdo</div></div>
     <div class="nitem" onclick="navTo('gestacao')"><div class="ni">🤰</div><div class="nl">Gestação</div></div>
-    <div class="nitem" onclick="navTo('conteudo')"><div class="ni">🎬</div><div class="nl">Conteúdo</div></div>
-    <div class="nitem" onclick="navTo('diario')"><div class="ni">📝</div><div class="nl">Diário</div></div>
+    <div class="nitem" onclick="navTo('diario')"><div class="ni">📖</div><div class="nl">Diário</div></div>
     <div class="nitem active" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
   </div>
 </div>
@@ -414,16 +348,7 @@ const DB = {
 function seedData(){
   if(!DB.get('nn_users')){
     DB.set('nn_users',[
-      {id:1,nome:'Ana Clara',email:'ana@email.com',senha:'123456',bebe:'Aurora',semanas:24,dpp:'2025-07-15',parto:'normal',ativo:true,criadoEm:new Date().toISOString()},
-      {id:2,nome:'Mariana Silva',email:'mari@email.com',senha:'123456',bebe:'Miguel',semanas:32,dpp:'2025-06-01',parto:'normal',ativo:true,criadoEm:new Date().toISOString()}
-    ]);
-  }
-  if(!DB.get('nn_conteudos')){
-    DB.set('nn_conteudos',[
-      {id:1,titulo:'Pega Correta: Guia Completo',categoria:'video',subcategoria:'Amamentação',descricao:'Aprenda a técnica certa para amamentar sem dor.',duracao:'18 min',url:'https://youtube.com',cor:'#e8b4a0,#c9907a',emoji:'🤱',ativo:true},
-      {id:2,titulo:'Posturas para Aliviar Dores',categoria:'video',subcategoria:'Bem-estar',descricao:'Posições que aliviam dores lombares na gestação.',duracao:'24 min',url:'https://youtube.com',cor:'#d4a0b5,#b07090',emoji:'🧘‍♀️',ativo:true},
-      {id:3,titulo:'Plano de Parto — Modelo',categoria:'ebook',subcategoria:'Parto',descricao:'Modelo completo para montar seu plano de parto.',paginas:'14 pág',url:'#',cor:'#c9907a,#a96b55',emoji:'📋',ativo:true},
-      {id:4,titulo:'Meditação — Conexão Mãe & Bebê',categoria:'meditacao',subcategoria:'Relaxamento',descricao:'Guia para se conectar com seu bebê.',duracao:'12 min',url:'#',cor:'#b4c4d8,#8090a8',emoji:'🌙',ativo:true}
+      {id:1,nome:'Ana Clara',email:'ana@email.com',senha:'123456',bebe:'Aurora',semanas:24,dpp:'2025-07-15',parto:'normal',ativo:true,criadoEm:new Date().toISOString()}
     ]);
   }
 }
@@ -458,35 +383,14 @@ async function apiFetch(endpoint, options = {}) {
 async function doLogin(){
   const email=document.getElementById('l-email').value.trim().toLowerCase();
   const senha=document.getElementById('l-senha').value;
-  
-  const res = await apiFetch('/api/login', {
-    method: 'POST',
-    body: JSON.stringify({ email, senha })
-  });
-
+  const res = await apiFetch('/api/login', { method: 'POST', body: JSON.stringify({ email, senha }) });
   if(res && res.status === 'success'){
     currentUser = res.user;
     DB.set('nn_session', currentUser.id);
-    document.getElementById('l-err').textContent='';
     goApp();
-  } else {
-    const users=DB.get('nn_users')||[];
-    const u=users.find(x=>x.email.toLowerCase()===email && x.senha===senha && x.ativo);
-    if(u){
-      currentUser=u;
-      DB.set('nn_session',u.id);
-      document.getElementById('l-err').textContent='';
-      goApp();
-    } else {
-      document.getElementById('l-err').textContent= res?.message || 'E-mail ou senha incorretos.';
-    }
-  }
+  } else { document.getElementById('l-err').textContent= res?.message || 'Erro no login.'; }
 }
-function doLogout(){
-  DB.del('nn_session');
-  currentUser=null;
-  showScreen('login');
-}
+function doLogout(){ DB.del('nn_session'); currentUser=null; showScreen('login'); }
 function openWhatsapp(){window.open('https://wa.me/5500000000000','_blank');}
 
 // ════ NAVIGATION ════
@@ -503,13 +407,10 @@ function navTo(id){
   if(id==='perfil')renderPerfil();
 }
 
-// ════ APP INIT ════
-function goApp(){
-  navTo('home');
-}
+function goApp(){ navTo('home'); }
 
 // ════ HOME ════
-function renderHome(){
+async function renderHome(){
   if(!currentUser)return;
   const u=currentUser;
   document.getElementById('h-nome').textContent=u.nome;
@@ -528,79 +429,69 @@ function renderHome(){
   document.getElementById('h-size').textContent=baby.s.charAt(0).toUpperCase()+baby.s.slice(1);
   document.getElementById('h-tip-tag').textContent=`💡 Dica da Nalin — Semana ${u.semanas}`;
   document.getElementById('h-tip').textContent=getTip(u.semanas);
-  const conteudos=DB.get('nn_conteudos')||[];
-  document.getElementById('h-nvid').textContent=conteudos.filter(c=>c.categoria==='video'&&c.ativo).length+' aulas';
-  document.getElementById('h-nebook').textContent=conteudos.filter(c=>c.categoria==='ebook'&&c.ativo).length+' materiais';
+  
+  const cont = await apiFetch('/api/conteudos') || [];
+  const ebooks = await apiFetch('/api/ebooks') || [];
+  document.getElementById('h-nvid').textContent=cont.filter(c=>c.categoria==='video').length+' aulas';
+  document.getElementById('h-nebook').textContent=ebooks.length+' materiais';
 }
 
 // ════ CONTEÚDO ════
-const catMap={0:'video',1:'ebook',2:'meditacao',3:'outro'};
-	function getYTId(url) {
-	  if (!url) return null;
-	  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-	  const match = url.match(regExp);
-	  return (match && match[2].length === 11) ? match[2] : null;
-	}
+const catMap={0:'video',1:'ebook',2:'meditacao'};
+function getYTId(url) {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+}
 
-		async function renderConteudo(idx){
-		  currentTab=idx;
-		  const cat=catMap[idx]||'video';
-		  
-		  const apiCont = await apiFetch('/api/conteudos');
-		  if(apiCont) DB.set('nn_conteudos', apiCont);
+async function renderConteudo(idx){
+  currentTab=idx;
+  const cat=catMap[idx]||'video';
+  let conteudos = [];
+  
+  if(cat === 'ebook') {
+    const apiEbooks = await apiFetch('/api/ebooks') || [];
+    conteudos = apiEbooks.map(e => ({
+      id: e.id, titulo: e.titulo, categoria: 'ebook', subcategoria: e.descricao || 'Material exclusivo',
+      url: API_URL + e.url_pdf, cor: '#c9907a,#a96b55', emoji: '📖'
+    }));
+  } else {
+    const apiCont = await apiFetch('/api/conteudos') || [];
+    conteudos = apiCont.filter(c => c.categoria === cat);
+  }
 
-		  let conteudos=(DB.get('nn_conteudos')||[]).filter(c=>c.categoria===cat&&c.ativo);
-		  
-		  // Carregar eBooks da API se for a aba de eBooks
-		  if(cat === 'ebook') {
-		    const apiEbooks = await apiFetch('/api/ebooks');
-		    if(apiEbooks && apiEbooks.length > 0) {
-		      conteudos = apiEbooks.map(e => ({
-		        id: e.id,
-		        titulo: e.titulo,
-		        categoria: 'ebook',
-		        subcategoria: e.descricao || 'Material exclusivo',
-		        descricao: e.descricao || '',
-		        url: API_URL + e.url_pdf,
-		        cor: '#c9907a,#a96b55',
-		        emoji: '📖',
-		        ativo: true
-		      }));
-		    }
-		  }
-	  const list=document.getElementById('cont-list');
-	  list.innerHTML='';
-	  if(!conteudos.length){
-	    list.innerHTML=`<div class="empty-state"><div class="ei">📭</div><p>Nenhum conteúdo ainda.<br>A Nalin está preparando algo especial!</p></div>`;
-	    return;
-	  }
-		  conteudos.forEach(c=>{
-		    const isPlay=c.categoria!=='ebook';
-		    const meta=c.categoria==='ebook'?(c.paginas?`<span>📄 ${c.paginas}</span>`:`<span>📄 PDF</span>`):(c.duracao?`<span>⏱ ${c.duracao}</span>`:'');
-		    const ytId = getYTId(c.url);
-		    const thumbImg = ytId ? `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="Capa">` : '';
-		    
-		    list.innerHTML+=`
-		    <div class="ccard" onclick="openConteudo('${c.url}')">
-		      <div class="cthumb" style="background:linear-gradient(135deg,${c.cor||'#e8b4a0,#c9907a'})">
-		        ${thumbImg}
-		        <div class="te" style="${thumbImg ? 'opacity:0.2' : ''}">${c.emoji||'📄'}</div>
-		        ${isPlay?'<div class="play-btn">▶</div>':''}
-		      </div>
-		      <div class="cinfo">
-		        <div class="ctag">${c.subcategoria||''}</div>
-		        <div class="ctitle">${c.titulo}</div>
-		        <div class="cmeta">${meta}</div>
-		      </div>
-		    </div>`;
-		  });
-	}
+  const list=document.getElementById('cont-list');
+  list.innerHTML='';
+  if(!conteudos.length){
+    list.innerHTML=`<div class="empty-state"><div class="ei">📭</div><p>Nenhum conteúdo ainda.</p></div>`;
+    return;
+  }
+  conteudos.forEach(c=>{
+    const isPlay=c.categoria!=='ebook';
+    const ytId = getYTId(c.url);
+    const thumbImg = ytId ? `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg">` : '';
+    list.innerHTML+=`
+    <div class="ccard" onclick="openConteudo('${c.url}')">
+      <div class="cthumb" style="background:linear-gradient(135deg,${c.cor||'#e8b4a0,#c9907a'})">
+        ${thumbImg}
+        <div class="te" style="${thumbImg ? 'opacity:0.2' : ''}">${c.emoji||'📄'}</div>
+        ${isPlay?'<div class="play-btn">▶</div>':''}
+      </div>
+      <div class="cinfo">
+        <div class="ctag">${c.subcategoria||''}</div>
+        <div class="ctitle">${c.titulo}</div>
+        <div class="cmeta">${c.duracao || c.paginas || ''}</div>
+      </div>
+    </div>`;
+  });
+}
 function switchTab(idx,el){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
   renderConteudo(idx);
 }
-function openConteudo(url){if(url&&url!=='#')window.open(url,'_blank');}
+function openConteudo(url){if(url)window.open(url,'_blank');}
 
 // ════ GESTAÇÃO ════
 function renderGestacao(tri){
@@ -612,10 +503,7 @@ function renderGestacao(tri){
     const isCur=w===currentUser?.semanas||(w+1===currentUser?.semanas);
     list.innerHTML+=`<div class="wkcard${isCur?' cur':''}">
       <div class="wknum"><span>${w}</span><span>sem</span></div>
-      <div class="wkinfo">
-        <div class="wkt">${wd.t}${isCur?' <span style="font-size:10px;background:var(--rose);color:white;padding:2px 8px;border-radius:10px;font-weight:500;margin-left:4px">Você aqui!</span>':''}</div>
-        <div class="wkd">${wd.d}</div>
-      </div>
+      <div class="wkinfo"><div class="wkt">${wd.t}</div><div class="wkd">${wd.d}</div></div>
       <div class="wke">${wd.e}</div>
     </div>`;
   }
@@ -627,31 +515,28 @@ function switchTri(t,el){
 }
 
 // ════ DIÁRIO ════
-function selMood(el,emoji,label){
+function selMood(el,emoji){
   document.querySelectorAll('.moodbtn').forEach(b=>b.classList.remove('sel'));
   el.classList.add('sel');
   currentMood=emoji;
 }
 function saveEntry(){
   const txt=document.getElementById('diary-txt').value.trim();
-  if(!txt){showToast('Escreva algo primeiro! 💕');return;}
+  if(!txt)return;
   const key=`nn_diary_${currentUser.id}`;
   const entries=DB.get(key)||[];
-  entries.unshift({id:Date.now(),txt,mood:currentMood,semanas:currentUser.semanas,data:new Date().toLocaleDateString('pt-BR',{day:'numeric',month:'long'}),dia:new Date().toLocaleDateString('pt-BR',{weekday:'long'})});
+  entries.unshift({id:Date.now(),txt,mood:currentMood,semanas:currentUser.semanas,data:new Date().toLocaleDateString('pt-BR')});
   DB.set(key,entries);
   document.getElementById('diary-txt').value='';
   renderDiario();
-  showToast('Memória salva! ✨');
 }
 function renderDiario(){
   const key=`nn_diary_${currentUser?.id}`;
   const entries=DB.get(key)||[];
-  document.getElementById('p-entradas').textContent=entries.length;
   const list=document.getElementById('entries-list');list.innerHTML='';
-  if(!entries.length){list.innerHTML='<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Nenhuma memória ainda.<br>Escreva seu primeiro registro! 🌸</div>';return;}
-  entries.slice(0,10).forEach(e=>{
+  entries.forEach(e=>{
     list.innerHTML+=`<div class="entry">
-      <div class="entry-hdr"><div class="entry-date">${e.data} · ${e.dia}</div><span style="font-size:20px">${e.mood}</span></div>
+      <div class="entry-hdr"><div class="entry-date">${e.data}</div><span>${e.mood}</span></div>
       <div class="entry-txt">${e.txt}</div>
       <div class="entry-wtag">Semana ${e.semanas}</div>
     </div>`;
@@ -664,32 +549,23 @@ function renderPerfil(){
   const u=currentUser;
   document.getElementById('p-nome').textContent=u.nome;
   document.getElementById('p-sem').textContent=u.semanas;
-  const tri=getTri(u.semanas);
-  document.getElementById('p-tri').textContent=`${tri.l} · Semana ${u.semanas}`;
+  document.getElementById('p-tri').textContent=getTri(u.semanas).l;
   if(u.dpp){
     const dpp=new Date(u.dpp),now=new Date();
     const diff=Math.max(0,Math.round((dpp-now)/(86400000)));
     document.getElementById('p-dias').textContent=diff;
-    document.getElementById('p-due').textContent='Parto previsto: '+dpp.toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
+    document.getElementById('p-due').textContent='Parto previsto: '+dpp.toLocaleDateString('pt-BR');
   }
-  const key=`nn_diary_${u.id}`;
-  document.getElementById('p-entradas').textContent=(DB.get(key)||[]).length;
+  document.getElementById('p-entradas').textContent=(DB.get(`nn_diary_${u.id}`)||[]).length;
 }
 
-// ════ TOAST ════
-function showToast(msg){
-  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
-}
-
-// ════ INIT ════
-document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('login').classList.contains('active'))doLogin();});
 seedData();
 const savedSession=DB.get('nn_session');
 if(savedSession){
-  const users=DB.get('nn_users')||[];
-  const u=users.find(x=>x.id===savedSession&&x.ativo);
-  if(u){currentUser=u;goApp();}
+  apiFetch('/api/users').then(users => {
+    const u = users?.find(x => x.id === savedSession);
+    if(u){ currentUser=u; goApp(); }
+  });
 }
 </script>
 </body>
