@@ -111,8 +111,9 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif;}
 .tab{flex-shrink:0;padding:8px 18px;border-radius:50px;border:1.5px solid var(--rose-pale);font-size:13px;font-weight:500;color:var(--mid);cursor:pointer;background:white;transition:all .2s;}
 .tab.active{background:var(--rose);color:white;border-color:var(--rose);}
 
-.cont-grid{padding:18px 12px;display:flex;flex-wrap:wrap;gap:10px;}
-.cont-grid > .ccard:not([style*="width:80px"]){width:calc(33.33% - 7px);}
+.cont-grid{padding:18px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;}
+.cont-grid > .ccard[data-ebook="true"]{width:80px;min-width:80px;height:auto;}
+.cont-grid > .ccard:not([data-ebook="true"]){width:calc(33.33% - 6px);}
 .ccard{background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px var(--shadow-soft);cursor:pointer;transition:transform .15s;display:flex;flex-direction:column;}
 .ccard:active{transform:scale(.96);}
 .cthumb{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:var(--rose-pale);}
@@ -591,21 +592,22 @@ async function renderConteudo(idx){
       thumbImg = `<img src="${c.capa}" alt="Capa">`;
     }
 
-    const cardStyle = isEbook ? 'width:80px; flex:none;' : '';
-    const thumbStyle = isEbook ? 'aspect-ratio:1/1; height:80px;' : '';
+
 
     list.innerHTML += `
-    <div class="ccard" onclick="openConteudo('${c.url}')" style="${cardStyle}">
-      <div class="cthumb" style="background:linear-gradient(135deg,${c.cor || '#e8b4a0,#c9907a'}); ${thumbStyle}">
+    <div class="ccard" onclick="openConteudo('${c.url}')" data-ebook="${isEbook}" title="${c.titulo}">
+      <div class="cthumb" style="background:linear-gradient(135deg,${c.cor || '#e8b4a0,#c9907a'})${isEbook ? '; width:80px; height:80px;' : ''}">
         ${thumbImg}
-        <div class="te" style="${thumbImg ? 'opacity:0.2' : ''}">${c.emoji || '📄'}</div>
+        <div class="te" style="${thumbImg ? 'opacity:0.2' : ''}; font-size:${isEbook ? '24px' : '28px'}">${c.emoji || '📄'}</div>
         ${isPlay ? '<div class="play-btn">▶</div>' : ''}
       </div>
-      <div class="cinfo" style="${isEbook ? 'padding:4px;' : ''}">
-        <div class="ctag" style="${isEbook ? 'font-size:7px;' : ''}">${c.subcategoria || ''}</div>
-        <div class="ctitle" style="${isEbook ? 'font-size:9px; -webkit-line-clamp:1;' : ''}">${c.titulo}</div>
-        <div class="cmeta" style="${isEbook ? 'display:none;' : ''}">${meta}</div>
+      ${!isEbook ? `
+      <div class="cinfo">
+        <div class="ctag">${c.subcategoria || ''}</div>
+        <div class="ctitle">${c.titulo}</div>
+        <div class="cmeta">${meta}</div>
       </div>
+      ` : ''}
     </div>`;
   });
 }
