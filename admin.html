@@ -265,6 +265,17 @@ tr:hover td{background:rgba(247,237,232,.5);}
             <div id="cfg-msg" style="font-size:13px;min-height:16px;color:var(--ok);"></div>
           </div>
         </div>
+        <div class="table-card">
+          <div class="tc-hdr"><h3>📱 Contato e Redes Sociais</h3></div>
+          <div style="padding:20px;display:flex;flex-direction:column;gap:12px;">
+            <div class="mfield"><label>Número WhatsApp</label><input type="text" id="cfg-whatsapp" placeholder="55 11 99999-9999"></div>
+            <div class="mfield"><label>Mensagem padrão WhatsApp</label><textarea id="cfg-whatsapp-msg" placeholder="Olá! Como posso ajudá-la?" style="height:80px;resize:vertical;"></textarea></div>
+            <div class="mfield"><label>URL do Instagram</label><input type="text" id="cfg-instagram" placeholder="https://instagram.com/seuusuario"></div>
+            <div class="mfield"><label>E-mail para contato</label><input type="email" id="cfg-email" placeholder="seu@email.com"></div>
+            <button class="btn-sm btn-rose-sm" style="align-self:flex-end" onclick="saveConfig()">Salvar configurações</button>
+            <div id="cfg-contact-msg" style="font-size:13px;min-height:16px;color:var(--ok);"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -371,7 +382,7 @@ function goPage(id,el){
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
   document.getElementById('p-'+id).classList.add('active');
   el.classList.add('active');
-  const renders={dashboard:renderDashboard,doulandas:renderDoulandas,videos:()=>renderConteudoTable('video'),ebooks:renderEbooksPage,meditacoes:()=>renderConteudoTable('meditacao')};
+  const renders={dashboard:renderDashboard,doulandas:renderDoulandas,videos:()=>renderConteudoTable('video'),ebooks:renderEbooksPage,meditacoes:()=>renderConteudoTable('meditacao'),config:loadConfig};
   if(renders[id])renders[id]();
 }
 
@@ -389,8 +400,8 @@ async function renderDashboard(){
   document.getElementById('stat-row').innerHTML=stats.map(s=>`<div class="stat-c"><div class="si">${s.i}</div><div class="sv">${s.v}</div><div class="sl">${s.l}</div></div>`).join('');
   
   const recent=users.slice(0, 4);
-  document.getElementById('dash-recent').innerHTML=`<table><thead><tr><th>Nome</th><th>Semanas</th><th>Status</th></tr></thead><tbody>${
-    recent.map(u=>`<tr><td class="td-name">${u.nome}</td><td>${u.semanas} sem</td><td><span class="badge ${u.ativo?'badge-ok':'badge-err'}">${u.ativo?'Ativa':'Inativa'}</span></td></tr>`).join('')
+  document.getElementById('dash-recent').innerHTML=`<table><thead><tr><th>Nome</th><th>Bebê</th><th>Semanas</th><th>Status</th></tr></thead><tbody>${
+    recent.map(u=>`<tr><td class="td-name">${u.nome}</td><td>${u.bebe||'—'}</td><td>${u.semanas} sem</td><td><span class="badge ${u.ativo?'badge-ok':'badge-err'}">${u.ativo?'Ativa':'Inativa'}</span></td></tr>`).join('')
   }</tbody></table>`;
   
   const acts=[
@@ -676,6 +687,36 @@ async function deleteEbook(id) {
 }
 
 function renderEbooksPage() { loadEbooks(); }
+
+async function loadConfig() {
+  const config = await apiFetch('/api/admin/config') || [];
+  const configMap = {};
+  config.forEach(c => configMap[c.chave] = c.valor);
+  
+  document.getElementById('cfg-whatsapp').value = configMap.whatsapp_numero || '';
+  document.getElementById('cfg-whatsapp-msg').value = configMap.whatsapp_mensagem || '';
+  document.getElementById('cfg-instagram').value = configMap.instagram_url || '';
+  document.getElementById('cfg-email').value = configMap.email_contato || '';
+}
+
+async function saveConfig() {
+  const config = {
+    whatsapp_numero: document.getElementById('cfg-whatsapp').value,
+    whatsapp_mensagem: document.getElementById('cfg-whatsapp-msg').value,
+    instagram_url: document.getElementById('cfg-instagram').value,
+    email_contato: document.getElementById('cfg-email').value
+  };
+  
+  const res = await apiFetch('/api/admin/config', { method: 'POST', body: JSON.stringify(config) });
+  if (res && res.status === 'success') {
+    document.getElementById('cfg-contact-msg').textContent = 'Configuracoes salvas com sucesso!';
+    document.getElementById('cfg-contact-msg').style.color = 'var(--ok)';
+    setTimeout(() => document.getElementById('cfg-contact-msg').textContent = '', 3000);
+  } else {
+    document.getElementById('cfg-contact-msg').textContent = 'Erro ao salvar configuracoes';
+    document.getElementById('cfg-contact-msg').style.color = 'var(--err)';
+  }
+}
 
 if(DB.get('nn_admin_session')){
   document.getElementById('admin-login').style.display='none';

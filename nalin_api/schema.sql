@@ -46,5 +46,21 @@ CREATE TABLE IF NOT EXISTS admin_config (
     password TEXT NOT NULL
 );
 
+-- Tabela de Configurações Globais
+CREATE TABLE IF NOT EXISTS config_global (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    chave TEXT UNIQUE NOT NULL,
+    valor TEXT,
+    descricao TEXT,
+    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Inserir admin padrão se não existir
 INSERT OR IGNORE INTO admin_config (id, username, password) VALUES (1, 'admin@nalinnazareth.com', 'admin123');
+
+-- Inserir configurações padrão
+INSERT OR IGNORE INTO config_global (chave, valor, descricao) VALUES 
+('whatsapp_numero', '5500000000000', 'Número de WhatsApp da Doula'),
+('whatsapp_mensagem', 'Olá! Tudo bem? Sou a Nalin, sua doula. Como posso ajudá-la?', 'Mensagem padrão do WhatsApp'),
+('instagram_url', '', 'URL do Instagram'),
+('email_contato', '', 'E-mail para contato');

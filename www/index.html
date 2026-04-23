@@ -491,7 +491,13 @@ function doLogout(){
   currentUser=null;
   location.reload(); // Recarrega para garantir que a tela de login volte ao estado inicial limpo com o botão Admin
 }
-function openWhatsapp(){window.open('https://wa.me/5500000000000','_blank');}
+async function openWhatsapp(){
+  const config = await apiFetch('/api/config') || {};
+  const whatsappNum = config.whatsapp_numero || '5500000000000';
+  const msg = config.whatsapp_mensagem || 'Ola! Tudo bem?';
+  const encoded = encodeURIComponent(msg);
+  window.open(`https://wa.me/${whatsappNum}?text=${encoded}`, '_blank');
+}
 
 // ════ NAVIGATION ════
 function showScreen(id){
