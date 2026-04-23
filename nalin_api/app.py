@@ -37,12 +37,14 @@ def close_connection(exception):
         db.close()
 
 def init_db():
+    """Inicializa o banco de dados usando o schema.sql"""
     with app.app_context():
         db = get_db()
         if os.path.exists(SCHEMA_PATH):
             with open(SCHEMA_PATH, mode='r', encoding='utf-8') as f:
                 db.cursor().executescript(f.read())
             db.commit()
+            print("Banco de dados inicializado com sucesso.")
         else:
             print(f"Erro: Arquivo {SCHEMA_PATH} não encontrado.")
 
@@ -117,14 +119,20 @@ def toggle_user(user_id):
 @app.route('/api/conteudos', methods=['GET'])
 def list_conteudos():
     db = get_db()
-    cont = db.execute('SELECT * FROM conteudos WHERE ativo = 1 ORDER BY criado_em DESC').fetchall()
-    return jsonify([dict(c) for c in cont])
+    try:
+        cont = db.execute('SELECT * FROM conteudos WHERE ativo = 1 ORDER BY criado_em DESC').fetchall()
+        return jsonify([dict(c) for c in cont])
+    except sqlite3.OperationalError:
+        return jsonify([])
 
 @app.route('/api/admin/conteudos', methods=['GET'])
 def admin_list_conteudos():
     db = get_db()
-    cont = db.execute('SELECT * FROM conteudos ORDER BY criado_em DESC').fetchall()
-    return jsonify([dict(c) for c in cont])
+    try:
+        cont = db.execute('SELECT * FROM conteudos ORDER BY criado_em DESC').fetchall()
+        return jsonify([dict(c) for c in cont])
+    except sqlite3.OperationalError:
+        return jsonify([])
 
 @app.route('/api/conteudos', methods=['POST'])
 def save_conteudo():
@@ -186,15 +194,21 @@ def upload_ebook():
 @app.route("/api/ebooks", methods=["GET"])
 def list_ebooks():
     db = get_db()
-    ebooks = db.execute("SELECT id, titulo, descricao, url_pdf, data_upload FROM ebooks WHERE ativo = 1 ORDER BY data_upload DESC").fetchall()
-    return jsonify([dict(e) for e in ebooks])
+    try:
+        ebooks = db.execute("SELECT id, titulo, descricao, url_pdf, data_upload FROM ebooks WHERE ativo = 1 ORDER BY data_upload DESC").fetchall()
+        return jsonify([dict(e) for e in ebooks])
+    except sqlite3.OperationalError:
+        return jsonify([])
 
 @app.route("/api/ebook/<int:ebook_id>", methods=["GET"])
 def get_ebook(ebook_id):
     db = get_db()
-    ebook = db.execute("SELECT id, titulo, descricao, url_pdf, data_upload FROM ebooks WHERE id = ? AND ativo = 1", (ebook_id,)).fetchone()
-    if ebook: return jsonify(dict(ebook))
-    return jsonify({"status": "error", "message": "eBook não encontrado."}), 404
+    try:
+        ebook = db.execute("SELECT id, titulo, descricao, url_pdf, data_upload FROM ebooks WHERE id = ? AND ativo = 1", (ebook_id,)).fetchone()
+        if ebook: return jsonify(dict(ebook))
+        return jsonify({"status": "error", "message": "eBook não encontrado."}), 404
+    except sqlite3.OperationalError:
+        return jsonify({"status": "error", "message": "Tabela de eBooks não encontrada."}), 500
 
 @app.route("/api/ebook/<int:ebook_id>", methods=["DELETE"])
 def delete_ebook(ebook_id):
@@ -204,8 +218,9 @@ def delete_ebook(ebook_id):
     return jsonify({"status": "success"})
 
 if __name__ == '__main__':
-    if not os.path.exists(DATABASE):
-        init_db()
+    # Tenta inicializar o banco sempre para garantir as tabelas
+    init_db()
+    
     ip = get_local_ip()
     print(f"\n{'='*50}")
     print(f" API RODANDO LOCALMENTE")
