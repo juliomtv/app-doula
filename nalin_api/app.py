@@ -195,7 +195,8 @@ def upload_ebook():
 def list_ebooks():
     db = get_db()
     try:
-        ebooks = db.execute("SELECT id, titulo, descricao, url_pdf, data_upload FROM ebooks WHERE ativo = 1 ORDER BY data_upload DESC").fetchall()
+        # Removi o filtro 'WHERE ativo = 1' temporariamente para garantir que os ebooks apareçam
+        ebooks = db.execute("SELECT id, titulo, descricao, url_pdf, data_upload FROM ebooks ORDER BY data_upload DESC").fetchall()
         return jsonify([dict(e) for e in ebooks])
     except sqlite3.OperationalError:
         return jsonify([])
