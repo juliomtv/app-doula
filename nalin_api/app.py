@@ -13,7 +13,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE = os.path.join(os.path.dirname(BASE_DIR), 'dados.db')
 SCHEMA_PATH = os.path.join(BASE_DIR, 'schema.sql')
 UPLOAD_FOLDER = os.path.join(os.path.dirname(BASE_DIR), 'uploads')
-ALLOWED_EXTENSIONS = {'pdf'}
+ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -165,23 +165,36 @@ def toggle_conteudo(cont_id):
 def upload_ebook():
     if "file" not in request.files:
         return jsonify({"status": "error", "message": "Nenhum arquivo enviado."}), 400
+    
     file = request.files["file"]
+    capa = request.files.get("capa")
+    
     if file.filename == "":
         return jsonify({"status": "error", "message": "Nenhum arquivo selecionado."}), 400
+    
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
         file.save(filepath)
+        
+        url_capa = None
+        if capa and allowed_file(capa.filename):
+            capa_filename = "capa_" + secure_filename(capa.filename)
+            capa_path = os.path.join(app.config["UPLOAD_FOLDER"], capa_filename)
+            capa.save(capa_path)
+            url_capa = f"/uploads/{capa_filename}"
+            
         titulo = request.form.get("titulo")
         descricao = request.form.get("descricao", "")
         if not titulo:
             os.remove(filepath)
             return jsonify({"status": "error", "message": "Título do eBook é obrigatório."}), 400
+            
         db = get_db()
         try:
             db.execute(
-                "INSERT INTO ebooks (titulo, descricao, url_pdf) VALUES (?, ?, ?)",
-                (titulo, descricao, f"/uploads/{filename}"),
+                "INSERT INTO ebooks (titulo, descricao, url_pdf, url_capa) VALUES (?, ?, ?, ?)",
+                (titulo, descricao, f"/uploads/{filename}", url_capa),
             )
             db.commit()
             return jsonify({"status": "success", "message": "eBook enviado com sucesso!"}), 201
@@ -195,8 +208,14 @@ def upload_ebook():
 def list_ebooks():
     db = get_db()
     try:
-        # Removi o filtro 'WHERE ativo = 1' temporariamente para garantir que os ebooks apareçam
-        ebooks = db.execute("SELECT id, titulo, descricao, url_pdf, data_upload FROM ebooks ORDER BY data_upload DESC").fetchall()
+        # Tenta adicionar a coluna url_capa se ela não existir (migração rápida)
+        try:
+            db.execute("ALTER TABLE ebooks ADD COLUMN url_capa TEXT")
+            db.commit()
+        except:
+            pass
+            
+        ebooks = db.execute("SELECT id, titulo, descricao, url_pdf, url_capa, data_upload FROM ebooks ORDER BY data_upload DESC").fetchall()
         return jsonify([dict(e) for e in ebooks])
     except sqlite3.OperationalError:
         return jsonify([])

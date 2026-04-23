@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS ebooks (
     titulo TEXT NOT NULL,
     descricao TEXT,
     url_pdf TEXT NOT NULL,
+    url_capa TEXT,
     ativo INTEGER DEFAULT 1,
     data_upload TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

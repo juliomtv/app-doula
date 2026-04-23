@@ -111,7 +111,8 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif;}
 .tab{flex-shrink:0;padding:8px 18px;border-radius:50px;border:1.5px solid var(--rose-pale);font-size:13px;font-weight:500;color:var(--mid);cursor:pointer;background:white;transition:all .2s;}
 .tab.active{background:var(--rose);color:white;border-color:var(--rose);}
 
-.cont-grid{padding:18px 12px;display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;}
+.cont-grid{padding:18px 12px;display:flex;flex-wrap:wrap;gap:10px;}
+.cont-grid > .ccard:not([style*="width:80px"]){width:calc(33.33% - 7px);}
 .ccard{background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px var(--shadow-soft);cursor:pointer;transition:transform .15s;display:flex;flex-direction:column;}
 .ccard:active{transform:scale(.96);}
 .cthumb{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:var(--rose-pale);}
@@ -561,6 +562,7 @@ async function renderConteudo(idx){
     categoria: 'ebook', 
     subcategoria: e.descricao || 'Material exclusivo',
     url: API_URL + e.url_pdf, 
+    capa: e.url_capa ? API_URL + e.url_capa : null,
     cor: '#c9907a,#a96b55', 
     emoji: '📖', 
     ativo: 1
@@ -577,21 +579,32 @@ async function renderConteudo(idx){
     return;
   }
   conteudos.forEach(c=>{
-    const isPlay=c.categoria!=='ebook';
-    const meta=c.categoria==='ebook'?(c.paginas?`<span>📄 ${c.paginas}</span>`:`<span>📄 PDF</span>`):(c.duracao?`<span>⏱ ${c.duracao}</span>`:'');
+    const isEbook = c.categoria === 'ebook';
+    const isPlay = c.categoria !== 'ebook';
+    const meta = c.categoria === 'ebook' ? (c.paginas ? `<span>📄 ${c.paginas}</span>` : `<span>📄 PDF</span>`) : (c.duracao ? `<span>⏱ ${c.duracao}</span>` : '');
     const ytId = getYTId(c.url);
-    const thumbImg = ytId ? `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="Capa">` : '';
-    list.innerHTML+=`
-    <div class="ccard" onclick="openConteudo('${c.url}')">
-      <div class="cthumb" style="background:linear-gradient(135deg,${c.cor||'#e8b4a0,#c9907a'})">
+    
+    let thumbImg = '';
+    if (ytId) {
+      thumbImg = `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="Capa">`;
+    } else if (c.capa) {
+      thumbImg = `<img src="${c.capa}" alt="Capa">`;
+    }
+
+    const cardStyle = isEbook ? 'width:80px; flex:none;' : '';
+    const thumbStyle = isEbook ? 'aspect-ratio:1/1; height:80px;' : '';
+
+    list.innerHTML += `
+    <div class="ccard" onclick="openConteudo('${c.url}')" style="${cardStyle}">
+      <div class="cthumb" style="background:linear-gradient(135deg,${c.cor || '#e8b4a0,#c9907a'}); ${thumbStyle}">
         ${thumbImg}
-        <div class="te" style="${thumbImg ? 'opacity:0.2' : ''}">${c.emoji||'📄'}</div>
-        ${isPlay?'<div class="play-btn">▶</div>':''}
+        <div class="te" style="${thumbImg ? 'opacity:0.2' : ''}">${c.emoji || '📄'}</div>
+        ${isPlay ? '<div class="play-btn">▶</div>' : ''}
       </div>
-      <div class="cinfo">
-        <div class="ctag">${c.subcategoria||''}</div>
-        <div class="ctitle">${c.titulo}</div>
-        <div class="cmeta">${meta}</div>
+      <div class="cinfo" style="${isEbook ? 'padding:4px;' : ''}">
+        <div class="ctag" style="${isEbook ? 'font-size:7px;' : ''}">${c.subcategoria || ''}</div>
+        <div class="ctitle" style="${isEbook ? 'font-size:9px; -webkit-line-clamp:1;' : ''}">${c.titulo}</div>
+        <div class="cmeta" style="${isEbook ? 'display:none;' : ''}">${meta}</div>
       </div>
     </div>`;
   });
