@@ -425,6 +425,7 @@ textarea.dta:focus{border-color:var(--rose);}
       <div class="mitem" onclick="openModal('modal-plano-parto')"><div class="mico">📋</div><div class="mtext"><span>Plano de Parto</span><span>Crie seu plano personalizado</span></div><span class="marr">›</span></div>
       <div class="mitem" onclick="openModal('modal-enxoval')"><div class="mico">🛍</div><div class="mtext"><span>Lista do Enxoval</span><span>O que preparar para o bebê</span></div><span class="marr">›</span></div>
       <div class="mitem" onclick="openModal('modal-maternidade')"><div class="mico">🏥</div><div class="mtext"><span>Maternidade</span><span>Documentos e o que levar</span></div><span class="marr">›</span></div>
+      <div class="mitem" onclick="navTo('agenda')"><div class="mico">📅</div><div class="mtext"><span>Minha Agenda</span><span>Consultas e compromissos</span></div><span class="marr">›</span></div>
       <div class="mitem" onclick="openWhatsapp()"><div class="mico">💬</div><div class="mtext"><span>Falar com a Nalin</span><span>Enviar mensagem via WhatsApp</span></div><span class="marr">›</span></div>
     </div>
     <div style="text-align:center;padding:4px 0 12px;">
@@ -652,6 +653,22 @@ async function renderHome(){
   
   document.getElementById('h-nvid').textContent=apiCont.filter(c=>c.categoria==='video'&&c.ativo).length+' aulas';
   document.getElementById('h-nebook').textContent=apiEbooks.length+' materiais';
+
+  // Exibir o próximo compromisso da agenda
+  const agendaKey = `nn_agenda_${u.id}`;
+  const compromissos = (DB.get(agendaKey) || []).filter(c => new Date(c.data + 'T' + c.hora) >= new Date());
+  compromissos.sort((a, b) => new Date(a.data + 'T' + a.hora) - new Date(b.data + 'T' + b.hora));
+  
+  const nextComp = compromissos[0];
+  if (nextComp) {
+    const dataObj = new Date(nextComp.data + 'T00:00:00');
+    const dataFormatada = dataObj.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
+    document.querySelector('.consult-box').style.display = 'flex';
+    document.querySelector('.consult-name').textContent = `${nextComp.tipo} · ${dataFormatada}`;
+    document.querySelector('.consult-time').textContent = `${nextComp.descricao || ''} · ${nextComp.hora}`;
+  } else {
+    document.querySelector('.consult-box').style.display = 'none';
+  }
 }
 
 // ════ CONTEÚDO ════
@@ -829,6 +846,7 @@ function saveAgenda(){
   
   closeModal('modal-agenda');
   renderAgenda();
+  renderHome();
   document.getElementById('ag-tipo').value='';
   document.getElementById('ag-data').value='';
   document.getElementById('ag-hora').value='';
@@ -843,6 +861,7 @@ function deleteAgenda(i){
   compromissos.splice(i,1);
   DB.set(key,compromissos);
   renderAgenda();
+  renderHome();
   showToast('Compromisso deletado!');
 }
 
