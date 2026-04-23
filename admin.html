@@ -196,6 +196,8 @@ tr:hover td{background:rgba(247,237,232,.5);}
       <div class="sb-item" onclick="goPage('videos',this)"><span class="si">🎬</span><span>Vídeos</span></div>
       <div class="sb-item" onclick="goPage('ebooks',this)"><span class="si">📖</span><span>E-books</span></div>
       <div class="sb-item" onclick="goPage('meditacoes',this)"><span class="si">🎵</span><span>Meditações</span></div>
+      <div class="sb-sect">Educação</div>
+      <div class="sb-item" onclick="goPage('dicas',this)"><span class="si">💡</span><span>Dicas Semanais</span></div>
       <div class="sb-sect">Sistema</div>
       <div class="sb-item" onclick="goPage('config',this)"><span class="si">⚙️</span><span>Configurações</span></div>
     </div>
@@ -250,6 +252,14 @@ tr:hover td{background:rgba(247,237,232,.5);}
         <button class="btn-sm btn-rose-sm" onclick="openAddConteudo('meditacao')">+ Adicionar Meditação</button>
       </div>
       <div class="table-card"><table><thead><tr><th>Título</th><th>Tipo</th><th>Duração</th><th>Status</th><th>Ações</th></tr></thead><tbody id="meditacoes-tbody"></tbody></table></div>
+    </div>
+
+    <div class="page" id="p-dicas">
+      <div class="page-hdr" style="display:flex;align-items:flex-start;justify-content:space-between;">
+        <div><h1>Dicas Semanais</h1><p>Gerencie as dicas que aparecem para cada semana de gestação</p></div>
+        <button class="btn-sm btn-rose-sm" onclick="openModal('modal-dica')">+ Adicionar Dica</button>
+      </div>
+      <div class="table-card"><table><thead><tr><th>Semana</th><th>Título</th><th>Dica</th><th>Ações</th></tr></thead><tbody id="dicas-tbody"></tbody></table></div>
     </div>
 
     <div class="page" id="p-config">
@@ -341,6 +351,20 @@ tr:hover td{background:rgba(247,237,232,.5);}
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-dica">
+  <div class="modal">
+    <div class="modal-hdr"><h3>Adicionar Dica Semanal</h3><button class="modal-close" onclick="closeModal('modal-dica')">✕</button></div>
+    <div class="modal-body">
+      <div class="mfield"><label>Semana de Gestacao</label><input type="number" id="md-semana" min="1" max="40" placeholder="Ex: 12"></div>
+      <div class="mfield"><label>Titulo da Dica</label><input type="text" id="md-titulo" placeholder="Ex: Fim do 1o Trimestre"></div>
+      <div class="mfield"><label>Dica</label><textarea id="md-dica" placeholder="Digite a dica que sera exibida para a doulanda nesta semana..." style="height:100px;"></textarea></div>
+      <div class="mfield"><label>Emoji (Opcional)</label><input type="text" id="md-emoji" placeholder="Ex: 🎉" maxlength="2"></div>
+      <div id="md-err" style="color:var(--err);font-size:13px;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-full btn-cancel" onclick="closeModal('modal-dica')">Cancelar</button><button class="btn-full btn-save" onclick="saveDica()">Salvar Dica</button></div>
+  </div>
+</div>
+
 <div id="toast-a" style="position:fixed;bottom:24px;right:24px;background:var(--dark);color:white;padding:12px 22px;border-radius:50px;font-size:14px;opacity:0;transition:all .3s;pointer-events:none;z-index:9999;transform:translateY(10px);">...</div>
 
 <script>
@@ -382,7 +406,7 @@ function goPage(id,el){
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
   document.getElementById('p-'+id).classList.add('active');
   el.classList.add('active');
-  const renders={dashboard:renderDashboard,doulandas:renderDoulandas,videos:()=>renderConteudoTable('video'),ebooks:renderEbooksPage,meditacoes:()=>renderConteudoTable('meditacao'),config:loadConfig};
+  const renders={dashboard:renderDashboard,doulandas:renderDoulandas,videos:()=>renderConteudoTable('video'),ebooks:renderEbooksPage,meditacoes:()=>renderConteudoTable('meditacao'),dicas:renderDicas,config:loadConfig};
   if(renders[id])renders[id]();
 }
 
@@ -716,6 +740,55 @@ async function saveConfig() {
     document.getElementById('cfg-contact-msg').textContent = 'Erro ao salvar configuracoes';
     document.getElementById('cfg-contact-msg').style.color = 'var(--err)';
   }
+}
+
+async function renderDicas() {
+  const dicas = await apiFetch('/api/admin/dicas') || [];
+  const tbody = document.getElementById('dicas-tbody');
+  tbody.innerHTML = '';
+  dicas.forEach(d => {
+    tbody.innerHTML += `<tr>
+      <td>${d.semana}</td>
+      <td>${d.titulo}</td>
+      <td>${d.dica.substring(0, 50)}...</td>
+      <td class="td-actions">
+        <button class="btn-sm btn-ghost" onclick="editDica(${d.id}, ${d.semana})">Editar</button>
+        <button class="btn-sm btn-danger" onclick="deleteDica(${d.id})">Deletar</button>
+      </td>
+    </tr>`;
+  });
+}
+
+async function saveDica() {
+  const semana = document.getElementById('md-semana').value;
+  const titulo = document.getElementById('md-titulo').value;
+  const dica = document.getElementById('md-dica').value;
+  const emoji = document.getElementById('md-emoji').value;
+  
+  if (!semana || !titulo || !dica) {
+    alert('Preencha todos os campos!');
+    return;
+  }
+  
+  const res = await apiFetch('/api/admin/dicas', {
+    method: 'POST',
+    body: JSON.stringify({ semana: parseInt(semana), titulo, dica, emoji })
+  });
+  
+  if (res && res.status === 'success') {
+    closeModal('modal-dica');
+    renderDicas();
+    document.getElementById('md-semana').value = '';
+    document.getElementById('md-titulo').value = '';
+    document.getElementById('md-dica').value = '';
+    document.getElementById('md-emoji').value = '';
+  }
+}
+
+async function deleteDica(id) {
+  if (!confirm('Deletar esta dica?')) return;
+  const res = await apiFetch(`/api/admin/dicas/${id}`, { method: 'DELETE' });
+  if (res) renderDicas();
 }
 
 if(DB.get('nn_admin_session')){

@@ -382,9 +382,9 @@ textarea.dta:focus{border-color:var(--rose);}
       <div class="scard"><div class="sval" id="p-entradas">0</div><div class="slbl">entradas no diário</div></div>
     </div>
     <div class="menu-list">
-      <div class="mitem"><div class="mico">📋</div><div class="mtext"><span>Plano de Parto</span><span>Crie seu plano personalizado</span></div><span class="marr">›</span></div>
-      <div class="mitem"><div class="mico">🛍</div><div class="mtext"><span>Lista do Enxoval</span><span>O que preparar para o bebê</span></div><span class="marr">›</span></div>
-      <div class="mitem"><div class="mico">🏥</div><div class="mtext"><span>Maternidade</span><span>Documentos e o que levar</span></div><span class="marr">›</span></div>
+      <div class="mitem" onclick="openModal('modal-plano-parto')"><div class="mico">📋</div><div class="mtext"><span>Plano de Parto</span><span>Crie seu plano personalizado</span></div><span class="marr">›</span></div>
+      <div class="mitem" onclick="openModal('modal-enxoval')"><div class="mico">🛍</div><div class="mtext"><span>Lista do Enxoval</span><span>O que preparar para o bebê</span></div><span class="marr">›</span></div>
+      <div class="mitem" onclick="openModal('modal-maternidade')"><div class="mico">🏥</div><div class="mtext"><span>Maternidade</span><span>Documentos e o que levar</span></div><span class="marr">›</span></div>
       <div class="mitem" onclick="openWhatsapp()"><div class="mico">💬</div><div class="mtext"><span>Falar com a Nalin</span><span>Enviar mensagem via WhatsApp</span></div><span class="marr">›</span></div>
     </div>
     <div style="text-align:center;padding:4px 0 12px;">
@@ -437,7 +437,15 @@ function getTri(w){if(w<=13)return{n:1,l:'1º Trimestre'};if(w<=26)return{n:2,l:
 
 const weeklyInfo={1:{t:'Fertilização',d:'O milagre começa.',e:'✨'},4:{t:'Formação',d:'Coração começa a se formar.',e:'💓'},6:{t:'Batimentos',d:'Primeiro batimento detectável!',e:'💗'},8:{t:'Órgãos',d:'Cérebro e coração em desenvolvimento.',e:'🫀'},10:{t:'Reflexos',d:'Bebê pode abrir e fechar os dedos.',e:'🤏'},12:{t:'Fim do 1º Trim.',d:'Risco de aborto reduz significativamente.',e:'🎉'},14:{t:'2º Trimestre',d:'Fase dourada! Enjoos diminuem.',e:'☀️'},16:{t:'Sexo do Bebê',d:'Possível descobrir na ultrassom!',e:'💕'},18:{t:'Primeiros Chutes',d:'Você começa a sentir os movimentos!',e:'🥊'},20:{t:'Metade da gestação',d:'Bebê ouve sons e sua voz.',e:'🎵'},22:{t:'Sobrevivência',d:'Bebê viável fora do útero com suporte.',e:'💪'},24:{t:'Audição',d:'Bebê ouve claramente você!',e:'👂'},26:{t:'Olhos Abrem',d:'Bebê já abre e fecha os olhos.',e:'👁️'},28:{t:'3º Trimestre',d:'Reta final! Bebê ganha peso.',e:'🚀'},30:{t:'Posição',d:'Bebê assume posição cefálica.',e:'🔄'},32:{t:'Sono REM',d:'Bebê tem sono REM e pode sonhar!',e:'💭'},34:{t:'Pulmões',d:'Pulmões quase completamente desenvolvidos.',e:'🫁'},36:{t:'Quase Pronto',d:'Bebê está desenvolvido.',e:'⏰'},38:{t:'A Termo',d:'Pronto para nascer a qualquer momento!',e:'🌟'},40:{t:'Parto Previsto',d:'Seu bebê está pronto para o mundo!',e:'👶'}};
 const tips={1:'Cuide bem de você! Tomar ácido fólico agora é essencial. 💊',4:'Beba muita água, mamãe. O corpo está trabalhando dobrado. 💧',8:'O enjoo é real, mas vai passar. Coma biscoito antes de levantar da cama. 🍪',12:'Você chegou ao fim do 1º trimestre! O risco diminui muito agora. 🎉',16:'Hora de pensar no plano de parto! Converse comigo quando quiser. 📋',20:'Na metade do caminho! Que tal registrar o ultrassom do bebê? 📸',24:'Seu bebê já ouve você! Cante, converse e leia histórias para ele. 🎵',28:'Reta final, mamãe! Prepare a bolsa da maternidade. 👜',32:'Faça os movimentos fetais diários: conte 10 movimentos por período. 🤰',36:'O bebê pode nascer a qualquer semana agora. Mantenha o saco pronto! ⏰',40:'É hoje? É amanhã? Cada contração é um passo mais perto. 💪'};
-function getTip(w){const ks=Object.keys(tips).map(Number).sort((a,b)=>a-b);let b=ks[0];for(const k of ks){if(k<=w)b=k;}return tips[b];}
+let dicasCache = null;
+async function getTip(w){
+  if (!dicasCache) {
+    dicasCache = await apiFetch('/api/dicas') || [];
+  }
+  const dica = dicasCache.find(d => d.semana == w);
+  if (dica) return dica.dica;
+  const ks=Object.keys(tips).map(Number).sort((a,b)=>a-b);let b=ks[0];for(const k of ks){if(k<=w)b=k;}return tips[b];
+}
 
 // ════ STATE ════
 let currentUser=null, currentMood='😊', currentTab=0;
@@ -702,10 +710,33 @@ function renderPerfil(){
   document.getElementById('p-entradas').textContent=(DB.get(key)||[]).length;
 }
 
+// ════ MODALS ════
+function openModal(id){
+  document.getElementById(id)?.classList.add('active');
+}
+function closeModal(id){
+  document.getElementById(id)?.classList.remove('active');
+}
+
 // ════ TOAST ════
 function showToast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ════ SINCRONIZACAO ════
+async function syncUserData(){
+  if(!currentUser)return;
+  const res = await apiFetch('/api/users');
+  if(res && Array.isArray(res)){
+    const updated = res.find(u => u.id === currentUser.id);
+    if(updated){
+      currentUser = updated;
+      DB.set('nn_session', currentUser.id);
+      if(document.getElementById('home').classList.contains('active'))renderHome();
+      if(document.getElementById('perfil').classList.contains('active'))renderPerfil();
+    }
+  }
 }
 
 // ════ INIT ════
@@ -715,8 +746,9 @@ const savedSession=DB.get('nn_session');
 if(savedSession){
   const users=DB.get('nn_users')||[];
   const u=users.find(x=>x.id===savedSession&&x.ativo);
-  if(u){currentUser=u;goApp();}
+  if(u){currentUser=u;goApp();syncUserData();}
 }
+setInterval(syncUserData, 30000);
 </script>
 </body>
 </html>

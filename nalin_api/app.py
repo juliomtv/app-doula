@@ -279,6 +279,157 @@ def admin_config():
         except Exception as e:
             return jsonify({"status": "error", "message": str(e)}), 500
 
+@app.route('/api/dicas', methods=['GET'])
+def get_dicas():
+    db = get_db()
+    try:
+        dicas = db.execute('SELECT * FROM dicas_semanais ORDER BY semana').fetchall()
+        return jsonify([dict(d) for d in dicas])
+    except:
+        return jsonify([])
+
+@app.route('/api/admin/dicas', methods=['GET', 'POST', 'OPTIONS'])
+def admin_dicas():
+    if request.method == 'OPTIONS':
+        return '', 204
+    
+    db = get_db()
+    if request.method == 'GET':
+        try:
+            dicas = db.execute('SELECT * FROM dicas_semanais ORDER BY semana').fetchall()
+            return jsonify([dict(d) for d in dicas])
+        except:
+            return jsonify([])
+    elif request.method == 'POST':
+        data = request.json
+        try:
+            db.execute('INSERT OR REPLACE INTO dicas_semanais (semana, titulo, dica, emoji) VALUES (?, ?, ?, ?)',
+                      (data['semana'], data['titulo'], data['dica'], data.get('emoji', '')))
+            db.commit()
+            return jsonify({"status": "success"})
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/agenda', methods=['GET', 'POST', 'OPTIONS'])
+def agenda():
+    if request.method == 'OPTIONS':
+        return '', 204
+    
+    db = get_db()
+    user_id = request.args.get('user_id') or (request.json.get('user_id') if request.json else None)
+    
+    if request.method == 'GET':
+        try:
+            eventos = db.execute('SELECT * FROM agenda WHERE user_id = ? ORDER BY data_evento ASC', (user_id,)).fetchall()
+            return jsonify([dict(e) for e in eventos])
+        except:
+            return jsonify([])
+    elif request.method == 'POST':
+        data = request.json
+        try:
+            db.execute('INSERT INTO agenda (user_id, titulo, descricao, data_evento, hora_evento, tipo) VALUES (?, ?, ?, ?, ?, ?)',
+                      (data['user_id'], data['titulo'], data.get('descricao', ''), data['data_evento'], data.get('hora_evento', ''), data.get('tipo', 'outro')))
+            db.commit()
+            return jsonify({"status": "success"})
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/agenda/<int:evento_id>', methods=['DELETE', 'OPTIONS'])
+def delete_agenda(evento_id):
+    if request.method == 'OPTIONS':
+        return '', 204
+    
+    db = get_db()
+    db.execute('DELETE FROM agenda WHERE id = ?', (evento_id,))
+    db.commit()
+    return jsonify({"status": "success"})
+
+@app.route('/api/enxoval', methods=['GET', 'POST', 'OPTIONS'])
+def enxoval():
+    if request.method == 'OPTIONS':
+        return '', 204
+    
+    db = get_db()
+    user_id = request.args.get('user_id') or (request.json.get('user_id') if request.json else None)
+    
+    if request.method == 'GET':
+        try:
+            itens = db.execute('SELECT * FROM enxoval WHERE user_id = ? ORDER BY prioridade DESC, criado_em DESC', (user_id,)).fetchall()
+            return jsonify([dict(i) for i in itens])
+        except:
+            return jsonify([])
+    elif request.method == 'POST':
+        data = request.json
+        try:
+            db.execute('INSERT INTO enxoval (user_id, item, quantidade, prioridade) VALUES (?, ?, ?, ?)',
+                      (data['user_id'], data['item'], data.get('quantidade', 1), data.get('prioridade', 'normal')))
+            db.commit()
+            return jsonify({"status": "success"})
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/enxoval/<int:item_id>', methods=['DELETE', 'POST', 'OPTIONS'])
+def update_enxoval(item_id):
+    if request.method == 'OPTIONS':
+        return '', 204
+    
+    db = get_db()
+    if request.method == 'DELETE':
+        db.execute('DELETE FROM enxoval WHERE id = ?', (item_id,))
+    elif request.method == 'POST':
+        data = request.json
+        db.execute('UPDATE enxoval SET comprado = ? WHERE id = ?', (data.get('comprado', 0), item_id))
+    db.commit()
+    return jsonify({"status": "success"})
+
+@app.route('/api/maternidade', methods=['GET', 'POST', 'OPTIONS'])
+def maternidade():
+    if request.method == 'OPTIONS':
+        return '', 204
+    
+    db = get_db()
+    user_id = request.args.get('user_id') or (request.json.get('user_id') if request.json else None)
+    
+    if request.method == 'GET':
+        try:
+            mat = db.execute('SELECT * FROM maternidade WHERE user_id = ?', (user_id,)).fetchone()
+            return jsonify(dict(mat) if mat else {})
+        except:
+            return jsonify({})
+    elif request.method == 'POST':
+        data = request.json
+        try:
+            db.execute('INSERT OR REPLACE INTO maternidade (user_id, nome_maternidade, endereco, telefone, medico_nome, medico_telefone, plano_saude, numero_cartao, observacoes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                      (data['user_id'], data.get('nome_maternidade', ''), data.get('endereco', ''), data.get('telefone', ''), data.get('medico_nome', ''), data.get('medico_telefone', ''), data.get('plano_saude', ''), data.get('numero_cartao', ''), data.get('observacoes', '')))
+            db.commit()
+            return jsonify({"status": "success"})
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/plano-parto', methods=['GET', 'POST', 'OPTIONS'])
+def plano_parto():
+    if request.method == 'OPTIONS':
+        return '', 204
+    
+    db = get_db()
+    user_id = request.args.get('user_id') or (request.json.get('user_id') if request.json else None)
+    
+    if request.method == 'GET':
+        try:
+            plano = db.execute('SELECT * FROM plano_parto WHERE user_id = ?', (user_id,)).fetchone()
+            return jsonify(dict(plano) if plano else {})
+        except:
+            return jsonify({})
+    elif request.method == 'POST':
+        data = request.json
+        try:
+            db.execute('INSERT OR REPLACE INTO plano_parto (user_id, tipo_parto, acompanhante, desejos, medos, posicoes_preferidas, musica_ambiente, iluminacao, outras_observacoes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                      (data['user_id'], data.get('tipo_parto', ''), data.get('acompanhante', ''), data.get('desejos', ''), data.get('medos', ''), data.get('posicoes_preferidas', ''), data.get('musica_ambiente', ''), data.get('iluminacao', ''), data.get('outras_observacoes', '')))
+            db.commit()
+            return jsonify({"status": "success"})
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
+
 if __name__ == '__main__':
     # Tenta inicializar o banco sempre para garantir as tabelas
     init_db()
