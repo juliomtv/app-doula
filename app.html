@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Doula Nalin Nazareth</title>
@@ -387,13 +389,14 @@ textarea.dta:focus{border-color:var(--rose);}
     </div>
     <div class="diary-write">
       <textarea class="dta" id="diary-txt" placeholder="O que você quer lembrar desse dia? Movimentos do bebê, sentimentos, desejos..."></textarea>
-      <div class="diary-acts">
-        <div class="dact">📸 Foto</div>
-        <div class="dact">🎵 Música</div>
-        <button class="dsave" onclick="saveEntry()">Salvar memória ✨</button>
+      <div class="diary-acts" style="display:flex; justify-content:flex-end;">
+        <button class="dsave" onclick="saveEntry()" style="flex:1;">Salvar memória ✨</button>
       </div>
     </div>
-    <div class="sec-title" style="padding-top:0;">Memórias anteriores</div>
+    <div class="sec-title" style="padding-top:0; display:flex; justify-content:space-between; align-items:center;">
+      <span>Memórias anteriores</span>
+      <button onclick="exportDiaryPDF()" style="background:var(--rose-pale); color:var(--rose); border:1px solid var(--rose); border-radius:50px; padding:5px 15px; font-size:12px; cursor:pointer; font-weight:600;">📥 Baixar PDF</button>
+    </div>
     <div class="entries-list" id="entries-list"></div>
     <div style="height:80px;"></div>
   </div>
@@ -817,13 +820,73 @@ function renderDiario(){
   document.getElementById('p-entradas').textContent=entries.length;
   const list=document.getElementById('entries-list');list.innerHTML='';
   if(!entries.length){list.innerHTML='<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Nenhuma memória ainda.<br>Escreva seu primeiro registro! 🌸</div>';return;}
-  entries.slice(0,10).forEach(e=>{
+  entries.forEach(e=>{
     list.innerHTML+=`<div class="entry">
       <div class="entry-hdr"><div class="entry-date">${e.data} · ${e.dia}</div><span style="font-size:20px">${e.mood}</span></div>
       <div class="entry-txt">${e.txt}</div>
       <div class="entry-wtag">Semana ${e.semanas}</div>
     </div>`;
   });
+}
+
+async function exportDiaryPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const key = `nn_diary_${currentUser?.id}`;
+  const entries = DB.get(key) || [];
+
+  if (entries.length === 0) {
+    showToast('Não há memórias para exportar!');
+    return;
+  }
+
+  showToast('Gerando seu diário em PDF... ⏳');
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.setTextColor(169, 107, 85); // Cor aproximada var(--dark)
+  doc.text("Meu Diário de Gestação", 105, 20, { align: "center" });
+  
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "italic");
+  doc.text(`Doulanda: ${currentUser.nome}`, 105, 30, { align: "center" });
+
+  let y = 45;
+  const margin = 20;
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  entries.forEach((e, i) => {
+    if (y > 250) {
+      doc.addPage();
+      y = 20;
+    }
+
+    // Cabeçalho da entrada
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(169, 107, 85);
+    doc.text(`${e.data} · ${e.dia} (${e.mood})`, margin, y);
+    y += 7;
+
+    // Semana
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(10);
+    doc.setTextColor(201, 144, 122); // Cor aproximada var(--rose)
+    doc.text(`Semana ${e.semanas}`, margin, y);
+    y += 8;
+
+    // Texto do diário
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.setTextColor(60, 60, 60);
+    const splitText = doc.splitTextToSize(e.txt, pageWidth - (margin * 2));
+    doc.text(splitText, margin, y);
+    
+    y += (splitText.length * 6) + 15;
+  });
+
+  doc.save(`Diario_Gestacao_${currentUser.nome}.pdf`);
+  showToast('PDF baixado com sucesso! ✨');
 }
 
 // ════ AGENDA ════
