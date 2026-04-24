@@ -603,7 +603,10 @@ async function saveDoula(){
   const questao_religiosa_cultural=document.getElementById('md-religiao').value;
   const expectativas_desejos_parto=document.getElementById('md-expectativas').value;
 
-  const getChecks = (name) => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value).join(',');
+  const getChecks = (name) => {
+    const checked = Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value);
+    return checked.length > 0 ? checked.join(',') : '';
+  };
   const servicos_extras=getChecks('extra');
   const historico_saude=getChecks('h-saude');
   const sobre_saude=getChecks('s-saude');
