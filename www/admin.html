@@ -976,11 +976,56 @@ async function deleteDica(id) {
   }
 }
 
-if(DB.get('nn_admin_session')){
-  document.getElementById('admin-login').style.display='none';
-  document.getElementById('admin-shell').classList.add('active');
-  renderDashboard();
-}
-</script>
+	// ════ ATUALIZAÇÃO AUTOMÁTICA ════
+	const ADMIN_VERSION = "1.0"; // Versão atual instalada
+
+	async function checkAdminUpdate() {
+	  try {
+	    const response = await fetch(`${API_URL}/versao_app`);
+	    const data = await response.json();
+	    
+	    if (data.versao_admin && data.versao_admin !== ADMIN_VERSION) {
+	      showAdminUpdatePopup(data.apk_admin_url);
+	    }
+	  } catch (err) {
+	    console.error("Erro ao verificar atualização:", err);
+	  }
+	}
+
+	function showAdminUpdatePopup(url) {
+	  const overlay = document.createElement('div');
+	  overlay.style = "position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px);";
+	  
+	  const modal = document.createElement('div');
+	  modal.style = "background:white; border-radius:24px; padding:32px; width:100%; max-width:320px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.3);";
+	  
+	  modal.innerHTML = `
+	    <div style="font-size:48px; margin-bottom:16px;">⚙️</div>
+	    <h3 style="font-family:'Cormorant Garamond',serif; font-size:24px; color:var(--dark); margin-bottom:8px;">Nova versão disponível</h3>
+	    <p style="font-size:14px; color:var(--mid); margin-bottom:24px;">Uma nova atualização do painel admin está pronta.</p>
+	    <button id="btn-update-now-admin" style="width:100%; background:var(--dark); color:white; border:none; border-radius:50px; padding:14px; font-size:15px; font-weight:600; cursor:pointer; margin-bottom:12px;">Atualizar agora</button>
+	    <button id="btn-update-later-admin" style="width:100%; background:none; border:none; color:var(--lite); font-size:14px; cursor:pointer;">Depois</button>
+	  `;
+	  
+	  overlay.appendChild(modal);
+	  document.body.appendChild(overlay);
+	  
+	  document.getElementById('btn-update-now-admin').onclick = () => {
+	    window.open(url, '_system');
+	    document.body.removeChild(overlay);
+	  };
+	  
+	  document.getElementById('btn-update-later-admin').onclick = () => {
+	    document.body.removeChild(overlay);
+	  };
+	}
+
+	if(DB.get('nn_admin_session')){
+	  document.getElementById('admin-login').style.display='none';
+	  document.getElementById('admin-shell').classList.add('active');
+	  renderDashboard();
+	}
+	checkAdminUpdate();
+	</script>
 </body>
 </html>

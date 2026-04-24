@@ -77,6 +77,18 @@ def status():
         return '', 204
     return jsonify({"status": "online", "message": "API Nalin Nazareth rodando localmente"})
 
+@app.route('/versao_app', methods=['GET', 'OPTIONS'])
+def versao_app():
+    if request.method == 'OPTIONS':
+        return '', 204
+    # O usuário solicitou este endpoint específico com este retorno
+    return jsonify({
+        "versao_cliente": "1.2",
+        "versao_admin": "1.2",
+        "apk_cliente_url": "https://meuservidor.com/apk/cliente.apk",
+        "apk_admin_url": "https://meuservidor.com/apk/admin.apk"
+    })
+
 @app.route('/api/logs', methods=['POST', 'OPTIONS'])
 def save_log():
     if request.method == 'OPTIONS':
