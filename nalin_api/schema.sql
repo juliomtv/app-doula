@@ -8,6 +8,15 @@ CREATE TABLE IF NOT EXISTS users (
     semanas INTEGER DEFAULT 0,
     dpp TEXT,
     parto TEXT DEFAULT 'normal',
+    rg_orgao TEXT,
+    cpf TEXT,
+    estado_civil TEXT,
+    endereco_cep TEXT,
+    nacionalidade TEXT,
+    pacote_escolhido TEXT,
+    servicos_extras TEXT,
+    forma_pagamento TEXT,
+    melhor_data_pagamento TEXT,
     ativo INTEGER DEFAULT 1,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

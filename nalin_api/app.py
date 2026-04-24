@@ -110,13 +110,17 @@ def save_user():
     data = request.json
     db = get_db()
     if 'id' in data and data['id']:
-        db.execute('UPDATE users SET nome=?, email=?, senha=?, bebe=?, semanas=?, dpp=?, parto=? WHERE id=?', 
-                   (data['nome'], data['email'], data['senha'], data['bebe'], data['semanas'], data['dpp'], data['parto'], data['id']))
+        db.execute('UPDATE users SET nome=?, email=?, senha=?, bebe=?, semanas=?, dpp=?, parto=?, rg_orgao=?, cpf=?, estado_civil=?, endereco_cep=?, nacionalidade=?, pacote_escolhido=?, servicos_extras=?, forma_pagamento=?, melhor_data_pagamento=? WHERE id=?', 
+                   (data['nome'], data['email'], data['senha'], data['bebe'], data['semanas'], data['dpp'], data['parto'], 
+                    data.get('rg_orgao'), data.get('cpf'), data.get('estado_civil'), data.get('endereco_cep'), data.get('nacionalidade'), 
+                    data.get('pacote_escolhido'), data.get('servicos_extras'), data.get('forma_pagamento'), data.get('melhor_data_pagamento'), data['id']))
     else:
         dup = db.execute('SELECT id FROM users WHERE email = ?', (data['email'],)).fetchone()
         if dup: return jsonify({"status": "error", "message": "E-mail já cadastrado."}), 400
-        db.execute('INSERT INTO users (nome, email, senha, bebe, semanas, dpp, parto) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                   (data['nome'], data['email'], data['senha'], data['bebe'], data['semanas'], data['dpp'], data['parto']))
+        db.execute('INSERT INTO users (nome, email, senha, bebe, semanas, dpp, parto, rg_orgao, cpf, estado_civil, endereco_cep, nacionalidade, pacote_escolhido, servicos_extras, forma_pagamento, melhor_data_pagamento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                   (data['nome'], data['email'], data['senha'], data['bebe'], data['semanas'], data['dpp'], data['parto'],
+                    data.get('rg_orgao'), data.get('cpf'), data.get('estado_civil'), data.get('endereco_cep'), data.get('nacionalidade'), 
+                    data.get('pacote_escolhido'), data.get('servicos_extras'), data.get('forma_pagamento'), data.get('melhor_data_pagamento')))
     db.commit()
     return jsonify({"status": "success"})
 

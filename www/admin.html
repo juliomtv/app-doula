@@ -300,7 +300,12 @@ tr:hover td{background:rgba(247,237,232,.5);}
       <div class="mrow"><div class="mfield"><label>Nome completo</label><input type="text" id="md-nome"></div><div class="mfield"><label>E-mail</label><input type="email" id="md-email"></div></div>
       <div class="mrow"><div class="mfield"><label>Senha</label><input type="password" id="md-senha"></div><div class="mfield"><label>Bebê</label><input type="text" id="md-bebe"></div></div>
       <div class="mrow"><div class="mfield"><label>Semanas</label><input type="number" id="md-sem"></div><div class="mfield"><label>DPP</label><input type="date" id="md-dpp"></div></div>
-      <div class="mfield"><label>Parto</label><select id="md-parto"><option value="normal">Normal</option><option value="cesarea">Cesárea</option></select></div>
+      <div class="mrow"><div class="mfield"><label>Parto</label><select id="md-parto"><option value="normal">Normal</option><option value="cesarea">Cesárea</option></select></div><div class="mfield"><label>RG + Órgão Emissor</label><input type="text" id="md-rg"></div></div>
+      <div class="mrow"><div class="mfield"><label>CPF</label><input type="text" id="md-cpf"></div><div class="mfield"><label>Estado Civil</label><select id="md-civil"><option value="solteira">Solteira</option><option value="casada">Casada</option><option value="viuva">Viúva</option><option value="divorciada">Divorciada</option><option value="separada">Separada Judicialmente</option></select></div></div>
+      <div class="mrow"><div class="mfield"><label>Endereço com CEP</label><input type="text" id="md-endereco"></div><div class="mfield"><label>Nacionalidade</label><input type="text" id="md-nacionalidade"></div></div>
+      <div class="mfield"><label>Pacote Escolhido</label><select id="md-pacote"><option value="essencia_online">Pacote essência - Aulas online</option><option value="essencia_presencial">Pacote essência - Aulas presenciais</option><option value="nascer">Pacote Nascer</option></select></div>
+      <div class="mfield"><label>Serviços Extras</label><div style="display:grid;grid-template-columns:1fr;gap:5px;font-size:13px;"><label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="extra" value="cuidados_recem_nascido" style="width:auto;"> Cursos de cuidados com recém nascido</label><label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="extra" value="consultoria_amamentacao" style="width:auto;"> Consultoria de amamentação extra</label><label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="extra" value="nao" style="width:auto;"> No momento não</label></div></div>
+      <div class="mrow"><div class="mfield"><label>Forma de Pagamento</label><select id="md-pagamento"><option value="vista">À vista (5% desc)</option><option value="2_pix">2 Parcelas (PIX)</option><option value="3_pix">3 Parcelas (PIX)</option><option value="cartao">Cartão de crédito</option></select></div><div class="mfield"><label>Melhor Data Pagamento</label><select id="md-data-pag"><option value="01">01º DIA ÚTIL</option><option value="05">05º DIA ÚTIL</option><option value="10">10º DIA ÚTIL</option><option value="15">15º DIA ÚTIL</option><option value="outro">Outro</option></select></div></div>
       <div id="md-err" style="color:var(--err);font-size:13px;"></div>
     </div>
     <div class="modal-footer"><button class="btn-full btn-cancel" onclick="closeModal('modal-doula')">Cancelar</button><button class="btn-full btn-save" onclick="saveDoula()">Salvar</button></div>
@@ -465,10 +470,15 @@ function openAddDoula(){
   document.getElementById('mdoula-title').textContent='Nova Doulânda';
   document.getElementById('mdoula-id').value='';
   document.getElementById('md-err').textContent='';
-  ['md-nome','md-email','md-senha','md-bebe','md-sem','md-dpp'].forEach(id=>{
+  ['md-nome','md-email','md-senha','md-bebe','md-sem','md-dpp','md-rg','md-cpf','md-endereco','md-nacionalidade'].forEach(id=>{
     document.getElementById(id).value='';
   });
   document.getElementById('md-parto').value='normal';
+  document.getElementById('md-civil').value='solteira';
+  document.getElementById('md-pacote').value='essencia_online';
+  document.getElementById('md-pagamento').value='vista';
+  document.getElementById('md-data-pag').value='01';
+  document.querySelectorAll('input[name="extra"]').forEach(cb => cb.checked = false);
   openModal('modal-doula');
 }
 
@@ -485,6 +495,16 @@ async function editDoula(id){
   document.getElementById('md-sem').value=u.semanas||'';
   document.getElementById('md-dpp').value=u.dpp||'';
   document.getElementById('md-parto').value=u.parto||'normal';
+  document.getElementById('md-rg').value=u.rg_orgao||'';
+  document.getElementById('md-cpf').value=u.cpf||'';
+  document.getElementById('md-civil').value=u.estado_civil||'solteira';
+  document.getElementById('md-endereco').value=u.endereco_cep||'';
+  document.getElementById('md-nacionalidade').value=u.nacionalidade||'';
+  document.getElementById('md-pacote').value=u.pacote_escolhido||'essencia_online';
+  document.getElementById('md-pagamento').value=u.forma_pagamento||'vista';
+  document.getElementById('md-data-pag').value=u.melhor_data_pagamento||'01';
+  const extras = (u.servicos_extras || '').split(',');
+  document.querySelectorAll('input[name="extra"]').forEach(cb => cb.checked = extras.includes(cb.value));
   document.getElementById('md-err').textContent='';
   openModal('modal-doula');
 }
@@ -497,12 +517,26 @@ async function saveDoula(){
   const sem=parseInt(document.getElementById('md-sem').value)||0;
   const dpp=document.getElementById('md-dpp').value;
   const parto=document.getElementById('md-parto').value;
+  const rg_orgao=document.getElementById('md-rg').value;
+  const cpf=document.getElementById('md-cpf').value;
+  const estado_civil=document.getElementById('md-civil').value;
+  const endereco_cep=document.getElementById('md-endereco').value;
+  const nacionalidade=document.getElementById('md-nacionalidade').value;
+  const pacote_escolhido=document.getElementById('md-pacote').value;
+  const forma_pagamento=document.getElementById('md-pagamento').value;
+  const melhor_data_pagamento=document.getElementById('md-data-pag').value;
+  const servicos_extras=Array.from(document.querySelectorAll('input[name="extra"]:checked')).map(cb => cb.value).join(',');
+  
   const editId=document.getElementById('mdoula-id').value;
   if(!nome||!email||!senha){document.getElementById('md-err').textContent='Preencha nome, e-mail e senha.';return;}
   
   const res = await apiFetch('/api/users', {
     method: 'POST',
-    body: JSON.stringify({ id: editId, nome, email, senha, bebe, semanas: sem, dpp, parto })
+    body: JSON.stringify({ 
+      id: editId, nome, email, senha, bebe, semanas: sem, dpp, parto,
+      rg_orgao, cpf, estado_civil, endereco_cep, nacionalidade, 
+      pacote_escolhido, servicos_extras, forma_pagamento, melhor_data_pagamento
+    })
   });
 
   if(res && res.status === 'success'){
