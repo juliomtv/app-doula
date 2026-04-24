@@ -482,17 +482,34 @@ textarea.dta:focus{border-color:var(--rose);}
 </div>
 
 <div class="modal-overlay" id="modal-maternidade">
-  <div class="modal">
+  <div class="modal" style="max-width:600px; height:90vh; display:flex; flex-direction:column;">
     <div class="modal-hdr"><h3>Maternidade</h3><button class="modal-close" onclick="closeModal('modal-maternidade')">✕</button></div>
-    <div class="modal-body">
-      <div class="mfield"><label>Nome da Maternidade</label><input type="text" id="mat-nome" placeholder="Ex: Hospital Santa Maria" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;"></div>
-      <div class="mfield"><label>Endereço</label><input type="text" id="mat-endereco" placeholder="Rua, número, bairro" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;"></div>
-      <div class="mfield"><label>Telefone</label><input type="tel" id="mat-tel" placeholder="(11) 99999-9999" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;"></div>
-      <div class="mfield"><label>Plano de Saúde / Convênio</label><input type="text" id="mat-plano" placeholder="Ex: Unimed" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;"></div>
-      <div class="mfield"><label>Observações</label><textarea id="mat-obs" placeholder="Informações adicionais..." style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;height:80px;resize:vertical;"></textarea></div>
-      <div id="mat-msg" style="font-size:13px;min-height:16px;color:var(--ok);"></div>
+    <div class="modal-body" style="flex:1; overflow-y:auto; padding:16px;">
+      <div style="display:flex; gap:10px; margin-bottom:20px;">
+        <div style="flex:1;"><label style="font-size:12px; color:var(--mid);">Nome da Maternidade</label><input type="text" id="mat-nome" placeholder="Ex: Hospital Santa Maria" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;"></div>
+        <div style="flex:1;"><label style="font-size:12px; color:var(--mid);">Cidade</label><input type="text" id="mat-cidade" placeholder="Sua cidade" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;"></div>
+      </div>
+      
+      <div id="mat-checklists">
+        <!-- Categorias serão inseridas aqui via JS -->
+      </div>
+
+      <div style="margin-top:20px; padding:12px; background:var(--rose-pale); border-radius:10px;">
+        <label style="font-size:13px; font-weight:600; color:var(--dark); display:block; margin-bottom:8px;">Adicionar item extra</label>
+        <div style="display:flex; gap:8px;">
+          <select id="mat-add-cat" style="padding:8px; border:1px solid var(--rose-pale); border-radius:8px; font-size:13px;">
+            <option value="bebe">Mala do Bebê</option>
+            <option value="mamae">Mala da Mamãe</option>
+            <option value="lista">Lista Maternidade</option>
+            <option value="sala">Sala de Parto</option>
+          </select>
+          <input type="text" id="mat-add-item" placeholder="Novo item..." style="flex:1; padding:8px; border:1px solid var(--rose-pale); border-radius:8px;">
+          <button onclick="addMatExtraItem()" style="background:var(--rose); color:white; border:none; border-radius:8px; padding:0 15px; cursor:pointer;">+</button>
+        </div>
+      </div>
+      <div id="mat-msg" style="font-size:13px;min-height:16px;color:var(--ok);margin-top:10px;text-align:center;"></div>
     </div>
-    <div class="modal-footer"><button class="btn-full btn-cancel" onclick="closeModal('modal-maternidade')">Fechar</button><button class="btn-full btn-save" onclick="saveMaternidade()">Salvar Informações</button></div>
+    <div class="modal-footer"><button class="btn-full btn-save" onclick="saveMaternidade()">Salvar Tudo</button></div>
   </div>
 </div>
 
@@ -964,20 +981,124 @@ function deleteEnxovalItem(i){
   renderEnxovalList();
 }
 
+const defaultMatChecklist = {
+  bebe: [
+    { n: "6 bodies de mangas compridas (RN)", c: false },
+    { n: "6 calças", c: false },
+    { n: "4 macacões", c: false },
+    { n: "1 pacote de fraldas descartáveis RN", c: false },
+    { n: "3 Mantas de malha ou flanela", c: false },
+    { n: "1 Cobertor", c: false },
+    { n: "4 Fraldas de boca", c: false },
+    { n: "3 Meias", c: false },
+    { n: "Conjunto para sair da maternidade", c: false },
+    { n: "Lenço umedecido ou algodão pra troca de fraldas", c: false },
+    { n: "Toalha (opcional)", c: false },
+    { n: "Caderneta de vacinação (se for personalizada)", c: false },
+    { n: "Almofada de amamentação", c: false }
+  ],
+  mamae: [
+    { n: "Documentos seus e do pré natal", c: false },
+    { n: "6 Calcinhas grandes (devido ao absorventes)", c: false },
+    { n: "3 Sutiãs/Tops confortáveis para amamentação", c: false },
+    { n: "2 Pijamas confortáveis (o quarto é compartilhado)", c: false },
+    { n: "2 mudas de roupa confortáveis para passar o dia no hospital", c: false },
+    { n: "1 Roupa para sair do hospital", c: false },
+    { n: "1 Chinelo para banho", c: false },
+    { n: "1 Chinelo para transitar no hospital", c: false },
+    { n: "Kit higiene (shampoo, condicionador, escova, etc)", c: false },
+    { n: "Absorvente ou fraldas pós parto", c: false },
+    { n: "1 Meia para o trabalho de parto", c: false },
+    { n: "2 Pares de meia para sua estadia no hospital", c: false },
+    { n: "Saco de roupa suja", c: false }
+  ],
+  lista: [
+    { n: "Travesseiro", c: false },
+    { n: "Cobertor (Mãe e acompanhante)", c: false },
+    { n: "Chinelo para tomar banho", c: false },
+    { n: "Meia", c: false },
+    { n: "Pano de chão (2)", c: false },
+    { n: "Toalha (Mãe e acompanhante)", c: false },
+    { n: "Garrafinha de água", c: false }
+  ],
+  sala: [
+    { n: "Pasta com seus documentos", c: false },
+    { n: "Top ou sutiã extra", c: false },
+    { n: "Chinelo", c: false },
+    { n: "Meia", c: false },
+    { n: "Xuxinha ou prendedor de cabelo", c: false },
+    { n: "Pente", c: false },
+    { n: "Sua playlist pra sala de parto", c: false },
+    { n: "Garrafa de água", c: false },
+    { n: "Lanches (chocolate, mel, frutas, etc)", c: false },
+    { n: "Toalha", c: false },
+    { n: "Primeira troca do bebê", c: false }
+  ]
+};
+
 function saveMaternidade(){
-  const mat={
-    nome:document.getElementById('mat-nome').value,
-    endereco:document.getElementById('mat-endereco').value,
-    tel:document.getElementById('mat-tel').value,
-    plano:document.getElementById('mat-plano').value,
-    obs:document.getElementById('mat-obs').value
-  };
-  if(!mat.nome){alert('Preencha o nome da maternidade!');return;}
+  const mat = DB.get(`nn_mat_${currentUser.id}`) || { checklists: JSON.parse(JSON.stringify(defaultMatChecklist)) };
+  mat.nome = document.getElementById('mat-nome').value;
+  mat.cidade = document.getElementById('mat-cidade').value;
+  
   const key=`nn_mat_${currentUser.id}`;
-  DB.set(key,mat);
+  DB.set(key, mat);
   document.getElementById('mat-msg').textContent='Informações salvas com sucesso!';
   document.getElementById('mat-msg').style.color='var(--ok)';
   setTimeout(()=>{document.getElementById('mat-msg').textContent='';},2000);
+}
+
+function renderMatChecklist() {
+  const mat = DB.get(`nn_mat_${currentUser.id}`) || { checklists: JSON.parse(JSON.stringify(defaultMatChecklist)) };
+  const container = document.getElementById('mat-checklists');
+  container.innerHTML = '';
+  
+  const labels = { bebe: "MALA DO BEBÊ", mamae: "MALA DA MAMÃE", lista: "LISTA PRA MATERNIDADE", sala: "MALA DA SALA DE PARTO" };
+  const icons = { bebe: "👶", mamae: "👩", lista: "📋", sala: "🏥" };
+
+  for (const cat in mat.checklists) {
+    let html = `<div style="margin-top:20px;">
+      <h4 style="font-size:14px; color:var(--rose); margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+        <span>${icons[cat]}</span> ${labels[cat]}
+      </h4>`;
+    
+    mat.checklists[cat].forEach((item, i) => {
+      html += `<div style="display:flex; align-items:center; padding:6px 0; border-bottom:1px solid #f9f0ed;">
+        <input type="checkbox" ${item.c ? 'checked' : ''} onchange="toggleMatItem('${cat}', ${i})" style="width:16px; height:16px; cursor:pointer;">
+        <span style="margin-left:10px; font-size:13px; flex:1; ${item.c ? 'text-decoration:line-through; color:var(--light);' : 'color:var(--dark);'}">${item.n}</span>
+        <button onclick="deleteMatItem('${cat}', ${i})" style="background:none; border:none; color:var(--err); font-size:14px; cursor:pointer; padding:0 5px;">✕</button>
+      </div>`;
+    });
+    html += `</div>`;
+    container.innerHTML += html;
+  }
+}
+
+function toggleMatItem(cat, i) {
+  const mat = DB.get(`nn_mat_${currentUser.id}`);
+  mat.checklists[cat][i].c = !mat.checklists[cat][i].c;
+  DB.set(`nn_mat_${currentUser.id}`, mat);
+  renderMatChecklist();
+}
+
+function deleteMatItem(cat, i) {
+  const mat = DB.get(`nn_mat_${currentUser.id}`);
+  mat.checklists[cat].splice(i, 1);
+  DB.set(`nn_mat_${currentUser.id}`, mat);
+  renderMatChecklist();
+}
+
+function addMatExtraItem() {
+  const cat = document.getElementById('mat-add-cat').value;
+  const name = document.getElementById('mat-add-item').value.trim();
+  if (!name) return;
+  
+  const mat = DB.get(`nn_mat_${currentUser.id}`) || { checklists: JSON.parse(JSON.stringify(defaultMatChecklist)) };
+  mat.checklists[cat].push({ n: name, c: false });
+  DB.set(`nn_mat_${currentUser.id}`, mat);
+  
+  document.getElementById('mat-add-item').value = '';
+  renderMatChecklist();
 }
 
 function loadPlanejamento(){
@@ -989,12 +1110,14 @@ function loadPlanejamento(){
   renderEnxovalList();
   
   const matKey=`nn_mat_${currentUser.id}`;
-  const mat=DB.get(matKey)||{};
+  let mat=DB.get(matKey);
+  if (!mat || !mat.checklists) {
+    mat = { nome: mat?.nome || '', cidade: mat?.cidade || '', checklists: JSON.parse(JSON.stringify(defaultMatChecklist)) };
+    DB.set(matKey, mat);
+  }
   document.getElementById('mat-nome').value=mat.nome||'';
-  document.getElementById('mat-endereco').value=mat.endereco||'';
-  document.getElementById('mat-tel').value=mat.tel||'';
-  document.getElementById('mat-plano').value=mat.plano||'';
-  document.getElementById('mat-obs').value=mat.obs||'';
+  document.getElementById('mat-cidade').value=mat.cidade||'';
+  renderMatChecklist();
 }
 
 // ════ MODALS ════
