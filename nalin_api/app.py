@@ -449,6 +449,13 @@ if __name__ == '__main__':
     # Tenta inicializar o banco sempre para garantir as tabelas
     init_db()
     
+    # Executa migração de colunas faltantes
+    try:
+        from migrate_db import migrate
+        migrate()
+    except Exception as e:
+        print(f"Erro ao executar migração automática: {e}")
+    
     ip = get_local_ip()
     print(f"\n{'='*50}")
     print(f" API RODANDO LOCALMENTE")
