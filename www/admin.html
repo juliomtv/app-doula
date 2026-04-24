@@ -306,6 +306,36 @@ tr:hover td{background:rgba(247,237,232,.5);}
       <div class="mfield"><label>Pacote Escolhido</label><select id="md-pacote"><option value="essencia_online">Pacote essência - Aulas online</option><option value="essencia_presencial">Pacote essência - Aulas presenciais</option><option value="nascer">Pacote Nascer</option></select></div>
       <div class="mfield"><label>Serviços Extras</label><div style="display:grid;grid-template-columns:1fr;gap:5px;font-size:13px;"><label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="extra" value="cuidados_recem_nascido" style="width:auto;"> Cursos de cuidados com recém nascido</label><label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="extra" value="consultoria_amamentacao" style="width:auto;"> Consultoria de amamentação extra</label><label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="extra" value="nao" style="width:auto;"> No momento não</label></div></div>
       <div class="mrow"><div class="mfield"><label>Forma de Pagamento</label><select id="md-pagamento"><option value="vista">À vista (5% desc)</option><option value="2_pix">2 Parcelas (PIX)</option><option value="3_pix">3 Parcelas (PIX)</option><option value="cartao">Cartão de crédito</option></select></div><div class="mfield"><label>Melhor Data Pagamento</label><select id="md-data-pag"><option value="01">01º DIA ÚTIL</option><option value="05">05º DIA ÚTIL</option><option value="10">10º DIA ÚTIL</option><option value="15">15º DIA ÚTIL</option><option value="outro">Outro</option></select></div></div>
+      
+      <div style="margin:20px 0 10px;padding-top:10px;border-top:1px solid var(--rose-p);font-weight:600;color:var(--rose-d);font-size:14px;">Informações de Atendimento</div>
+      <div class="mfield"><label>E-mail (Seu e do Acompanhante)</label><input type="text" id="md-email-acomp"></div>
+      <div class="mrow"><div class="mfield"><label>Já iniciou o pré-natal?</label><select id="md-pre-natal"><option value="sim">Sim</option><option value="marcado">Não, mas já marquei</option><option value="nao">Não marquei</option></select></div><div class="mfield"><label>Local do pré-natal / Médico</label><input type="text" id="md-local-pre"></div></div>
+      <div class="mrow"><div class="mfield"><label>Idade</label><input type="number" id="md-idade"></div><div class="mfield"><label>Data de Nascimento</label><input type="date" id="md-nasc"></div></div>
+      <div class="mfield"><label>Acompanhante e Parentesco</label><input type="text" id="md-acomp-parent"></div>
+      
+      <div class="mfield"><label>Histórico de Saúde</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:12px;"><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="h-saude" value="diabetes" style="width:auto;"> Diabetes</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="h-saude" value="hipertensao" style="width:auto;"> Hipertensão</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="h-saude" value="renal" style="width:auto;"> Doença Renal</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="h-saude" value="hipotireoidismo" style="width:auto;"> Hipotireoidismo</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="h-saude" value="hipertireoidismo" style="width:auto;"> Hipertireoidismo</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="h-saude" value="cardiovascular" style="width:auto;"> Cardiovascular</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="h-saude" value="circulacao" style="width:auto;"> Circulação</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="h-saude" value="trombofilia" style="width:auto;"> Trombofilia</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="h-saude" value="depressao" style="width:auto;"> Depressão</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="h-saude" value="ansiedade" style="width:auto;"> Ansiedade</label></div></div>
+      
+      <div class="mfield"><label>Sobre sua Saúde</label><div style="display:grid;grid-template-columns:1fr;gap:5px;font-size:12px;"><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="s-saude" value="fumante" style="width:auto;"> Fumante</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="s-saude" value="alcool_social" style="width:auto;"> Bebida alcoólica social</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="s-saude" value="alcool_diaria" style="width:auto;"> Bebida alcoólica diária</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="s-saude" value="sedentaria" style="width:auto;"> Sedentária</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="s-saude" value="ativa_moderada" style="width:auto;"> Ativa moderada (até 3x)</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="s-saude" value="ativa" style="width:auto;"> Ativa (+3x)</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="s-saude" value="durmo_bem" style="width:auto;"> Durmo bem</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="s-saude" value="durmo_mal" style="width:auto;"> Durmo mal</label></div></div>
+      
+      <div class="mfield"><label>Alergias</label><input type="text" id="md-alergias"></div>
+      
+      <div class="mfield"><label>Sintomas na Gravidez</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:12px;"><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="sint-grav" value="cabeca" style="width:auto;"> Dores de cabeça</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="sint-grav" value="tontura" style="width:auto;"> Tontura</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="sint-grav" value="diarreia" style="width:auto;"> Diarréia</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="sint-grav" value="prisao_ventre" style="width:auto;"> Prisão de Ventre</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="sint-grav" value="enjoo" style="width:auto;"> Enjôo/Náuseas</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="sint-grav" value="vomitos" style="width:auto;"> Vômitos</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="sint-grav" value="urinaria" style="width:auto;"> Infecção Urinária</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="sint-grav" value="candidiase" style="width:auto;"> Candidíase</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="sint-grav" value="fraqueza" style="width:auto;"> Fraqueza</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="sint-grav" value="sono" style="width:auto;"> Sono</label></div></div>
+      
+      <div class="mfield"><label>Histórico Doenças Familiares</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:12px;"><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="h-fam" value="nao" style="width:auto;"> Não tem</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="h-fam" value="diabetes" style="width:auto;"> Diabetes</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="h-fam" value="hipertensao" style="width:auto;"> Hipertensão</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="h-fam" value="congenita" style="width:auto;"> Má formação congênita</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="h-fam" value="gemelar" style="width:auto;"> Gravidez Gemelar</label></div></div>
+      
+      <div class="mfield"><label>Doenças Durante a Gravidez</label><div style="display:grid;grid-template-columns:1fr;gap:5px;font-size:12px;"><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="d-grav" value="diabetes_gestacional" style="width:auto;"> Diabetes Gestacional</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="d-grav" value="hipertensao" style="width:auto;"> Hipertensão</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="d-grav" value="pre_eclampsia" style="width:auto;"> Pré-eclâmpsia</label></div></div>
+      
+      <div class="mrow"><div class="mfield"><label>Já esteve grávida antes?</label><select id="md-grav-antes"><option value="nao">Não</option><option value="sim_1">Sim, uma vez</option><option value="sim_2">Sim, duas vezes ou mais</option></select></div><div class="mfield"><label>Intercorrências anteriores?</label><select id="md-inter-antes"><option value="nao">Não</option><option value="sim">Sim</option></select></div></div>
+      <div class="mfield"><label>Quais intercorrências?</label><input type="text" id="md-quais-inter"></div>
+      
+      <div class="mfield"><label>Experiência de Partos Anteriores</label><div style="display:grid;grid-template-columns:1fr;gap:5px;font-size:12px;"><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="exp-parto" value="nunca" style="width:auto;"> Nunca estive grávida</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="exp-parto" value="aborto" style="width:auto;"> Aborto</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="exp-parto" value="prematuro" style="width:auto;"> Parto Prematuro</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="exp-parto" value="normal_pos" style="width:auto;"> Parto Normal (Positiva)</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="exp-parto" value="normal_neg" style="width:auto;"> Parto Normal (Negativa)</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="exp-parto" value="1_cesarea" style="width:auto;"> 1 Cesárea</label><label style="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;color:var(--dark);"><input type="checkbox" name="exp-parto" value="2_cesareas" style="width:auto;"> 2 Cesáreas ou mais</label></div></div>
+      
+      <div class="mfield"><label>Relato Experiência de Parto</label><textarea id="md-relato-parto"></textarea></div>
+      <div class="mfield"><label>Medicação ou Suplemento?</label><input type="text" id="md-medicacao"></div>
+      <div class="mrow"><div class="mfield"><label>Vacinação em dia?</label><input type="text" id="md-vacina"></div><div class="mfield"><label>Sentimento Gravidez</label><input type="text" id="md-sentimento"></div></div>
+      <div class="mfield"><label>Questão Religiosa/Cultural?</label><input type="text" id="md-religiao"></div>
+      <div class="mfield"><label>Expectativas e Desejos para o Parto</label><textarea id="md-expectativas"></textarea></div>
+
       <div id="md-err" style="color:var(--err);font-size:13px;"></div>
     </div>
     <div class="modal-footer"><button class="btn-full btn-cancel" onclick="closeModal('modal-doula')">Cancelar</button><button class="btn-full btn-save" onclick="saveDoula()">Salvar</button></div>
@@ -470,15 +500,19 @@ function openAddDoula(){
   document.getElementById('mdoula-title').textContent='Nova Doulânda';
   document.getElementById('mdoula-id').value='';
   document.getElementById('md-err').textContent='';
-  ['md-nome','md-email','md-senha','md-bebe','md-sem','md-dpp','md-rg','md-cpf','md-endereco','md-nacionalidade'].forEach(id=>{
-    document.getElementById(id).value='';
+  ['md-nome','md-email','md-senha','md-bebe','md-sem','md-dpp','md-rg','md-cpf','md-endereco','md-nacionalidade','md-email-acomp','md-local-pre','md-idade','md-nasc','md-acomp-parent','md-alergias','md-quais-inter','md-relato-parto','md-medicacao','md-vacina','md-sentimento','md-religiao','md-expectativas'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value='';
   });
   document.getElementById('md-parto').value='normal';
   document.getElementById('md-civil').value='solteira';
   document.getElementById('md-pacote').value='essencia_online';
   document.getElementById('md-pagamento').value='vista';
   document.getElementById('md-data-pag').value='01';
-  document.querySelectorAll('input[name="extra"]').forEach(cb => cb.checked = false);
+  document.getElementById('md-pre-natal').value='sim';
+  document.getElementById('md-grav-antes').value='nao';
+  document.getElementById('md-inter-antes').value='nao';
+  document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
   openModal('modal-doula');
 }
 
@@ -503,8 +537,35 @@ async function editDoula(id){
   document.getElementById('md-pacote').value=u.pacote_escolhido||'essencia_online';
   document.getElementById('md-pagamento').value=u.forma_pagamento||'vista';
   document.getElementById('md-data-pag').value=u.melhor_data_pagamento||'01';
-  const extras = (u.servicos_extras || '').split(',');
-  document.querySelectorAll('input[name="extra"]').forEach(cb => cb.checked = extras.includes(cb.value));
+  document.getElementById('md-email-acomp').value=u.email_acompanhante||'';
+  document.getElementById('md-pre-natal').value=u.ja_iniciou_pre_natal||'sim';
+  document.getElementById('md-local-pre').value=u.local_pre_natal||'';
+  document.getElementById('md-idade').value=u.idade||'';
+  document.getElementById('md-nasc').value=u.data_nascimento||'';
+  document.getElementById('md-acomp-parent').value=u.acompanhante_parentesco||'';
+  document.getElementById('md-alergias').value=u.alergias||'';
+  document.getElementById('md-grav-antes').value=u.ja_esteve_gravida_antes||'nao';
+  document.getElementById('md-inter-antes').value=u.intercorrencias_gestacoes_anteriores||'nao';
+  document.getElementById('md-quais-inter').value=u.quais_intercorrencias||'';
+  document.getElementById('md-relato-parto').value=u.relato_experiencia_parto||'';
+  document.getElementById('md-medicacao').value=u.medicacao_suplemento||'';
+  document.getElementById('md-vacina').value=u.vacinacao_em_dia||'';
+  document.getElementById('md-sentimento').value=u.sentimento_gravidez||'';
+  document.getElementById('md-religiao').value=u.questao_religiosa_cultural||'';
+  document.getElementById('md-expectativas').value=u.expectativas_desejos_parto||'';
+  
+  const setChecks = (name, val) => {
+    const vals = (val || '').split(',');
+    document.querySelectorAll(`input[name="${name}"]`).forEach(cb => cb.checked = vals.includes(cb.value));
+  };
+  setChecks('extra', u.servicos_extras);
+  setChecks('h-saude', u.historico_saude);
+  setChecks('s-saude', u.sobre_saude);
+  setChecks('sint-grav', u.sintomas_gravidez);
+  setChecks('h-fam', u.historico_doencas_familiares);
+  setChecks('d-grav', u.doencas_gravidez);
+  setChecks('exp-parto', u.experiencia_partos_anteriores);
+  
   document.getElementById('md-err').textContent='';
   openModal('modal-doula');
 }
@@ -525,7 +586,31 @@ async function saveDoula(){
   const pacote_escolhido=document.getElementById('md-pacote').value;
   const forma_pagamento=document.getElementById('md-pagamento').value;
   const melhor_data_pagamento=document.getElementById('md-data-pag').value;
-  const servicos_extras=Array.from(document.querySelectorAll('input[name="extra"]:checked')).map(cb => cb.value).join(',');
+  const email_acompanhante=document.getElementById('md-email-acomp').value;
+  const ja_iniciou_pre_natal=document.getElementById('md-pre-natal').value;
+  const local_pre_natal=document.getElementById('md-local-pre').value;
+  const idade=document.getElementById('md-idade').value;
+  const data_nascimento=document.getElementById('md-nasc').value;
+  const acompanhante_parentesco=document.getElementById('md-acomp-parent').value;
+  const alergias=document.getElementById('md-alergias').value;
+  const ja_esteve_gravida_antes=document.getElementById('md-grav-antes').value;
+  const intercorrencias_gestacoes_anteriores=document.getElementById('md-inter-antes').value;
+  const quais_intercorrencias=document.getElementById('md-quais-inter').value;
+  const relato_experiencia_parto=document.getElementById('md-relato-parto').value;
+  const medicacao_suplemento=document.getElementById('md-medicacao').value;
+  const vacinacao_em_dia=document.getElementById('md-vacina').value;
+  const sentimento_gravidez=document.getElementById('md-sentimento').value;
+  const questao_religiosa_cultural=document.getElementById('md-religiao').value;
+  const expectativas_desejos_parto=document.getElementById('md-expectativas').value;
+
+  const getChecks = (name) => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value).join(',');
+  const servicos_extras=getChecks('extra');
+  const historico_saude=getChecks('h-saude');
+  const sobre_saude=getChecks('s-saude');
+  const sintomas_gravidez=getChecks('sint-grav');
+  const historico_doencas_familiares=getChecks('h-fam');
+  const doencas_gravidez=getChecks('d-grav');
+  const experiencia_partos_anteriores=getChecks('exp-parto');
   
   const editId=document.getElementById('mdoula-id').value;
   if(!nome||!email||!senha){document.getElementById('md-err').textContent='Preencha nome, e-mail e senha.';return;}
@@ -535,7 +620,13 @@ async function saveDoula(){
     body: JSON.stringify({ 
       id: editId, nome, email, senha, bebe, semanas: sem, dpp, parto,
       rg_orgao, cpf, estado_civil, endereco_cep, nacionalidade, 
-      pacote_escolhido, servicos_extras, forma_pagamento, melhor_data_pagamento
+      pacote_escolhido, servicos_extras, forma_pagamento, melhor_data_pagamento,
+      email_acompanhante, ja_iniciou_pre_natal, local_pre_natal, idade, data_nascimento,
+      acompanhante_parentesco, historico_saude, sobre_saude, alergias, sintomas_gravidez,
+      historico_doencas_familiares, doencas_gravidez, ja_esteve_gravida_antes,
+      intercorrencias_gestacoes_anteriores, quais_intercorrencias, experiencia_partos_anteriores,
+      relato_experiencia_parto, medicacao_suplemento, vacinacao_em_dia, sentimento_gravidez,
+      questao_religiosa_cultural, expectativas_desejos_parto
     })
   });
 

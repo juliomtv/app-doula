@@ -109,18 +109,29 @@ def list_users():
 def save_user():
     data = request.json
     db = get_db()
+    fields = [
+        'nome', 'email', 'senha', 'bebe', 'semanas', 'dpp', 'parto', 'rg_orgao', 'cpf', 'estado_civil', 
+        'endereco_cep', 'nacionalidade', 'pacote_escolhido', 'servicos_extras', 'forma_pagamento', 'melhor_data_pagamento',
+        'email_acompanhante', 'ja_iniciou_pre_natal', 'local_pre_natal', 'idade', 'data_nascimento', 
+        'acompanhante_parentesco', 'historico_saude', 'sobre_saude', 'alergias', 'sintomas_gravidez', 
+        'historico_doencas_familiares', 'doencas_gravidez', 'ja_esteve_gravida_antes', 
+        'intercorrencias_gestacoes_anteriores', 'quais_intercorrencias', 'experiencia_partos_anteriores', 
+        'relato_experiencia_parto', 'medicacao_suplemento', 'vacinacao_em_dia', 'sentimento_gravidez', 
+        'questao_religiosa_cultural', 'expectativas_desejos_parto'
+    ]
+    
     if 'id' in data and data['id']:
-        db.execute('UPDATE users SET nome=?, email=?, senha=?, bebe=?, semanas=?, dpp=?, parto=?, rg_orgao=?, cpf=?, estado_civil=?, endereco_cep=?, nacionalidade=?, pacote_escolhido=?, servicos_extras=?, forma_pagamento=?, melhor_data_pagamento=? WHERE id=?', 
-                   (data['nome'], data['email'], data['senha'], data['bebe'], data['semanas'], data['dpp'], data['parto'], 
-                    data.get('rg_orgao'), data.get('cpf'), data.get('estado_civil'), data.get('endereco_cep'), data.get('nacionalidade'), 
-                    data.get('pacote_escolhido'), data.get('servicos_extras'), data.get('forma_pagamento'), data.get('melhor_data_pagamento'), data['id']))
+        set_clause = ', '.join([f"{f}=?" for f in fields])
+        values = [data.get(f) for f in fields]
+        values.append(data['id'])
+        db.execute(f'UPDATE users SET {set_clause} WHERE id=?', tuple(values))
     else:
         dup = db.execute('SELECT id FROM users WHERE email = ?', (data['email'],)).fetchone()
         if dup: return jsonify({"status": "error", "message": "E-mail já cadastrado."}), 400
-        db.execute('INSERT INTO users (nome, email, senha, bebe, semanas, dpp, parto, rg_orgao, cpf, estado_civil, endereco_cep, nacionalidade, pacote_escolhido, servicos_extras, forma_pagamento, melhor_data_pagamento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                   (data['nome'], data['email'], data['senha'], data['bebe'], data['semanas'], data['dpp'], data['parto'],
-                    data.get('rg_orgao'), data.get('cpf'), data.get('estado_civil'), data.get('endereco_cep'), data.get('nacionalidade'), 
-                    data.get('pacote_escolhido'), data.get('servicos_extras'), data.get('forma_pagamento'), data.get('melhor_data_pagamento')))
+        placeholders = ', '.join(['?' for _ in fields])
+        columns = ', '.join(fields)
+        values = [data.get(f) for f in fields]
+        db.execute(f'INSERT INTO users ({columns}) VALUES ({placeholders})', tuple(values))
     db.commit()
     return jsonify({"status": "success"})
 
