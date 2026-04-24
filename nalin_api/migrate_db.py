@@ -62,6 +62,19 @@ def migrate():
             except Exception as e:
                 print(f"Erro ao adicionar {col_name}: {e}")
 
+    # Criar tabela de logs se não existir
+    print("Verificando tabela de logs...")
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS logs_atividade (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        acao TEXT NOT NULL,
+        detalhes TEXT,
+        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+    """)
+
     conn.commit()
     conn.close()
     

@@ -163,3 +163,13 @@ INSERT OR IGNORE INTO config_global (chave, valor, descricao) VALUES
 ('whatsapp_mensagem', 'Ola! Tudo bem? Sou a Nalin, sua doula. Como posso ajuda-la?', 'Mensagem padrao do WhatsApp'),
 ('instagram_url', '', 'URL do Instagram'),
 ('email_contato', '', 'E-mail para contato');
+
+-- Tabela de Logs de Atividade
+CREATE TABLE IF NOT EXISTS logs_atividade (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    acao TEXT NOT NULL, -- Ex: 'Viu o vídeo: Titulo', 'Escreveu no diário', 'Acessou o app'
+    detalhes TEXT,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);

@@ -77,6 +77,34 @@ def status():
         return '', 204
     return jsonify({"status": "online", "message": "API Nalin Nazareth rodando localmente"})
 
+@app.route('/api/logs', methods=['POST', 'OPTIONS'])
+def save_log():
+    if request.method == 'OPTIONS':
+        return '', 204
+    data = request.json
+    user_id = data.get('user_id')
+    acao = data.get('acao')
+    detalhes = data.get('detalhes', '')
+    if not user_id or not acao:
+        return jsonify({"status": "error", "message": "Dados incompletos"}), 400
+    db = get_db()
+    db.execute('INSERT INTO logs_atividade (user_id, acao, detalhes) VALUES (?, ?, ?)', (user_id, acao, detalhes))
+    db.commit()
+    return jsonify({"status": "success"})
+
+@app.route('/api/admin/logs', methods=['GET', 'OPTIONS'])
+def list_logs():
+    if request.method == 'OPTIONS':
+        return '', 204
+    db = get_db()
+    logs = db.execute('''
+        SELECT l.*, u.nome as user_nome 
+        FROM logs_atividade l 
+        JOIN users u ON l.user_id = u.id 
+        ORDER BY l.criado_em DESC LIMIT 50
+    ''').fetchall()
+    return jsonify([dict(l) for l in logs])
+
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
@@ -85,7 +113,10 @@ def login():
     db = get_db()
     user = db.execute('SELECT * FROM users WHERE email = ? AND senha = ?', (email, senha)).fetchone()
     if user:
-        return jsonify({"status": "success", "user": dict(user)})
+        user_dict = dict(user)
+        db.execute('INSERT INTO logs_atividade (user_id, acao) VALUES (?, ?)', (user_dict['id'], 'Acessou o App'))
+        db.commit()
+        return jsonify({"status": "success", "user": user_dict})
     return jsonify({"status": "error", "message": "E-mail ou senha incorretos."}), 401
 
 @app.route('/api/admin/login', methods=['POST'])
@@ -131,7 +162,9 @@ def save_user():
         placeholders = ', '.join(['?' for _ in fields])
         columns = ', '.join(fields)
         values = [data.get(f) for f in fields]
-        db.execute(f'INSERT INTO users ({columns}) VALUES ({placeholders})', tuple(values))
+        cursor = db.execute(f'INSERT INTO users ({columns}) VALUES ({placeholders})', tuple(values))
+        new_id = cursor.lastrowid
+        db.execute('INSERT INTO logs_atividade (user_id, acao) VALUES (?, ?)', (new_id, 'Nova doulanda cadastrada'))
     db.commit()
     return jsonify({"status": "success"})
 

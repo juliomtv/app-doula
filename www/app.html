@@ -379,6 +379,19 @@ async function apiFetch(endpoint, options = {}) {
   }
 }
 
+// ════ LOG ACTIVITY ════
+async function logActivity(acao, detalhes = '') {
+  if (!currentUser) return;
+  await apiFetch('/api/logs', {
+    method: 'POST',
+    body: JSON.stringify({
+      user_id: currentUser.id,
+      acao: acao,
+      detalhes: detalhes
+    })
+  });
+}
+
 // ════ LOGIN ════
 async function doLogin(){
   const email=document.getElementById('l-email').value.trim().toLowerCase();
@@ -490,8 +503,15 @@ function switchTab(idx,el){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
   renderConteudo(idx);
+  const catName = {0:'Vídeos',1:'E-books',2:'Meditações'}[idx];
+  logActivity(`Acessou ${catName}`);
 }
-function openConteudo(url){if(url)window.open(url,'_blank');}
+function openConteudo(url, titulo = 'Conteúdo'){
+  if(url){
+    logActivity(`Assistiu/Leu: ${titulo}`);
+    window.open(url,'_blank');
+  }
+}
 
 // ════ GESTAÇÃO ════
 function renderGestacao(tri){
@@ -512,6 +532,8 @@ function switchTri(t,el){
   document.querySelectorAll('.ttab').forEach(x=>x.classList.remove('active'));
   el.classList.add('active');
   renderGestacao(t);
+  const triName = {1:'1º Trimestre',2:'2º Trimestre',3:'3º Trimestre'}[t];
+  logActivity(`Acessou ${triName}`);
 }
 
 // ════ DIÁRIO ════
@@ -528,6 +550,7 @@ function saveEntry(){
   entries.unshift({id:Date.now(),txt,mood:currentMood,semanas:currentUser.semanas,data:new Date().toLocaleDateString('pt-BR')});
   DB.set(key,entries);
   document.getElementById('diary-txt').value='';
+  logActivity('Escreveu no Diário', `Humor: ${currentMood}`);
   renderDiario();
 }
 function renderDiario(){

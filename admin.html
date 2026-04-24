@@ -448,8 +448,9 @@ function goPage(id,el){
 
 async function renderDashboard(){
   const users = await apiFetch('/api/users') || [];
-  const cont = await apiFetch('/api/admin/conteudos') || [];
+  const cont = await apiFetch('/api/conteudos') || [];
   const ebooks = await apiFetch('/api/ebooks') || [];
+  const logs = await apiFetch('/api/admin/logs') || [];
   
   const stats=[
     {v:users.length,l:'Doulandas',i:'🤰'},
@@ -464,12 +465,25 @@ async function renderDashboard(){
     recent.map(u=>`<tr><td class="td-name">${u.nome}</td><td>${u.bebe||'—'}</td><td>${u.semanas} sem</td><td><span class="badge ${u.ativo?'badge-ok':'badge-err'}">${u.ativo?'Ativa':'Inativa'}</span></td></tr>`).join('')
   }</tbody></table>`;
   
-  const acts=[
-    {t:`${users[0]?.nome||'—'} cadastrada no sistema`,tm:'Recente'},
-    {t:'E-book: '+(ebooks[0]?.titulo||'Nenhum ainda'),tm:'Último upload'},
-    {t:'Vídeo: '+(cont.find(c=>c.categoria==='video')?.titulo||'Nenhum ainda'),tm:'Último vídeo'},
-    {t:'Painel atualizado em tempo real',tm:'Agora'}
-  ];
+  const acts = logs.slice(0, 10).map(l => {
+    const date = new Date(l.criado_em);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    let tm = 'Agora';
+    if (diffMins > 0 && diffMins < 60) tm = `${diffMins}m atrás`;
+    else if (diffHours > 0 && diffHours < 24) tm = `${diffHours}h atrás`;
+    else if (diffDays > 0) tm = `${diffDays}d atrás`;
+    
+    return {
+      t: `${l.user_nome}: ${l.acao}${l.detalhes ? ' - ' + l.detalhes : ''}`,
+      tm: tm
+    };
+  });
+  
   document.getElementById('dash-activity').innerHTML=acts.map(a=>`
     <div class="act-item"><div class="act-dot"></div><div><div class="act-txt">${a.t||'—'}</div><div class="act-time">${a.tm}</div></div></div>
   `).join('');
