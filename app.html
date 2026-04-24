@@ -430,6 +430,7 @@ textarea.dta:focus{border-color:var(--rose);}
       <div class="mitem" onclick="openModal('modal-enxoval')"><div class="mico">🛍</div><div class="mtext"><span>Lista do Enxoval</span><span>O que preparar para o bebê</span></div><span class="marr">›</span></div>
       <div class="mitem" onclick="openModal('modal-maternidade')"><div class="mico">🏥</div><div class="mtext"><span>Maternidade</span><span>Documentos e o que levar</span></div><span class="marr">›</span></div>
       <div class="mitem" onclick="navTo('agenda')"><div class="mico">📅</div><div class="mtext"><span>Minha Agenda</span><span>Consultas e compromissos</span></div><span class="marr">›</span></div>
+      <div class="mitem" onclick="openModal('modal-contracoes')"><div class="mico">⏱</div><div class="mtext"><span>Contador de Contrações</span><span>Monitore o trabalho de parto</span></div><span class="marr">›</span></div>
       <div class="mitem" onclick="openWhatsapp()"><div class="mico">💬</div><div class="mtext"><span>Falar com a Nalin</span><span>Enviar mensagem via WhatsApp</span></div><span class="marr">›</span></div>
     </div>
     <div style="text-align:center;padding:4px 0 12px;">
@@ -538,6 +539,46 @@ textarea.dta:focus{border-color:var(--rose);}
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-contracoes">
+  <div class="modal" style="max-width:500px; height:90vh; display:flex; flex-direction:column;">
+    <div class="modal-hdr"><h3>Contador de Contrações</h3><button class="modal-close" onclick="closeModal('modal-contracoes')">✕</button></div>
+    <div class="modal-body" style="flex:1; overflow-y:auto; padding:20px;">
+      
+      <div id="cnt-alert" style="display:none; background:#fff5f5; border:1px solid #feb2b2; color:#c53030; padding:12px; border-radius:10px; margin-bottom:20px; font-size:13px; text-align:center; font-weight:600;">
+        ⚠️ Suas contrações estão regulares. Considere entrar em contato com sua doula.
+      </div>
+
+      <div style="text-align:center; margin-bottom:30px;">
+        <div id="cnt-timer" style="font-size:48px; font-weight:300; color:var(--dark); font-family:monospace; margin-bottom:20px;">00:00</div>
+        <div style="display:flex; gap:10px; justify-content:center;">
+          <button id="btn-start-cnt" onclick="startContraction()" style="background:var(--ok); color:white; border:none; border-radius:50px; padding:15px 30px; font-size:16px; font-weight:600; cursor:pointer; flex:1;">Iniciar Contração</button>
+          <button id="btn-stop-cnt" onclick="stopContraction()" style="display:none; background:var(--err); color:white; border:none; border-radius:50px; padding:15px 30px; font-size:16px; font-weight:600; cursor:pointer; flex:1;">Finalizar Contração</button>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-bottom:25px;">
+        <div style="flex:1; background:var(--rose-pale); padding:10px; border-radius:12px; text-align:center;">
+          <div style="font-size:11px; color:var(--mid); text-transform:uppercase; letter-spacing:1px;">Média Duração</div>
+          <div id="cnt-avg-dur" style="font-size:18px; font-weight:600; color:var(--dark);">0s</div>
+        </div>
+        <div style="flex:1; background:var(--rose-pale); padding:10px; border-radius:12px; text-align:center;">
+          <div style="font-size:11px; color:var(--mid); text-transform:uppercase; letter-spacing:1px;">Média Intervalo</div>
+          <div id="cnt-avg-int" style="font-size:18px; font-weight:600; color:var(--dark);">0m</div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h4 style="font-family:'Cormorant Garamond',serif; font-size:18px; color:var(--dark);">Histórico</h4>
+        <button onclick="clearContractions()" style="background:none; border:none; color:var(--err); font-size:12px; cursor:pointer;">Limpar tudo</button>
+      </div>
+      
+      <div id="cnt-history">
+        <!-- Histórico será inserido aqui via JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -589,7 +630,7 @@ async function loadDicas(){
 }
 
 // ════ STATE ════
-let currentUser=null, currentMood='😊', currentTab=0, editingAgendaIndex=null;
+let currentUser=null, currentMood='😊', currentTab=0, editingAgendaIndex=null, cntTimer=null, cntStartTime=null;
 
 // ════ API FETCH HELPERS ════
 async function apiFetch(endpoint, options = {}) {
@@ -1303,6 +1344,7 @@ function loadPlanejamento(){
 // ════ MODALS ════
 function openModal(id){
   if(id==='modal-plano-parto'||id==='modal-enxoval'||id==='modal-maternidade')loadPlanejamento();
+  if(id==='modal-contracoes')renderContractions();
   if(id === 'modal-agenda' && editingAgendaIndex === null) {
     document.querySelector('#modal-agenda h3').textContent = 'Adicionar Compromisso';
     document.getElementById('btn-save-agenda').textContent = 'Salvar Compromisso';
@@ -1342,6 +1384,138 @@ function uploadAvatar(event) {
     showToast('Foto de perfil atualizada! ✨');
   };
   reader.readAsDataURL(file);
+}
+
+// ════ CONTADOR DE CONTRAÇÕES ════
+function startContraction() {
+  cntStartTime = new Date();
+  document.getElementById('btn-start-cnt').style.display = 'none';
+  document.getElementById('btn-stop-cnt').style.display = 'block';
+  
+  cntTimer = setInterval(() => {
+    const now = new Date();
+    const diff = Math.floor((now - cntStartTime) / 1000);
+    const m = String(Math.floor(diff / 60)).padStart(2, '0');
+    const s = String(diff % 60).padStart(2, '0');
+    document.getElementById('cnt-timer').textContent = `${m}:${s}`;
+  }, 1000);
+}
+
+function stopContraction() {
+  clearInterval(cntTimer);
+  const endTime = new Date();
+  const duration = Math.floor((endTime - cntStartTime) / 1000);
+  
+  const key = `nn_cnt_${currentUser.id}`;
+  const history = DB.get(key) || [];
+  
+  let interval = 0;
+  if (history.length > 0) {
+    const lastStart = new Date(history[0].start);
+    interval = Math.floor((cntStartTime - lastStart) / 60000);
+  }
+
+  history.unshift({
+    start: cntStartTime.toISOString(),
+    end: endTime.toISOString(),
+    duration: duration,
+    interval: interval
+  });
+
+  DB.set(key, history);
+  
+  document.getElementById('btn-start-cnt').style.display = 'block';
+  document.getElementById('btn-stop-cnt').style.display = 'none';
+  document.getElementById('cnt-timer').textContent = '00:00';
+  
+  renderContractions();
+}
+
+function renderContractions() {
+  const key = `nn_cnt_${currentUser.id}`;
+  const history = DB.get(key) || [];
+  const list = document.getElementById('cnt-history');
+  list.innerHTML = '';
+
+  if (history.length === 0) {
+    list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--light); font-size:13px;">Nenhuma contração registrada.</div>';
+    document.getElementById('cnt-avg-dur').textContent = '0s';
+    document.getElementById('cnt-avg-int').textContent = '0m';
+    document.getElementById('cnt-alert').style.display = 'none';
+    return;
+  }
+
+  let totalDur = 0;
+  let totalInt = 0;
+  let intCount = 0;
+
+  history.forEach((c, i) => {
+    totalDur += c.duration;
+    if (c.interval > 0) {
+      totalInt += c.interval;
+      intCount++;
+    }
+
+    const start = new Date(c.start);
+    const timeStr = start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    
+    list.innerHTML += `
+      <div style="background:#fff; border:1px solid var(--rose-pale); border-radius:10px; padding:12px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-weight:600; color:var(--dark); font-size:14px;">${timeStr}</div>
+          <div style="font-size:12px; color:var(--mid); margin-top:2px;">
+            Duração: ${c.duration}s ${c.interval > 0 ? `• Intervalo: ${c.interval}min` : ''}
+          </div>
+        </div>
+        <button onclick="deleteContraction(${i})" style="background:none; border:none; color:var(--err); font-size:16px; cursor:pointer;">✕</button>
+      </div>
+    `;
+  });
+
+  const avgDur = Math.round(totalDur / history.length);
+  const avgInt = intCount > 0 ? Math.round(totalInt / intCount) : 0;
+
+  document.getElementById('cnt-avg-dur').textContent = `${avgDur}s`;
+  document.getElementById('cnt-avg-int').textContent = `${avgInt}min`;
+
+  checkRule511(history);
+}
+
+function checkRule511(history) {
+  if (history.length < 3) return;
+  
+  const now = new Date();
+  const oneHourAgo = new Date(now - 60 * 60000);
+  
+  // Filtrar contrações da última hora
+  const lastHour = history.filter(c => new Date(c.start) > oneHourAgo);
+  
+  if (lastHour.length >= 3) {
+    const avgDur = lastHour.reduce((acc, c) => acc + c.duration, 0) / lastHour.length;
+    const intervals = lastHour.filter(c => c.interval > 0);
+    const avgInt = intervals.length > 0 ? intervals.reduce((acc, c) => acc + c.interval, 0) / intervals.length : 0;
+
+    // Regra 5-1-1: Intervalo ~5min, Duração ~60s (1min), por 1 hora
+    if (avgInt <= 6 && avgInt >= 3 && avgDur >= 45) {
+      document.getElementById('cnt-alert').style.display = 'block';
+      return;
+    }
+  }
+  document.getElementById('cnt-alert').style.display = 'none';
+}
+
+function deleteContraction(i) {
+  const key = `nn_cnt_${currentUser.id}`;
+  const history = DB.get(key) || [];
+  history.splice(i, 1);
+  DB.set(key, history);
+  renderContractions();
+}
+
+function clearContractions() {
+  if (!confirm('Deseja limpar todo o histórico de contrações?')) return;
+  DB.set(`nn_cnt_${currentUser.id}`, []);
+  renderContractions();
 }
 
 // ════ SINCRONIZACAO ════
