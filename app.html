@@ -411,7 +411,8 @@ textarea.dta:focus{border-color:var(--rose);}
   <div class="sbar"><span>9:41</span><span>📶🔋</span></div>
   <div class="scroll">
     <div class="perf-hero">
-      <div class="perf-avatar">🤰</div>
+      <div class="perf-avatar" id="p-avatar" onclick="document.getElementById('p-file').click()" style="cursor:pointer; overflow:hidden; display:flex; align-items:center; justify-content:center; background:var(--rose-pale);">🤰</div>
+      <input type="file" id="p-file" accept="image/*" style="display:none;" onchange="uploadAvatar(event)">
       <div class="perf-name" id="p-nome">—</div>
       <div class="perf-due" id="p-due">—</div>
       <div class="perf-badge"><span>🌸</span><span id="p-tri">—</span></div>
@@ -917,6 +918,16 @@ function renderPerfil(){
   const u=currentUser;
   document.getElementById('p-nome').textContent=u.nome;
   document.getElementById('p-sem').textContent=u.semanas;
+  
+  // Carregar foto de perfil
+  const savedAvatar = DB.get(`nn_avatar_${u.id}`);
+  const avatarDiv = document.getElementById('p-avatar');
+  if(savedAvatar) {
+    avatarDiv.innerHTML = `<img src="${savedAvatar}" style="width:100%; height:100%; object-fit:cover;">`;
+  } else {
+    avatarDiv.innerHTML = '🤰';
+  }
+
   const tri=getTri(u.semanas);
   document.getElementById('p-tri').textContent=`${tri.l} · Semana ${u.semanas}`;
   if(u.dpp){
@@ -1142,6 +1153,26 @@ function closeModal(id){
 function showToast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function uploadAvatar(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  // Limitar tamanho para não estourar LocalStorage (aprox 1MB)
+  if (file.size > 1024 * 1024) {
+    alert('A imagem é muito grande! Escolha uma foto de até 1MB.');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const base64 = e.target.result;
+    DB.set(`nn_avatar_${currentUser.id}`, base64);
+    renderPerfil();
+    showToast('Foto de perfil atualizada! ✨');
+  };
+  reader.readAsDataURL(file);
 }
 
 // ════ SINCRONIZACAO ════
