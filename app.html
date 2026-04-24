@@ -461,7 +461,13 @@ textarea.dta:focus{border-color:var(--rose);}
 
 <div class="modal-overlay" id="modal-plano-parto">
   <div class="modal" style="max-width:600px; height:90vh; display:flex; flex-direction:column;">
-    <div class="modal-hdr"><h3>Plano de Parto</h3><button class="modal-close" onclick="closeModal('modal-plano-parto')">✕</button></div>
+    <div class="modal-hdr">
+      <h3>Plano de Parto</h3>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button onclick="exportPlanoPartoPDF()" style="background:var(--rose-pale); color:var(--rose); border:1px solid var(--rose); border-radius:50px; padding:4px 12px; font-size:11px; cursor:pointer; font-weight:600;">📥 PDF</button>
+        <button class="modal-close" onclick="closeModal('modal-plano-parto')">✕</button>
+      </div>
+    </div>
     <div class="modal-body" style="flex:1; overflow-y:auto; padding:16px;">
       <div class="mfield"><label>NOME:</label><input type="text" id="pp-nome" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;"></div>
       <div class="mfield"><label>NOME DO ACOMPANHANTE:</label><input type="text" id="pp-acomp" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;"></div>
@@ -902,6 +908,76 @@ async function exportDiaryPDF() {
 
   doc.save(`Diario_Gestacao_${currentUser.nome}.pdf`);
   showToast('PDF baixado com sucesso! ✨');
+}
+
+async function exportPlanoPartoPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const ppKey = `nn_pp_${currentUser.id}`;
+  const pp = DB.get(ppKey) || {};
+
+  if (!pp.nome) {
+    showToast('Preencha o nome antes de exportar!');
+    return;
+  }
+
+  showToast('Gerando Plano de Parto em PDF... ⏳');
+
+  // Título
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.setTextColor(169, 107, 85);
+  doc.text("Plano de Parto", 105, 20, { align: "center" });
+
+  let y = 40;
+  const margin = 20;
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  // Informações Básicas
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(`NOME: `, margin, y);
+  doc.setFont("helvetica", "normal");
+  doc.text(`${pp.nome || ''}`, margin + 15, y);
+  y += 10;
+
+  doc.setFont("helvetica", "bold");
+  doc.text(`ACOMPANHANTE: `, margin, y);
+  doc.setFont("helvetica", "normal");
+  const rels = pp.relacoes ? pp.relacoes.join(', ') : '';
+  doc.text(`${pp.acomp || ''} (${rels})`, margin + 38, y);
+  y += 10;
+
+  doc.setFont("helvetica", "bold");
+  doc.text(`DOULA: `, margin, y);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Nalin Nazareth`, margin + 18, y);
+  y += 15;
+
+  // Seção 1
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(201, 144, 122);
+  doc.text("1. DURANTE O TRABALHO DE PARTO", margin, y);
+  y += 8;
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(60, 60, 60);
+  const duranteSplit = doc.splitTextToSize(pp.durante || 'Não informado.', pageWidth - (margin * 2));
+  doc.text(duranteSplit, margin, y);
+  y += (duranteSplit.length * 6) + 15;
+
+  // Seção 2
+  if (y > 250) { doc.addPage(); y = 20; }
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(201, 144, 122);
+  doc.text("2. EM CASO DE INDUÇÃO", margin, y);
+  y += 8;
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(60, 60, 60);
+  const inducaoSplit = doc.splitTextToSize(pp.inducao || 'Não informado.', pageWidth - (margin * 2));
+  doc.text(inducaoSplit, margin, y);
+
+  doc.save(`Plano_de_Parto_${pp.nome}.pdf`);
+  showToast('Plano de Parto baixado! ✨');
 }
 
 // ════ AGENDA ════
