@@ -224,7 +224,7 @@ tr:hover td{background:rgba(247,237,232,.5);}
     <div class="page" id="p-doulandas">
       <div class="page-hdr" style="display:flex;align-items:flex-start;justify-content:space-between;">
         <div><h1>Doulandas</h1><p>Gerencie todas as suas gestantes</p></div>
-        <button class="btn-sm btn-rose-sm" onclick="openModal('modal-doula')">+ Nova Doulânda</button>
+        <button class="btn-sm btn-rose-sm" onclick="openAddDoula()">+ Nova Doulânda</button>
       </div>
       <div class="search-bar"><input type="text" id="search-doula" placeholder="🔍 Buscar por nome ou e-mail..." oninput="renderDoulandas()"></div>
       <div class="table-card"><table><thead><tr><th>Nome</th><th>Semanas</th><th>Bebê</th><th>Parto Previsto</th><th>Status</th><th>Ações</th></tr></thead><tbody id="doulandas-tbody"></tbody></table></div>
@@ -461,6 +461,17 @@ async function renderDoulandas(){
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
+function openAddDoula(){
+  document.getElementById('mdoula-title').textContent='Nova Doulânda';
+  document.getElementById('mdoula-id').value='';
+  document.getElementById('md-err').textContent='';
+  ['md-nome','md-email','md-senha','md-bebe','md-sem','md-dpp'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  document.getElementById('md-parto').value='normal';
+  openModal('modal-doula');
+}
+
 async function editDoula(id){
   const users = await apiFetch('/api/users') || [];
   const u=users.find(x=>x.id===id);
@@ -474,6 +485,7 @@ async function editDoula(id){
   document.getElementById('md-sem').value=u.semanas||'';
   document.getElementById('md-dpp').value=u.dpp||'';
   document.getElementById('md-parto').value=u.parto||'normal';
+  document.getElementById('md-err').textContent='';
   openModal('modal-doula');
 }
 
