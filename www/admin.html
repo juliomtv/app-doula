@@ -907,12 +907,14 @@ async function renderDicas() {
       <td>${d.titulo}</td>
       <td>${d.dica.substring(0, 50)}...</td>
       <td class="td-actions">
-        <button class="btn-sm btn-ghost" onclick="editDica(${d.id}, ${d.semana})">Editar</button>
+        <button class="btn-sm btn-ghost" onclick="editDica(${d.id})">Editar</button>
         <button class="btn-sm btn-danger" onclick="deleteDica(${d.id})">Deletar</button>
       </td>
     </tr>`;
   });
 }
+
+let currentDicaId = null;
 
 async function saveDica() {
   const semana = document.getElementById('md-semana').value;
@@ -925,10 +927,18 @@ async function saveDica() {
     return;
   }
   
-  const res = await apiFetch('/api/admin/dicas', {
-    method: 'POST',
-    body: JSON.stringify({ semana: parseInt(semana), titulo, dica, emoji })
-  });
+  let res;
+  if (currentDicaId) {
+    res = await apiFetch(`/api/admin/dicas/${currentDicaId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ semana: parseInt(semana), titulo, dica, emoji })
+    });
+  } else {
+    res = await apiFetch('/api/admin/dicas', {
+      method: 'POST',
+      body: JSON.stringify({ semana: parseInt(semana), titulo, dica, emoji })
+    });
+  }
   
   if (res && res.status === 'success') {
     closeModal('modal-dica');
@@ -937,13 +947,33 @@ async function saveDica() {
     document.getElementById('md-titulo').value = '';
     document.getElementById('md-dica').value = '';
     document.getElementById('md-emoji').value = '';
+    currentDicaId = null;
+    document.querySelector('#modal-dica .modal-hdr h3').textContent = 'Adicionar Dica Semanal';
+  }
+}
+
+async function editDica(id) {
+  const dicas = await apiFetch('/api/admin/dicas') || [];
+  const dica = dicas.find(d => d.id === id);
+  
+  if (dica) {
+    currentDicaId = id;
+    document.getElementById('md-semana').value = dica.semana;
+    document.getElementById('md-titulo').value = dica.titulo;
+    document.getElementById('md-dica').value = dica.dica;
+    document.getElementById('md-emoji').value = dica.emoji || '';
+    document.querySelector('#modal-dica .modal-hdr h3').textContent = 'Editar Dica Semanal';
+    openModal('modal-dica');
   }
 }
 
 async function deleteDica(id) {
   if (!confirm('Deletar esta dica?')) return;
   const res = await apiFetch(`/api/admin/dicas/${id}`, { method: 'DELETE' });
-  if (res) renderDicas();
+  if (res && res.status === 'success') {
+    renderDicas();
+    showToastA('Dica deletada com sucesso!');
+  }
 }
 
 if(DB.get('nn_admin_session')){

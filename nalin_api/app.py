@@ -351,8 +351,31 @@ def admin_dicas():
     elif request.method == 'POST':
         data = request.json
         try:
-            db.execute('INSERT OR REPLACE INTO dicas_semanais (semana, titulo, dica, emoji) VALUES (?, ?, ?, ?)',
+            db.execute('INSERT INTO dicas_semanais (semana, titulo, dica, emoji) VALUES (?, ?, ?, ?)',
                       (data['semana'], data['titulo'], data['dica'], data.get('emoji', '')))
+            db.commit()
+            return jsonify({"status": "success"})
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/admin/dicas/<int:dica_id>', methods=['PUT', 'DELETE', 'OPTIONS'])
+def admin_dica_detail(dica_id):
+    if request.method == 'OPTIONS':
+        return '', 204
+    
+    db = get_db()
+    if request.method == 'PUT':
+        data = request.json
+        try:
+            db.execute('UPDATE dicas_semanais SET semana=?, titulo=?, dica=?, emoji=? WHERE id=?',
+                      (data['semana'], data['titulo'], data['dica'], data.get('emoji', ''), dica_id))
+            db.commit()
+            return jsonify({"status": "success"})
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
+    elif request.method == 'DELETE':
+        try:
+            db.execute('DELETE FROM dicas_semanais WHERE id=?', (dica_id,))
             db.commit()
             return jsonify({"status": "success"})
         except Exception as e:
