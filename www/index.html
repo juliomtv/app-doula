@@ -218,6 +218,14 @@ textarea.dta:focus{border-color:var(--rose);}
 </style>
 </head>
 <body>
+	<!-- ── SPLASH SCREEN ── -->
+	<div id="splash" style="position:fixed; inset:0; background:var(--cream); z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; transition: opacity 0.5s ease;">
+	  <div class="login-blob" style="margin-bottom:20px;">
+	    <div class="login-logo">🌸</div>
+	  </div>
+	  <h2 id="splash-text" style="font-family:'Cormorant Garamond',serif; font-size:32px; font-style:italic; color:var(--dark); margin-bottom:8px;">Carregando...</h2>
+	  <div id="splash-version" style="font-size:12px; color:var(--light); position:absolute; bottom:40px;">Versão 1.0</div>
+	</div>
 
 <!-- ═══════════════ LOGIN ═══════════════ -->
 <div class="screen active" id="login">
@@ -1584,19 +1592,38 @@ async function syncUserData(){
 	  };
 	}
 
-	// ════ INIT ════
-	document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('login').classList.contains('active'))doLogin();});
-	seedData();
-	loadDicas();
-	const savedSession=DB.get('nn_session');
-	if(savedSession){
-	  const users=DB.get('nn_users')||[];
-	  const u=users.find(x=>x.id===savedSession&&x.ativo);
-	  if(u){currentUser=u;goApp();syncUserData();}
-	}
-	setInterval(syncUserData, 30000);
-	setInterval(loadDicas, 60000);
-	checkAppUpdate();
+		// ════ INIT ════
+		window.addEventListener('load', async () => {
+		  const splashText = document.getElementById('splash-text');
+		  const splashVersion = document.getElementById('splash-version');
+		  if (splashVersion) splashVersion.textContent = `Versão ${APP_VERSION}`;
+
+		  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('login').classList.contains('active'))doLogin();});
+		  
+		  if (splashText) splashText.textContent = "Carregando dados...";
+		  seedData();
+		  loadDicas();
+		  
+		  const savedSession=DB.get('nn_session');
+		  if(savedSession){
+		    if (splashText) splashText.textContent = "Validando sessão...";
+		    const users=DB.get('nn_users')||[];
+		    const u=users.find(x=>x.id===savedSession&&x.ativo);
+		    if(u){currentUser=u;goApp();syncUserData();}
+		  }
+		  
+		  setInterval(syncUserData, 30000);
+		  setInterval(loadDicas, 60000);
+		  
+		  if (splashText) splashText.textContent = "Verificando atualizações...";
+		  await checkAppUpdate();
+
+		  const splash = document.getElementById('splash');
+		  if (splash) {
+		    splash.style.opacity = '0';
+		    setTimeout(() => splash.remove(), 500);
+		  }
+		});
 	</script>
 </body>
 </html>

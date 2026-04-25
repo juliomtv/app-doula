@@ -83,10 +83,10 @@ def versao_app():
         return '', 204
     # O usuário solicitou este endpoint específico com este retorno
     return jsonify({
-        "versao_cliente": "1.2",
-        "versao_admin": "1.2",
-        "apk_cliente_url": "https://meuservidor.com/apk/cliente.apk",
-        "apk_admin_url": "https://meuservidor.com/apk/admin.apk"
+        "versao_cliente": "1.1",
+        "versao_admin": "1.1",
+        "apk_cliente_url": f"{base_url}/apk/cliente.apk",
+        "apk_admin_url": f"{base_url}/apk/admin.apk"
     })
 
 @app.route('/api/logs', methods=['POST', 'OPTIONS'])
