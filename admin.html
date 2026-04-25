@@ -171,6 +171,11 @@ tr:hover td{background:rgba(247,237,232,.5);}
       <label>Senha</label>
       <input type="password" id="a-pass" placeholder="••••••••" value="admin123">
     </div>
+    <div class="afield">
+      <label>URL da API (opcional)</label>
+      <input type="text" id="a-api-url" placeholder="http://localhost:5000" value="">
+      <small style="font-size:11px;color:var(--lite);margin-top:4px;display:block;">Ex: http://192.168.1.15:5000 ou http://localhost:5000</small>
+    </div>
     <button class="abtn" onclick="adminLogin()">Entrar no painel</button>
     <div class="aerr" id="a-err"></div>
     <div style="text-align:center;margin-top:20px;">
@@ -404,7 +409,9 @@ tr:hover td{background:rgba(247,237,232,.5);}
 <div id="toast-a" style="position:fixed;bottom:24px;right:24px;background:var(--dark);color:white;padding:12px 22px;border-radius:50px;font-size:14px;opacity:0;transition:all .3s;pointer-events:none;z-index:9999;transform:translateY(10px);">...</div>
 
 <script>
-const API_URL = "http://192.168.1.8:5000";
+// ════ CONFIGURAÇÃO DINÂMICA DA API ════
+let API_URL = localStorage.getItem('api_url') || 'http://localhost:5000';
+
 const DB={get:k=>{try{return JSON.parse(localStorage.getItem(k));}catch{return null;}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),del:k=>localStorage.removeItem(k)};
 
 async function apiFetch(endpoint, options = {}) {
@@ -413,16 +420,33 @@ async function apiFetch(endpoint, options = {}) {
       ...options,
       headers: { 'Content-Type': 'application/json', ...options.headers }
     });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (e) {
     console.error("Erro na API:", e);
+    console.error("URL tentada:", `${API_URL}${endpoint}`);
     return null;
   }
+}
+
+// Função para atualizar a URL da API
+function setApiUrl(url) {
+  API_URL = url;
+  localStorage.setItem('api_url', url);
+  console.log('API URL atualizada para:', API_URL);
 }
 
 function adminLogin(){
   const user=document.getElementById('a-user').value.trim().toLowerCase();
   const pass=document.getElementById('a-pass').value;
+  const customUrl=document.getElementById('a-api-url').value.trim();
+  
+  if(customUrl){
+    setApiUrl(customUrl);
+    document.getElementById('a-err').textContent='Conectando a API...';
+    document.getElementById('a-err').style.color='var(--mid)';
+  }
+  
   apiFetch('/api/admin/login', {
     method: 'POST',
     body: JSON.stringify({ user, pass })

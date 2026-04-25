@@ -234,6 +234,11 @@ textarea.dta:focus{border-color:var(--rose);}
       <label>Senha</label>
       <input type="password" id="l-senha" placeholder="••••••••" value="">
     </div>
+    <div class="field">
+      <label>URL da API (opcional)</label>
+      <input type="text" id="l-api-url" placeholder="http://localhost:5000" value="">
+      <small style="font-size:11px;color:var(--light);margin-top:4px;display:block;">Ex: http://192.168.1.15:5000 ou http://localhost:5000</small>
+    </div>
     <button class="btn-rose" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="l-err"></div>
     <div class="login-note">Não tem conta? Peça à sua doula para criar seu acesso 🌺</div>
@@ -582,13 +587,19 @@ textarea.dta:focus{border-color:var(--rose);}
 <div class="toast" id="toast"></div>
 
 <script>
-// ════ STORAGE HELPERS ════
-const API_URL = "http://192.168.1.8:5000";
+// ════ CONFIGURAÇÃO DINÂMICA DA API ════
+let API_URL = localStorage.getItem('api_url') || 'http://localhost:5000';
 const DB = {
   get:(k)=>{ try{return JSON.parse(localStorage.getItem(k));}catch{return null;}},
   set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
   del:(k)=>localStorage.removeItem(k)
 };
+
+function setApiUrl(url) {
+  API_URL = url;
+  localStorage.setItem('api_url', url);
+  console.log('API URL atualizada para:', API_URL);
+}
 
 // ════ SEED DATA ════
 function seedData(){
@@ -639,9 +650,11 @@ async function apiFetch(endpoint, options = {}) {
       ...options,
       headers: { 'Content-Type': 'application/json', ...options.headers }
     });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (e) {
     console.error("Erro na API:", e);
+    console.error("URL tentada:", `${API_URL}${endpoint}`);
     return null;
   }
 }
@@ -650,6 +663,13 @@ async function apiFetch(endpoint, options = {}) {
 async function doLogin(){
   const email=document.getElementById('l-email').value.trim().toLowerCase();
   const senha=document.getElementById('l-senha').value;
+  const customUrl=document.getElementById('l-api-url').value.trim();
+  
+  if(customUrl){
+    setApiUrl(customUrl);
+    document.getElementById('l-err').textContent='Conectando a API...';
+    document.getElementById('l-err').style.color='var(--mid)';
+  }
   
   // Tentar login via API
   const res = await apiFetch('/api/login', {

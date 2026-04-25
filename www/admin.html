@@ -171,6 +171,11 @@ tr:hover td{background:rgba(247,237,232,.5);}
       <label>Senha</label>
       <input type="password" id="a-pass" placeholder="••••••••" value="admin123">
     </div>
+    <div class="afield">
+      <label>URL da API (opcional)</label>
+      <input type="text" id="a-api-url" placeholder="http://localhost:5000" value="">
+      <small style="font-size:11px;color:var(--lite);margin-top:4px;display:block;">Ex: http://192.168.1.15:5000 ou http://localhost:5000</small>
+    </div>
     <button class="abtn" onclick="adminLogin()">Entrar no painel</button>
     <div class="aerr" id="a-err"></div>
     <div style="text-align:center;margin-top:20px;">
@@ -404,7 +409,9 @@ tr:hover td{background:rgba(247,237,232,.5);}
 <div id="toast-a" style="position:fixed;bottom:24px;right:24px;background:var(--dark);color:white;padding:12px 22px;border-radius:50px;font-size:14px;opacity:0;transition:all .3s;pointer-events:none;z-index:9999;transform:translateY(10px);">...</div>
 
 <script>
-const API_URL = "http://192.168.1.8:5000";
+// ════ CONFIGURAÇÃO DINÂMICA DA API ════
+let API_URL = localStorage.getItem('api_url') || 'http://localhost:5000';
+
 const DB={get:k=>{try{return JSON.parse(localStorage.getItem(k));}catch{return null;}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),del:k=>localStorage.removeItem(k)};
 
 async function apiFetch(endpoint, options = {}) {
@@ -413,16 +420,33 @@ async function apiFetch(endpoint, options = {}) {
       ...options,
       headers: { 'Content-Type': 'application/json', ...options.headers }
     });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (e) {
     console.error("Erro na API:", e);
+    console.error("URL tentada:", `${API_URL}${endpoint}`);
     return null;
   }
+}
+
+// Função para atualizar a URL da API
+function setApiUrl(url) {
+  API_URL = url;
+  localStorage.setItem('api_url', url);
+  console.log('API URL atualizada para:', API_URL);
 }
 
 function adminLogin(){
   const user=document.getElementById('a-user').value.trim().toLowerCase();
   const pass=document.getElementById('a-pass').value;
+  const customUrl=document.getElementById('a-api-url').value.trim();
+  
+  if(customUrl){
+    setApiUrl(customUrl);
+    document.getElementById('a-err').textContent='Conectando a API...';
+    document.getElementById('a-err').style.color='var(--mid)';
+  }
+  
   apiFetch('/api/admin/login', {
     method: 'POST',
     body: JSON.stringify({ user, pass })
@@ -907,14 +931,12 @@ async function renderDicas() {
       <td>${d.titulo}</td>
       <td>${d.dica.substring(0, 50)}...</td>
       <td class="td-actions">
-        <button class="btn-sm btn-ghost" onclick="editDica(${d.id})">Editar</button>
+        <button class="btn-sm btn-ghost" onclick="editDica(${d.id}, ${d.semana})">Editar</button>
         <button class="btn-sm btn-danger" onclick="deleteDica(${d.id})">Deletar</button>
       </td>
     </tr>`;
   });
 }
-
-let currentDicaId = null;
 
 async function saveDica() {
   const semana = document.getElementById('md-semana').value;
@@ -927,18 +949,10 @@ async function saveDica() {
     return;
   }
   
-  let res;
-  if (currentDicaId) {
-    res = await apiFetch(`/api/admin/dicas/${currentDicaId}`, {
-      method: 'PUT',
-      body: JSON.stringify({ semana: parseInt(semana), titulo, dica, emoji })
-    });
-  } else {
-    res = await apiFetch('/api/admin/dicas', {
-      method: 'POST',
-      body: JSON.stringify({ semana: parseInt(semana), titulo, dica, emoji })
-    });
-  }
+  const res = await apiFetch('/api/admin/dicas', {
+    method: 'POST',
+    body: JSON.stringify({ semana: parseInt(semana), titulo, dica, emoji })
+  });
   
   if (res && res.status === 'success') {
     closeModal('modal-dica');
@@ -947,85 +961,20 @@ async function saveDica() {
     document.getElementById('md-titulo').value = '';
     document.getElementById('md-dica').value = '';
     document.getElementById('md-emoji').value = '';
-    currentDicaId = null;
-    document.querySelector('#modal-dica .modal-hdr h3').textContent = 'Adicionar Dica Semanal';
-  }
-}
-
-async function editDica(id) {
-  const dicas = await apiFetch('/api/admin/dicas') || [];
-  const dica = dicas.find(d => d.id === id);
-  
-  if (dica) {
-    currentDicaId = id;
-    document.getElementById('md-semana').value = dica.semana;
-    document.getElementById('md-titulo').value = dica.titulo;
-    document.getElementById('md-dica').value = dica.dica;
-    document.getElementById('md-emoji').value = dica.emoji || '';
-    document.querySelector('#modal-dica .modal-hdr h3').textContent = 'Editar Dica Semanal';
-    openModal('modal-dica');
   }
 }
 
 async function deleteDica(id) {
   if (!confirm('Deletar esta dica?')) return;
   const res = await apiFetch(`/api/admin/dicas/${id}`, { method: 'DELETE' });
-  if (res && res.status === 'success') {
-    renderDicas();
-    showToastA('Dica deletada com sucesso!');
-  }
+  if (res) renderDicas();
 }
 
-	// ════ ATUALIZAÇÃO AUTOMÁTICA ════
-	const ADMIN_VERSION = "1.0"; // Versão atual instalada
-
-	async function checkAdminUpdate() {
-	  try {
-	    const response = await fetch(`${API_URL}/versao_app`);
-	    const data = await response.json();
-	    
-	    if (data.versao_admin && data.versao_admin !== ADMIN_VERSION) {
-	      showAdminUpdatePopup(data.apk_admin_url);
-	    }
-	  } catch (err) {
-	    console.error("Erro ao verificar atualização:", err);
-	  }
-	}
-
-	function showAdminUpdatePopup(url) {
-	  const overlay = document.createElement('div');
-	  overlay.style = "position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px);";
-	  
-	  const modal = document.createElement('div');
-	  modal.style = "background:white; border-radius:24px; padding:32px; width:100%; max-width:320px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.3);";
-	  
-	  modal.innerHTML = `
-	    <div style="font-size:48px; margin-bottom:16px;">⚙️</div>
-	    <h3 style="font-family:'Cormorant Garamond',serif; font-size:24px; color:var(--dark); margin-bottom:8px;">Nova versão disponível</h3>
-	    <p style="font-size:14px; color:var(--mid); margin-bottom:24px;">Uma nova atualização do painel admin está pronta.</p>
-	    <button id="btn-update-now-admin" style="width:100%; background:var(--dark); color:white; border:none; border-radius:50px; padding:14px; font-size:15px; font-weight:600; cursor:pointer; margin-bottom:12px;">Atualizar agora</button>
-	    <button id="btn-update-later-admin" style="width:100%; background:none; border:none; color:var(--lite); font-size:14px; cursor:pointer;">Depois</button>
-	  `;
-	  
-	  overlay.appendChild(modal);
-	  document.body.appendChild(overlay);
-	  
-	  document.getElementById('btn-update-now-admin').onclick = () => {
-	    window.open(url, '_system');
-	    document.body.removeChild(overlay);
-	  };
-	  
-	  document.getElementById('btn-update-later-admin').onclick = () => {
-	    document.body.removeChild(overlay);
-	  };
-	}
-
-	if(DB.get('nn_admin_session')){
-	  document.getElementById('admin-login').style.display='none';
-	  document.getElementById('admin-shell').classList.add('active');
-	  renderDashboard();
-	}
-	checkAdminUpdate();
-	</script>
+if(DB.get('nn_admin_session')){
+  document.getElementById('admin-login').style.display='none';
+  document.getElementById('admin-shell').classList.add('active');
+  renderDashboard();
+}
+</script>
 </body>
 </html>

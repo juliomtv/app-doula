@@ -218,14 +218,6 @@ textarea.dta:focus{border-color:var(--rose);}
 </style>
 </head>
 <body>
-	<!-- ── SPLASH SCREEN ── -->
-	<div id="splash" style="position:fixed; inset:0; background:var(--cream); z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; transition: opacity 0.5s ease;">
-	  <div class="login-blob" style="margin-bottom:20px;">
-	    <div class="login-logo">🌸</div>
-	  </div>
-	  <h2 id="splash-text" style="font-family:'Cormorant Garamond',serif; font-size:32px; font-style:italic; color:var(--dark); margin-bottom:8px;">Carregando...</h2>
-	  <div id="splash-version" style="font-size:12px; color:var(--light); position:absolute; bottom:40px;">Versão 1.0</div>
-	</div>
 
 <!-- ═══════════════ LOGIN ═══════════════ -->
 <div class="screen active" id="login">
@@ -241,6 +233,11 @@ textarea.dta:focus{border-color:var(--rose);}
     <div class="field">
       <label>Senha</label>
       <input type="password" id="l-senha" placeholder="••••••••" value="">
+    </div>
+    <div class="field">
+      <label>URL da API (opcional)</label>
+      <input type="text" id="l-api-url" placeholder="http://localhost:5000" value="">
+      <small style="font-size:11px;color:var(--light);margin-top:4px;display:block;">Ex: http://192.168.1.15:5000 ou http://localhost:5000</small>
     </div>
     <button class="btn-rose" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="l-err"></div>
@@ -590,13 +587,19 @@ textarea.dta:focus{border-color:var(--rose);}
 <div class="toast" id="toast"></div>
 
 <script>
-// ════ STORAGE HELPERS ════
-const API_URL = "http://192.168.1.8:5000";
+// ════ CONFIGURAÇÃO DINÂMICA DA API ════
+let API_URL = localStorage.getItem('api_url') || 'http://localhost:5000';
 const DB = {
   get:(k)=>{ try{return JSON.parse(localStorage.getItem(k));}catch{return null;}},
   set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
   del:(k)=>localStorage.removeItem(k)
 };
+
+function setApiUrl(url) {
+  API_URL = url;
+  localStorage.setItem('api_url', url);
+  console.log('API URL atualizada para:', API_URL);
+}
 
 // ════ SEED DATA ════
 function seedData(){
@@ -647,9 +650,11 @@ async function apiFetch(endpoint, options = {}) {
       ...options,
       headers: { 'Content-Type': 'application/json', ...options.headers }
     });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (e) {
     console.error("Erro na API:", e);
+    console.error("URL tentada:", `${API_URL}${endpoint}`);
     return null;
   }
 }
@@ -658,6 +663,13 @@ async function apiFetch(endpoint, options = {}) {
 async function doLogin(){
   const email=document.getElementById('l-email').value.trim().toLowerCase();
   const senha=document.getElementById('l-senha').value;
+  const customUrl=document.getElementById('l-api-url').value.trim();
+  
+  if(customUrl){
+    setApiUrl(customUrl);
+    document.getElementById('l-err').textContent='Conectando a API...';
+    document.getElementById('l-err').style.color='var(--mid)';
+  }
   
   // Tentar login via API
   const res = await apiFetch('/api/login', {
@@ -1548,82 +1560,18 @@ async function syncUserData(){
   }
 }
 
-	// ════ ATUALIZAÇÃO AUTOMÁTICA ════
-	const APP_VERSION = "1.0"; // Versão atual instalada
-
-	async function checkAppUpdate() {
-	  try {
-	    const response = await fetch(`${API_URL}/versao_app`);
-	    const data = await response.json();
-	    
-	    if (data.versao_cliente && data.versao_cliente !== APP_VERSION) {
-	      showUpdatePopup(data.apk_cliente_url);
-	    }
-	  } catch (err) {
-	    console.error("Erro ao verificar atualização:", err);
-	  }
-	}
-
-	function showUpdatePopup(url) {
-	  const overlay = document.createElement('div');
-	  overlay.style = "position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px);";
-	  
-	  const modal = document.createElement('div');
-	  modal.style = "background:white; border-radius:24px; padding:32px; width:100%; max-width:320px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.3);";
-	  
-	  modal.innerHTML = `
-	    <div style="font-size:48px; margin-bottom:16px;">🚀</div>
-	    <h3 style="font-family:'Cormorant Garamond',serif; font-size:24px; color:var(--dark); margin-bottom:8px;">Nova versão disponível</h3>
-	    <p style="font-size:14px; color:var(--mid); margin-bottom:24px;">Uma nova atualização está pronta para você aproveitar as novidades.</p>
-	    <button id="btn-update-now" style="width:100%; background:var(--rose); color:white; border:none; border-radius:50px; padding:14px; font-size:15px; font-weight:600; cursor:pointer; margin-bottom:12px; box-shadow:0 6px 20px rgba(169,107,85,0.3);">Atualizar agora</button>
-	    <button id="btn-update-later" style="width:100%; background:none; border:none; color:var(--light); font-size:14px; cursor:pointer;">Depois</button>
-	  `;
-	  
-	  overlay.appendChild(modal);
-	  document.body.appendChild(overlay);
-	  
-	  document.getElementById('btn-update-now').onclick = () => {
-	    window.open(url, '_system');
-	    document.body.removeChild(overlay);
-	  };
-	  
-	  document.getElementById('btn-update-later').onclick = () => {
-	    document.body.removeChild(overlay);
-	  };
-	}
-
-		// ════ INIT ════
-		window.addEventListener('load', async () => {
-		  const splashText = document.getElementById('splash-text');
-		  const splashVersion = document.getElementById('splash-version');
-		  if (splashVersion) splashVersion.textContent = `Versão ${APP_VERSION}`;
-
-		  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('login').classList.contains('active'))doLogin();});
-		  
-		  if (splashText) splashText.textContent = "Carregando dados...";
-		  seedData();
-		  loadDicas();
-		  
-		  const savedSession=DB.get('nn_session');
-		  if(savedSession){
-		    if (splashText) splashText.textContent = "Validando sessão...";
-		    const users=DB.get('nn_users')||[];
-		    const u=users.find(x=>x.id===savedSession&&x.ativo);
-		    if(u){currentUser=u;goApp();syncUserData();}
-		  }
-		  
-		  setInterval(syncUserData, 30000);
-		  setInterval(loadDicas, 60000);
-		  
-		  if (splashText) splashText.textContent = "Verificando atualizações...";
-		  await checkAppUpdate();
-
-		  const splash = document.getElementById('splash');
-		  if (splash) {
-		    splash.style.opacity = '0';
-		    setTimeout(() => splash.remove(), 500);
-		  }
-		});
-	</script>
+// ════ INIT ════
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('login').classList.contains('active'))doLogin();});
+seedData();
+loadDicas();
+const savedSession=DB.get('nn_session');
+if(savedSession){
+  const users=DB.get('nn_users')||[];
+  const u=users.find(x=>x.id===savedSession&&x.ativo);
+  if(u){currentUser=u;goApp();syncUserData();}
+}
+setInterval(syncUserData, 30000);
+setInterval(loadDicas, 60000);
+</script>
 </body>
 </html>
