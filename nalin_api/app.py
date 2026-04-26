@@ -402,20 +402,20 @@ def delete_ebook(ebook_id):
     db.commit()
     return jsonify({"status": "success"})
 
-@app.route('/api/config', methods=['GET', 'POST', 'OPTIONS'])
+@app.route('/api/config', methods=['GET', 'OPTIONS'])
 def config():
+    """Endpoint público para o app das clientes obter as configurações do sistema (WhatsApp, Instagram, e-mail)."""
     if request.method == 'OPTIONS':
         return '', 204
     db = get_db()
-    if request.method == 'GET':
-        conf = db.execute('SELECT * FROM admin_config LIMIT 1').fetchone()
-        return jsonify(dict(conf) if conf else {})
-    else:
-        data = request.json
-        db.execute('UPDATE admin_config SET whatsapp_numero = ?, whatsapp_mensagem = ?, dpp_manual = ?',
-                   (data.get('whatsapp_numero'), data.get('whatsapp_mensagem'), data.get('dpp_manual')))
-        db.commit()
-        return jsonify({"status": "success"})
+    rows = db.execute('SELECT chave, valor FROM config_global').fetchall()
+    config_map = {row['chave']: row['valor'] for row in rows}
+    return jsonify({
+        'whatsapp_numero':   config_map.get('whatsapp_numero', ''),
+        'whatsapp_mensagem': config_map.get('whatsapp_mensagem', 'Olá, preciso de ajuda!'),
+        'instagram_url':     config_map.get('instagram_url', ''),
+        'email_contato':     config_map.get('email_contato', '')
+    })
 
 # ── CONFIGURAÇÕES GLOBAIS DO ADMIN ──────────────────────────────────────────────────────────────────────────────
 @app.route('/api/admin/config', methods=['GET', 'POST', 'OPTIONS'])

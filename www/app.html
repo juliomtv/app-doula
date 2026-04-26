@@ -510,7 +510,18 @@ async function doLogin(){
   }
 }
 function doLogout(){ DB.del('nn_session'); currentUser=null; showScreen('login'); }
-function openWhatsapp(){window.open('https://wa.me/5500000000000','_blank');}
+async function openWhatsapp(){
+  // Busca número e mensagem configurados pelo admin
+  const cfg = await apiFetch('/api/config') || {};
+  const numero  = (cfg.whatsapp_numero  || '').replace(/\D/g, '');
+  const mensagem = cfg.whatsapp_mensagem || 'Olá, preciso de ajuda!';
+  if (!numero) {
+    alert('Número do WhatsApp não configurado. Fale com a Nalin por outro canal.');
+    return;
+  }
+  const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
+  window.open(url, '_blank');
+}
 
 // ════ NAVIGATION ════
 function showScreen(id){
