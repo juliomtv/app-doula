@@ -308,7 +308,7 @@ textarea.dta:focus{border-color:var(--rose);}
     <button class="btn-rose" style="background:var(--dark);margin-top:0;" onclick="abrirLoginAdmin()">Acesso Administrador 🔐</button>
 
 <!-- Modal de login admin -->
-<div class="modal-overlay" id="modal-admin-login" style="display:none;z-index:9999;">
+<div class="modal-overlay" id="modal-admin-login" style="z-index:9999;">
   <div class="modal" style="max-width:360px;">
     <div class="modal-hdr"><h3>Acesso Administrativo</h3><button class="modal-close" onclick="closeModal('modal-admin-login')">✕</button></div>
     <div class="modal-body" style="padding:20px;">
@@ -1664,7 +1664,7 @@ function abrirLoginAdmin() {
   document.getElementById('admin-login-user').value = '';
   document.getElementById('admin-login-pass').value = '';
   document.getElementById('admin-login-err').textContent = '';
-  document.getElementById('modal-admin-login').style.display = 'flex';
+  document.getElementById('modal-admin-login').classList.add('active');
 }
 async function confirmarLoginAdmin() {
   const user = document.getElementById('admin-login-user').value.trim();
@@ -1677,7 +1677,7 @@ async function confirmarLoginAdmin() {
     const res = await apiFetch('/api/admin/login', { method: 'POST', body: JSON.stringify({ usuario: user, senha: pass }) });
     if (res && res.ok) {
       closeModal('modal-admin-login');
-      window.location.href = 'admin.html';
+      setTimeout(() => { window.location.href = 'admin.html'; }, 200);
     } else {
       document.getElementById('admin-login-err').textContent = res?.erro || 'Usuário ou senha incorretos.';
     }
@@ -1711,9 +1711,8 @@ function savePlanoParto(){
 
   const key=`nn_pp_${currentUser.id}`;
   DB.set(key, pp);
-  document.getElementById('pp-msg').textContent='Plano salvo com sucesso!';
-  document.getElementById('pp-msg').style.color='var(--ok)';
-  setTimeout(()=>{document.getElementById('pp-msg').textContent='';},2000);
+  showToast('Plano de parto salvo! 📋');
+  setTimeout(() => closeModal('modal-plano-parto'), 400);
 }
 
 function addEnxovalItem(){
@@ -1816,12 +1815,10 @@ function saveMaternidade(){
   const mat = DB.get(`nn_mat_${currentUser.id}`) || { checklists: JSON.parse(JSON.stringify(defaultMatChecklist)) };
   mat.nome = document.getElementById('mat-nome').value;
   mat.cidade = document.getElementById('mat-cidade').value;
-  
   const key=`nn_mat_${currentUser.id}`;
   DB.set(key, mat);
-  document.getElementById('mat-msg').textContent='Informações salvas com sucesso!';
-  document.getElementById('mat-msg').style.color='var(--ok)';
-  setTimeout(()=>{document.getElementById('mat-msg').textContent='';},2000);
+  showToast('Maternidade salva! 🏥');
+  setTimeout(() => closeModal('modal-maternidade'), 400);
 }
 
 function renderMatChecklist() {
@@ -2108,6 +2105,17 @@ async function syncUserData(){
 const OTA_VERSION_KEY = 'ota_versao_instalada';
 const OTA_SKIP_KEY    = 'ota_skip_versao';
 
+function compararVersao(a, b) {
+  // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")
+  const pa = String(a).split('.').map(Number);
+  const pb = String(b).split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const na = pa[i] || 0, nb = pb[i] || 0;
+    if (na > nb) return true;
+    if (na < nb) return false;
+  }
+  return false; // iguais
+}
 async function verificarAtualizacao() {
   if (!API_URL) return; // Sem servidor configurado, pula
   try {
@@ -2115,16 +2123,12 @@ async function verificarAtualizacao() {
     if (!res.ok) return;
     const dados = await res.json();
     const versaoServidor = dados.versao || '1.0.0';
-    const hashServidor   = dados.hash   || '';
     const versaoLocal    = localStorage.getItem(OTA_VERSION_KEY) || '0.0.0';
     const skipVersao     = localStorage.getItem(OTA_SKIP_KEY)    || '';
-
-    // Se o usuário escolheu "Agora não" para esta versão, não mostra de novo nesta sessão
+    // Se o usuário escolheu "Agora não" para esta versão exata, não mostra de novo
     if (skipVersao === versaoServidor) return;
-
-    // Compara versões ou hash
-    if (versaoServidor !== versaoLocal || (hashServidor && hashServidor !== localStorage.getItem('ota_hash_local'))) {
-      // Há atualização disponível — mostrar modal
+    // Só mostra o modal se a versão do servidor for MAIOR que a local
+    if (compararVersao(versaoServidor, versaoLocal)) {
       mostrarModalOTA(versaoServidor, versaoLocal, dados.notas || 'Melhorias e correções de bugs.', dados.obrigatoria || false);
     }
   } catch (e) {

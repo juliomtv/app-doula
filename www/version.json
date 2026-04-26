@@ -1,6 +1,6 @@
 {
-  "versao": "1.0.2",
+  "versao": "1.0.3",
   "data": "2026-04-26",
-  "notas": "OTA corrigido (notificação ao abrir app). Botão Sair no painel admin em celular.",
+  "notas": "OTA corrigido (comparação semântica de versões). Modal admin: X e Cancelar funcionando. Salvar Maternidade e Plano de Parto fecham o modal automaticamente.",
   "obrigatoria": false
 }
