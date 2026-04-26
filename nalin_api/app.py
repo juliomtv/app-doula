@@ -6,6 +6,8 @@ import socket
 import subprocess
 import threading
 import re
+import hashlib
+import json
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -92,7 +94,8 @@ CORS(app, resources={
     r"/api/*": {"origins": "*", "methods": ["GET", "POST", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type"]},
     r"/versao_app": {"origins": "*", "methods": ["GET", "OPTIONS"], "allow_headers": ["Content-Type"]},
     r"/server-info": {"origins": "*", "methods": ["GET", "OPTIONS"], "allow_headers": ["Content-Type"]},
-    r"/api/url-servidor": {"origins": "*", "methods": ["GET", "POST", "OPTIONS"], "allow_headers": ["Content-Type"]}
+    r"/api/url-servidor": {"origins": "*", "methods": ["GET", "POST", "OPTIONS"], "allow_headers": ["Content-Type"]},
+    r"/ota/*": {"origins": "*", "methods": ["GET", "OPTIONS"], "allow_headers": ["Content-Type"]}
 })
 
 app.add_url_rule("/uploads/<path:filename>", endpoint="uploads", view_func=lambda filename: send_from_directory(app.config["UPLOAD_FOLDER"], filename))
@@ -198,6 +201,52 @@ def url_servidor():
             return jsonify({"status": "success", "url_base_servidor": nova_url})
         except Exception as e:
             return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# ════ OTA UPDATE ════
+# Caminho do www relativo ao nalin_api
+WWW_DIR = os.path.join(os.path.dirname(BASE_DIR), 'www')
+VERSION_FILE = os.path.join(WWW_DIR, 'version.json')
+
+def get_app_version():
+    """Lê o version.json e retorna os dados de versão."""
+    try:
+        with open(VERSION_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {"versao": "1.0.0", "data": "", "notas": "", "obrigatoria": False}
+
+def get_index_hash():
+    """Calcula o hash MD5 do index.html para detectar mudanças."""
+    index_path = os.path.join(WWW_DIR, 'index.html')
+    try:
+        with open(index_path, 'rb') as f:
+            return hashlib.md5(f.read()).hexdigest()
+    except Exception:
+        return ""
+
+@app.route('/ota/versao', methods=['GET', 'OPTIONS'])
+def ota_versao():
+    """Retorna a versão atual do app e o hash do index.html."""
+    if request.method == 'OPTIONS':
+        return '', 204
+    ver = get_app_version()
+    ver['hash'] = get_index_hash()
+    return jsonify(ver)
+
+@app.route('/ota/index.html', methods=['GET', 'OPTIONS'])
+def ota_index():
+    """Serve o index.html atualizado para download pelo app."""
+    if request.method == 'OPTIONS':
+        return '', 204
+    return send_from_directory(WWW_DIR, 'index.html')
+
+@app.route('/ota/version.json', methods=['GET', 'OPTIONS'])
+def ota_version_json():
+    """Serve o version.json para o app verificar a versão."""
+    if request.method == 'OPTIONS':
+        return '', 204
+    return send_from_directory(WWW_DIR, 'version.json')
 
 @app.route('/versao_app', methods=['GET', 'OPTIONS'])
 def versao_app():

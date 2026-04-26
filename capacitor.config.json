@@ -4,6 +4,17 @@
   "webDir": "www",
   "server": {
     "androidScheme": "https",
-    "cleartext": true
+    "cleartext": true,
+    "allowNavigation": ["*.trycloudflare.com", "*.youtube.com", "wa.me"]
+  },
+  "android": {
+    "allowMixedContent": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "backgroundColor": "#FBF7F4",
+      "showSpinner": false
+    }
   }
 }
