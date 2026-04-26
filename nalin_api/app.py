@@ -3,6 +3,9 @@ from flask import Flask, request, jsonify, g, send_from_directory
 from flask_cors import CORS
 import os
 import socket
+import subprocess
+import threading
+import re
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -34,10 +37,61 @@ def get_local_ip():
 ip_local = get_local_ip()
 base_url = f"http://{ip_local}:5000"
 
+# URL pública gerada pelo cloudflared tunnel (preenchida automaticamente ao iniciar)
+tunnel_url = None
+
+def start_cloudflared_tunnel():
+    """Inicia o cloudflared tunnel em background e captura a URL pública.
+    O cloudflared cria um túnel HTTPS gratuito sem necessidade de conta.
+    Instale com: winget install Cloudflare.cloudflared (Windows)
+                 brew install cloudflared (Mac)
+                 sudo apt install cloudflared (Linux/Ubuntu)
+    Ou baixe em: https://github.com/cloudflare/cloudflared/releases
+    """
+    global tunnel_url
+    try:
+        # Verifica se cloudflared está disponível no PATH
+        check = subprocess.run(
+            ['cloudflared', '--version'],
+            capture_output=True, text=True
+        )
+        if check.returncode != 0:
+            print("[TUNNEL] cloudflared não encontrado no PATH.")
+            print("[TUNNEL] Instale em: https://github.com/cloudflare/cloudflared/releases")
+            print("[TUNNEL] Sem o tunnel, o app só funciona na mesma rede Wi-Fi.")
+            return
+
+        proc = subprocess.Popen(
+            ['cloudflared', 'tunnel', '--url', 'http://localhost:5000'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1
+        )
+        print("[TUNNEL] Iniciando cloudflared tunnel... aguarde alguns segundos.")
+        for line in proc.stdout:
+            # Captura a URL pública gerada pelo cloudflared
+            match = re.search(r'https://[a-zA-Z0-9\-]+\.trycloudflare\.com', line)
+            if match:
+                tunnel_url = match.group(0)
+                print(f"\n{'='*60}")
+                print(f" 🌍 URL PÚBLICA GERADA COM SUCESSO!")
+                print(f" 🔗 {tunnel_url}")
+                print(f" 📱 Cole essa URL no app para acessar de qualquer rede")
+                print(f"    (5G, Wi-Fi externo, etc.)")
+                print(f"{'='*60}\n")
+                break
+    except FileNotFoundError:
+        print("[TUNNEL] cloudflared não encontrado.")
+        print("[TUNNEL] Baixe em: https://github.com/cloudflare/cloudflared/releases")
+    except Exception as e:
+        print(f"[TUNNEL] Erro ao iniciar tunnel: {e}")
+
 # Configuração expandida do CORS para incluir rotas fora de /api/
 CORS(app, resources={
     r"/api/*": {"origins": "*", "methods": ["GET", "POST", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type"]},
-    r"/versao_app": {"origins": "*", "methods": ["GET", "OPTIONS"], "allow_headers": ["Content-Type"]}
+    r"/versao_app": {"origins": "*", "methods": ["GET", "OPTIONS"], "allow_headers": ["Content-Type"]},
+    r"/server-info": {"origins": "*", "methods": ["GET", "OPTIONS"], "allow_headers": ["Content-Type"]}
 })
 
 app.add_url_rule("/uploads/<path:filename>", endpoint="uploads", view_func=lambda filename: send_from_directory(app.config["UPLOAD_FOLDER"], filename))
@@ -85,6 +139,21 @@ def status():
     if request.method == 'OPTIONS':
         return '', 204
     return jsonify({"status": "online", "message": "API Nalin Nazareth rodando localmente"})
+
+@app.route('/server-info', methods=['GET', 'OPTIONS'])
+def server_info():
+    """Retorna informações do servidor para o app descobrir a URL pública.
+    O app usa este endpoint para saber qual URL usar quando estiver fora da rede local.
+    """
+    if request.method == 'OPTIONS':
+        return '', 204
+    return jsonify({
+        "status": "online",
+        "ip_local": ip_local,
+        "url_local": f"http://{ip_local}:5000",
+        "url_publica": tunnel_url,
+        "mensagem": "Use url_publica para acessar de qualquer rede (5G, Wi-Fi externo)"
+    })
 
 @app.route('/versao_app', methods=['GET', 'OPTIONS'])
 def versao_app():
@@ -385,8 +454,12 @@ if __name__ == '__main__':
     
     print(f"\n{'='*60}")
     print(f" 🚀 SERVIDOR API NALIN NAZARETH ATIVO")
-    print(f" 📱 No App, use este IP: {ip_local}")
-    print(f" 🔗 URL Completa: http://{ip_local}:5000")
-    print(f" 🌐 Certifique-se que o celular está no mesmo Wi-Fi!")
+    print(f" 📡 IP Local (Wi-Fi): http://{ip_local}:5000")
+    print(f" 🌍 Iniciando túnel público (aguarde alguns segundos)...")
     print(f"{'='*60}\n")
+    
+    # Inicia o tunnel cloudflared em background para não bloquear o servidor
+    tunnel_thread = threading.Thread(target=start_cloudflared_tunnel, daemon=True)
+    tunnel_thread.start()
+    
     app.run(host='0.0.0.0', port=5000, debug=False)

@@ -203,6 +203,11 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif;}
     <h3>Bem-vinda, mamãe</h3>
     <div class="field"><label>E-mail</label><input type="email" id="l-email" placeholder="seu@email.com"></div>
     <div class="field"><label>Senha</label><input type="password" id="l-senha" placeholder="••••••••"></div>
+    <div class="field">
+      <label>URL do Servidor</label>
+      <input type="text" id="l-api-url" placeholder="https://xxxx.trycloudflare.com" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+      <small style="font-size:11px;color:var(--light);margin-top:4px;display:block;line-height:1.5;">Cole a URL que aparece no terminal do servidor.<br>Ex: <strong>https://xxxx.trycloudflare.com</strong></small>
+    </div>
     <button class="btn-rose" onclick="doLogin()">Entrar no App</button>
     <div class="login-err" id="l-err"></div>
   </div>
@@ -345,7 +350,8 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif;}
 
 <script>
 // ════ STORAGE HELPERS ════
-let API_URL = localStorage.getItem('api_url') || "http://192.168.1.8:5000";
+// URL do servidor: usa a salva no localStorage ou vazia (usuário deve informar no login)
+let API_URL = localStorage.getItem('api_url') || '';
 const DB = {
   get:(k)=>{ try{return JSON.parse(localStorage.getItem(k));}catch{return null;}},
   set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
@@ -376,15 +382,33 @@ let currentUser=null, currentMood='😊', currentTab=0;
 // ════ API FETCH HELPERS ════
 async function apiFetch(endpoint, options = {}) {
   try {
-    const res = await fetch(`${API_URL}${endpoint}`, {
+    let baseUrl = API_URL;
+    if (!baseUrl) return null;
+    if (!baseUrl.startsWith('http')) baseUrl = 'http://' + baseUrl;
+    const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
+    const res = await fetch(url, {
       ...options,
       headers: { 'Content-Type': 'application/json', ...options.headers }
     });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (e) {
     console.error("Erro na API:", e);
-    return null;
+    return { status: 'error', message: 'Não foi possível conectar ao servidor. Verifique a URL.' };
   }
+}
+function setApiUrl(url) {
+  if(!url) return;
+  if(!url.startsWith('http')) url = 'http://' + url;
+  API_URL = url;
+  localStorage.setItem('api_url', url);
+  console.log('API URL atualizada para:', API_URL);
+}
+// Preenche o campo de URL com o valor salvo
+function preencherCampoUrl() {
+  const saved = localStorage.getItem('api_url');
+  const input = document.getElementById('l-api-url');
+  if (input && saved) input.value = saved;
 }
 
 // ════ LOG ACTIVITY ════
@@ -404,12 +428,27 @@ async function logActivity(acao, detalhes = '') {
 async function doLogin(){
   const email=document.getElementById('l-email').value.trim().toLowerCase();
   const senha=document.getElementById('l-senha').value;
+  const customUrl=document.getElementById('l-api-url').value.trim();
+  const errEl=document.getElementById('l-err');
+
+  if(!customUrl && !API_URL){
+    errEl.textContent='⚠️ Informe a URL do servidor antes de entrar.';
+    document.getElementById('l-api-url').focus();
+    return;
+  }
+  if(customUrl) setApiUrl(customUrl);
+
+  errEl.textContent='🔄 Conectando...';
   const res = await apiFetch('/api/login', { method: 'POST', body: JSON.stringify({ email, senha }) });
   if(res && res.status === 'success'){
     currentUser = res.user;
     DB.set('nn_session', currentUser.id);
+    errEl.textContent='';
     goApp();
-  } else { document.getElementById('l-err').textContent= res?.message || 'Erro no login.'; }
+  } else {
+    const msg = (res && res.message) ? res.message : 'E-mail ou senha incorretos.';
+    errEl.textContent = msg;
+  }
 }
 function doLogout(){ DB.del('nn_session'); currentUser=null; showScreen('login'); }
 function openWhatsapp(){window.open('https://wa.me/5500000000000','_blank');}
@@ -634,35 +673,37 @@ function renderPerfil(){
 	  };
 	}
 
-		window.addEventListener('load', async () => {
+			window.addEventListener('load', async () => {
 		  const splashText = document.getElementById('splash-text');
 		  const splashVersion = document.getElementById('splash-version');
 		  if (splashVersion) splashVersion.textContent = `Versão ${APP_VERSION}`;
-
 		  if (splashText) splashText.textContent = "Carregando dados...";
 		  seedData();
+		  // Preenche o campo de URL com o valor salvo
+		  preencherCampoUrl();
 		  
 		  const savedSession=DB.get('nn_session');
-		  if(savedSession){
+		  if(savedSession && API_URL){
 		    if (splashText) splashText.textContent = "Validando sessão...";
 		    try {
 		      const users = await apiFetch('/api/users');
-		      const u = users?.find(x => x.id === savedSession);
-		      if(u){ currentUser=u; goApp(); }
+		      if (Array.isArray(users)) {
+		        const u = users.find(x => x.id === savedSession);
+		        if(u){ currentUser=u; goApp(); }
+		      }
 		    } catch (err) {
 		      console.error("Erro ao validar sessão:", err);
 		    }
 		  }
 		  
 		  if (splashText) splashText.textContent = "Verificando atualizações...";
-		  await checkAppUpdate();
-
+		  if (API_URL) await checkAppUpdate();
 		  const splash = document.getElementById('splash');
 		  if (splash) {
 		    splash.style.opacity = '0';
 		    setTimeout(() => splash.remove(), 500);
 		  }
-		});
+		});;
 	</script>
 </body>
 </html>

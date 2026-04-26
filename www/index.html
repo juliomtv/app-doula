@@ -235,9 +235,9 @@ textarea.dta:focus{border-color:var(--rose);}
       <input type="password" id="l-senha" placeholder="••••••••" value="">
     </div>
     <div class="field">
-      <label>URL da API (opcional)</label>
-      <input type="text" id="l-api-url" placeholder="http://localhost:5000" value="">
-      <small style="font-size:11px;color:var(--light);margin-top:4px;display:block;">Ex: http://192.168.1.15:5000 ou http://localhost:5000</small>
+      <label>URL do Servidor</label>
+      <input type="text" id="l-api-url" placeholder="https://xxxx.trycloudflare.com" value="" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+      <small style="font-size:11px;color:var(--light);margin-top:4px;display:block;line-height:1.5;">Cole a URL que aparece no terminal do servidor ao iniciar.<br>Ex: <strong>https://xxxx.trycloudflare.com</strong> (funciona em qualquer rede)<br>Ou: <strong>http://192.168.1.15:5000</strong> (somente Wi-Fi local)</small>
     </div>
     <button class="btn-rose" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="l-err"></div>
@@ -588,7 +588,8 @@ textarea.dta:focus{border-color:var(--rose);}
 
 <script>
 // ════ CONFIGURAÇÃO DINÂMICA DA API ════
-let API_URL = localStorage.getItem('api_url') || 'http://localhost:5000';
+// URL do servidor: usa a salva no localStorage ou vazia (usuario deve informar no login)
+let API_URL = localStorage.getItem('api_url') || '';
 const DB = {
   get:(k)=>{ try{return JSON.parse(localStorage.getItem(k));}catch{return null;}},
   set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
@@ -603,22 +604,18 @@ function setApiUrl(url) {
   console.log('API URL atualizada para:', API_URL);
 }
 
-// Tentar descobrir o IP da API automaticamente se estiver no localhost (comum em mobile/apk)
-async function discoverApi() {
-  // Se já temos uma URL salva que não é localhost, não fazemos nada
+// Preenche o campo de URL da API com o valor salvo anteriormente (se houver)
+function preencherCampoUrl() {
   const saved = localStorage.getItem('api_url');
-  if (saved && !saved.includes('localhost') && !saved.includes('127.0.0.1')) return;
-
-  console.log("Tentando descobrir API na rede local...");
-  
-  // Lista de IPs comuns para testar (gateway padrão geralmente termina em .1 ou .100)
-  // Como não podemos escanear a rede toda via JS no browser facilmente, 
-  // vamos focar em permitir que o usuário insira ou usar o que o backend nos der.
-  
-  // Uma técnica comum é tentar buscar um arquivo de configuração estático se houver um servidor central,
-  // mas como é local, o melhor é o fallback para o que foi digitado.
+  const input = document.getElementById('l-api-url');
+  if (input && saved) {
+    input.value = saved;
+  }
 }
-discoverApi();
+// Executa quando a tela de login estiver pronta
+document.addEventListener('DOMContentLoaded', preencherCampoUrl);
+// Fallback caso DOMContentLoaded já tenha disparado
+if (document.readyState !== 'loading') preencherCampoUrl();
 
 // ════ SEED DATA ════
 function seedData(){
@@ -683,9 +680,10 @@ async function apiFetch(endpoint, options = {}) {
     console.error("Erro na API:", e);
     // Retornar um objeto de erro padronizado para que a UI possa tratar
     const currentIp = API_URL.replace('http://', '').split(':')[0];
+    const currentAddr = API_URL || 'servidor';
     return { 
       status: 'error', 
-      message: `Não foi possível conectar em ${currentIp}. Verifique se o servidor está rodando e se você está na mesma rede Wi-Fi.` 
+      message: `Não foi possível conectar ao servidor (${currentAddr}). Verifique se o servidor está ligado e se a URL está correta.` 
     };
   }
 }
@@ -695,13 +693,22 @@ async function doLogin(){
   const email=document.getElementById('l-email').value.trim().toLowerCase();
   const senha=document.getElementById('l-senha').value;
   const customUrl=document.getElementById('l-api-url').value.trim();
-  
+  const errEl=document.getElementById('l-err');
+
+  // Validação: URL do servidor é obrigatória
+  if(!customUrl && !API_URL){
+    errEl.textContent='⚠️ Informe a URL do servidor antes de entrar.';
+    errEl.style.color='#c0392b';
+    document.getElementById('l-api-url').focus();
+    return;
+  }
+
   if(customUrl){
     setApiUrl(customUrl);
-    document.getElementById('l-err').textContent='Conectando a API...';
-    document.getElementById('l-err').style.color='var(--mid)';
+    errEl.textContent='🔄 Conectando ao servidor...';
+    errEl.style.color='var(--mid)';
   }
-  
+
   // Tentar login via API
   const res = await apiFetch('/api/login', {
     method: 'POST',
@@ -711,7 +718,7 @@ async function doLogin(){
   if(res && res.status === 'success'){
     currentUser = res.user;
     DB.set('nn_session', currentUser.id);
-    document.getElementById('l-err').textContent='';
+    errEl.textContent='';
     goApp();
   } else {
     // Fallback para localStorage se API falhar (modo offline parcial)
@@ -720,13 +727,20 @@ async function doLogin(){
     if(u){
       currentUser=u;
       DB.set('nn_session',u.id);
-      document.getElementById('l-err').textContent='';
+      errEl.textContent='';
       goApp();
     } else {
-      // Se res for nulo ou tiver erro de conexão, mostrar mensagem apropriada
-      const msg = (res && res.status === 'error') ? res.message : 'E-mail ou senha incorretos.';
-      document.getElementById('l-err').textContent = msg;
-      document.getElementById('l-err').style.color = '#c0392b';
+      // Mensagem de erro clara para o usuário
+      let msg;
+      if(res && res.status === 'error' && res.message && res.message.includes('conectar')){
+        msg = '❌ Não foi possível conectar ao servidor. Verifique se o servidor está ligado e se a URL está correta.';
+      } else if(res && res.status === 'error'){
+        msg = res.message;
+      } else {
+        msg = 'E-mail ou senha incorretos.';
+      }
+      errEl.textContent = msg;
+      errEl.style.color = '#c0392b';
     }
   }
 }
@@ -1598,12 +1612,24 @@ async function syncUserData(){
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('login').classList.contains('active'))doLogin();});
 seedData();
 loadDicas();
-const savedSession=DB.get('nn_session');
-if(savedSession){
-  const users=DB.get('nn_users')||[];
-  const u=users.find(x=>x.id===savedSession&&x.ativo);
-  if(u){currentUser=u;goApp();syncUserData();}
-}
+// Preenche o campo de URL com o valor salvo no localStorage
+preencherCampoUrl();
+// Tenta restaurar sessão salva (somente se houver URL configurada)
+(async function initSession(){
+  const savedSession=DB.get('nn_session');
+  if(savedSession && API_URL){
+    // Tenta validar sessão via API
+    const users = await apiFetch('/api/users');
+    if(users && Array.isArray(users)){
+      const u=users.find(x=>x.id===savedSession&&x.ativo);
+      if(u){currentUser=u;goApp();syncUserData();return;}
+    }
+    // Fallback: usa dados locais se API não responder
+    const localUsers=DB.get('nn_users')||[];
+    const u=localUsers.find(x=>x.id===savedSession&&x.ativo);
+    if(u){currentUser=u;goApp();syncUserData();}
+  }
+})();
 setInterval(syncUserData, 30000);
 setInterval(loadDicas, 60000);
 </script>

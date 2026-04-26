@@ -1,45 +1,109 @@
-# Guia: Rodando a API no seu Notebook
+# Guia: Rodando o Servidor no seu Computador
 
-Como você vai rodar tudo no seu notebook, o processo é muito simples. Siga os passos abaixo:
+O servidor roda no seu computador e o app no celular pode se conectar a ele de **qualquer rede** (Wi-Fi, 5G) usando o **Cloudflare Tunnel** — uma ferramenta gratuita que cria uma URL pública temporária para o seu servidor local.
 
-## 1. Preparar o Ambiente (No Notebook)
+---
+
+## 1. Preparar o Ambiente (No Computador)
+
 Certifique-se de ter o **Python** instalado.
+
 Abra o terminal na pasta `nalin_api` e instale as dependências:
+
 ```bash
 pip install flask flask-cors
 ```
 
-## 2. Iniciar a API
-Ainda no terminal, execute:
+---
+
+## 2. Instalar o Cloudflare Tunnel (cloudflared)
+
+O `cloudflared` cria um túnel seguro HTTPS entre a internet e o seu servidor local. É **gratuito** e não precisa de conta.
+
+**Windows:**
+```powershell
+winget install Cloudflare.cloudflared
+```
+Ou baixe o instalador em: https://github.com/cloudflare/cloudflared/releases
+
+**Mac:**
+```bash
+brew install cloudflared
+```
+
+**Linux/Ubuntu:**
+```bash
+sudo apt install cloudflared
+```
+
+---
+
+## 3. Iniciar o Servidor
+
+Na pasta `nalin_api`, execute:
+
 ```bash
 python app.py
 ```
-O terminal mostrará uma mensagem como esta:
-`Endereço para os APKS: http://192.168.1.15:5000`
 
-**Importante:** Anote esse número de IP (ex: `192.168.1.15`).
+O terminal mostrará algo como:
 
----
+```
+============================================================
+ 🚀 SERVIDOR API NALIN NAZARETH ATIVO
+ 📡 IP Local (Wi-Fi): http://192.168.1.15:5000
+ 🌍 Iniciando túnel público (aguarde alguns segundos)...
+============================================================
 
-## 3. Conectar os Apps (APK) à API
-Para que os APKs no celular achem o seu notebook, você deve atualizar a URL nos arquivos HTML **antes** de gerar o APK.
-
-### No `app.html` e `admin.html`:
-No topo do `<script>`, coloque o IP que apareceu no seu terminal:
-```javascript
-const API_URL = "http://SEU_IP_AQUI:5000"; // Ex: http://192.168.1.15:5000
+============================================================
+ 🌍 URL PÚBLICA GERADA COM SUCESSO!
+ 🔗 https://exemplo-aleatorio.trycloudflare.com
+ 📱 Cole essa URL no app para acessar de qualquer rede
+============================================================
 ```
 
----
-
-## 4. Dicas de Ouro para Rede Local
-1. **Mesmo Wi-Fi**: O seu notebook e o seu celular Android **devem** estar conectados na mesma rede Wi-Fi.
-2. **Firewall**: Se o app não conectar, pode ser que o Firewall do Windows esteja bloqueando a porta 5000. Tente desativar temporariamente ou permitir a porta 5000.
-3. **IP Dinâmico**: O IP do seu notebook pode mudar se você reiniciar o roteador. Se o app parar de funcionar, verifique se o IP no terminal do Python ainda é o mesmo.
+**Anote a URL pública** (ex: `https://exemplo-aleatorio.trycloudflare.com`).
 
 ---
 
-## 5. Vantagem do Banco de Dados Local
-- O arquivo `dados.db` será criado automaticamente na pasta raiz do projeto.
-- Todas as clientes que você cadastrar no Admin ficarão salvas nesse arquivo no seu notebook.
-- Se você quiser fazer um backup, basta copiar o arquivo `dados.db`.
+## 4. Conectar o App ao Servidor
+
+Na tela de login do app, cole a **URL pública** no campo **"URL do Servidor"**:
+
+```
+https://exemplo-aleatorio.trycloudflare.com
+```
+
+A URL fica salva automaticamente — você só precisa informar uma vez. Nas próximas vezes que abrir o app, ela já estará preenchida.
+
+> **Importante:** A URL pública muda toda vez que você reinicia o servidor. Se o app parar de conectar, verifique a nova URL no terminal e atualize no campo de login.
+
+---
+
+## 5. Funcionamento em Diferentes Redes
+
+| Situação | Como conectar |
+|---|---|
+| Celular no mesmo Wi-Fi do computador | Use a URL pública **ou** o IP local (`http://192.168.1.15:5000`) |
+| Celular em outra rede (5G, Wi-Fi externo) | Use **somente** a URL pública (`https://xxxx.trycloudflare.com`) |
+
+---
+
+## 6. Dicas Importantes
+
+1. **Servidor deve estar ligado:** O computador precisa estar ligado e com o servidor rodando para o app funcionar.
+2. **Firewall:** Se o cloudflared não iniciar, verifique se o Firewall está bloqueando. Permita o `cloudflared` nas configurações de segurança.
+3. **URL muda ao reiniciar:** A URL pública é temporária. Ao reiniciar o servidor, uma nova URL é gerada — atualize no app.
+4. **Backup do banco:** O arquivo `dados.db` fica na pasta raiz do projeto. Copie-o para fazer backup de todas as clientes cadastradas.
+
+---
+
+## 7. Sem o cloudflared (somente Wi-Fi local)
+
+Se preferir não usar o cloudflared, o app ainda funciona normalmente **na mesma rede Wi-Fi** do computador. Use o IP local exibido no terminal:
+
+```
+http://192.168.1.15:5000
+```
+
+Nesse caso, o celular e o computador precisam estar na mesma rede Wi-Fi.
