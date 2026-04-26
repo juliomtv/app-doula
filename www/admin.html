@@ -160,9 +160,21 @@ tr:hover td{background:rgba(247,237,232,.5);}
   50% { width: 100%; }
   100% { width: 100%; }
 }
+
+/* ── OTA UPDATE BANNER ── */
+#ota-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(90deg,#2d6a4f,#40916c);color:white;padding:10px 20px;text-align:center;font-size:13px;font-weight:500;box-shadow:0 2px 12px rgba(0,0,0,.2);}
+#ota-banner.show{display:flex;align-items:center;justify-content:center;gap:12px;}
+#ota-banner button{background:white;color:#2d6a4f;border:none;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;}
+#ota-banner .ota-dismiss{background:transparent;color:rgba(255,255,255,.7);font-size:18px;padding:0 4px;line-height:1;}
 </style>
 </head>
 <body>
+<div id="ota-banner">
+  <span id="ota-banner-txt">🚀 Nova versão disponível!</span>
+  <button onclick="otaAtualizarAdmin()">Atualizar agora</button>
+  <button class="ota-dismiss" onclick="document.getElementById('ota-banner').classList.remove('show')">✕</button>
+</div>
+
 
 <!-- ════════════ ADMIN LOGIN ════════════ -->
 <div id="admin-login">
@@ -634,6 +646,8 @@ async function adminLogin(){
     document.getElementById('admin-login').style.display='none';
     document.getElementById('admin-shell').classList.add('active');
     renderDashboard();
+    // Verificar se há atualização disponível
+    setTimeout(verificarAtualizacaoAdmin, 1500);
   } else {
     errEl.textContent = res ? (res.message || 'Credenciais incorretas.') : '❌ Não foi possível conectar ao servidor.';
     errEl.style.color = '#c0392b';
@@ -1480,11 +1494,64 @@ async function deleteDica(id) {
     document.getElementById('admin-login').style.display='none';
     document.getElementById('admin-shell').classList.add('active');
     renderDashboard();
+    setTimeout(verificarAtualizacaoAdmin, 1500);
   }
 
   // Atualiza URL pública a cada 5 minutos
   setInterval(descobrirUrlPublica, 5 * 60 * 1000);
 })();
+
+// ════ OTA UPDATE (ADMIN) ════
+const ADMIN_OTA_VERSION_KEY = 'ota_versao_instalada';
+const ADMIN_OTA_SKIP_KEY    = 'ota_skip_versao';
+function compararVersaoAdmin(a, b) {
+  const pa = String(a).split('.').map(Number);
+  const pb = String(b).split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const na = pa[i] || 0, nb = pb[i] || 0;
+    if (na > nb) return true;
+    if (na < nb) return false;
+  }
+  return false;
+}
+async function verificarAtualizacaoAdmin() {
+  if (!API_URL) return;
+  try {
+    const res = await fetch(`${API_URL}/ota/versao`, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return;
+    const dados = await res.json();
+    const versaoServidor = dados.versao || '1.0.0';
+    const versaoLocal    = localStorage.getItem(ADMIN_OTA_VERSION_KEY) || '0.0.0';
+    const skipVersao     = localStorage.getItem(ADMIN_OTA_SKIP_KEY)    || '';
+    if (skipVersao === versaoServidor) return;
+    if (compararVersaoAdmin(versaoServidor, versaoLocal)) {
+      const banner = document.getElementById('ota-banner');
+      const txt    = document.getElementById('ota-banner-txt');
+      if (banner) {
+        if (txt) txt.textContent = `🚀 Nova versão ${versaoServidor} disponível! (você tem ${versaoLocal})`;
+        banner.dataset.versaoNova = versaoServidor;
+        banner.classList.add('show');
+      }
+    }
+  } catch (e) { /* silencioso */ }
+}
+async function otaAtualizarAdmin() {
+  const banner = document.getElementById('ota-banner');
+  const versaoNova = banner ? banner.dataset.versaoNova : '';
+  const txt = document.getElementById('ota-banner-txt');
+  if (txt) txt.textContent = '⏳ Baixando atualização...';
+  try {
+    const res = await fetch(`${API_URL}/ota/index.html`, { signal: AbortSignal.timeout(30000) });
+    if (!res.ok) throw new Error('Falha no download');
+    if (txt) txt.textContent = '✅ Atualização concluída! Recarregando...';
+    localStorage.setItem(ADMIN_OTA_VERSION_KEY, versaoNova || '');
+    localStorage.removeItem(ADMIN_OTA_SKIP_KEY);
+    setTimeout(() => window.location.reload(true), 1500);
+  } catch (e) {
+    if (txt) txt.textContent = '❌ Erro ao baixar. Verifique a conexão.';
+  }
+}
+
 </script>
 </body>
 </html>

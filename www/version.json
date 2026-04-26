@@ -1,6 +1,6 @@
 {
-  "versao": "1.0.4",
+  "versao": "1.0.5",
   "data": "2026-04-26",
-  "notas": "Botão Acesso Administrador abre admin.html diretamente. Login admin corrigido (nalinnazareth/apolo1895). Modal duplicado removido.",
+  "notas": "OTA verificado ao abrir o app (tela de login). Admin também recebe notificação de atualização após login.",
   "obrigatoria": false
 }
