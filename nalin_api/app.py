@@ -91,7 +91,8 @@ def start_cloudflared_tunnel():
 CORS(app, resources={
     r"/api/*": {"origins": "*", "methods": ["GET", "POST", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type"]},
     r"/versao_app": {"origins": "*", "methods": ["GET", "OPTIONS"], "allow_headers": ["Content-Type"]},
-    r"/server-info": {"origins": "*", "methods": ["GET", "OPTIONS"], "allow_headers": ["Content-Type"]}
+    r"/server-info": {"origins": "*", "methods": ["GET", "OPTIONS"], "allow_headers": ["Content-Type"]},
+    r"/api/url-servidor": {"origins": "*", "methods": ["GET", "POST", "OPTIONS"], "allow_headers": ["Content-Type"]}
 })
 
 app.add_url_rule("/uploads/<path:filename>", endpoint="uploads", view_func=lambda filename: send_from_directory(app.config["UPLOAD_FOLDER"], filename))
@@ -142,18 +143,61 @@ def status():
 
 @app.route('/server-info', methods=['GET', 'OPTIONS'])
 def server_info():
-    """Retorna informações do servidor para o app descobrir a URL pública.
-    O app usa este endpoint para saber qual URL usar quando estiver fora da rede local.
+    """Retorna informações do servidor.
+    Também retorna url_base_servidor salva pelo admin para novas instalações se configurarem automaticamente.
     """
     if request.method == 'OPTIONS':
         return '', 204
+    db = get_db()
+    try:
+        row = db.execute("SELECT valor FROM config_global WHERE chave = 'url_base_servidor'").fetchone()
+        url_base_salva = row['valor'] if row and row['valor'] else None
+    except Exception:
+        url_base_salva = None
     return jsonify({
         "status": "online",
         "ip_local": ip_local,
         "url_local": f"http://{ip_local}:5000",
         "url_publica": tunnel_url,
+        "url_base_servidor": url_base_salva,
         "mensagem": "Use url_publica para acessar de qualquer rede (5G, Wi-Fi externo)"
     })
+
+@app.route('/api/url-servidor', methods=['GET', 'POST', 'OPTIONS'])
+def url_servidor():
+    """Endpoint público para o app buscar/salvar a URL base do servidor.
+    GET  → retorna url_base_servidor e url_publica (sem autenticação, pois o app precisa antes do login)
+    POST → salva url_base_servidor (uso do admin)
+    """
+    if request.method == 'OPTIONS':
+        return '', 204
+    db = get_db()
+    if request.method == 'GET':
+        try:
+            row = db.execute("SELECT valor FROM config_global WHERE chave = 'url_base_servidor'").fetchone()
+            url_base = row['valor'] if row and row['valor'] else None
+        except Exception:
+            url_base = None
+        return jsonify({
+            "status": "ok",
+            "url_base_servidor": url_base,
+            "url_publica": tunnel_url,
+            "ip_local": ip_local
+        })
+    else:
+        data = request.json or {}
+        nova_url = data.get('url_base_servidor', '').strip()
+        if not nova_url:
+            return jsonify({"status": "error", "message": "url_base_servidor é obrigatória"}), 400
+        try:
+            db.execute(
+                "INSERT OR REPLACE INTO config_global (chave, valor, descricao, atualizado_em) VALUES ('url_base_servidor', ?, 'URL base do servidor configurada pelo admin', CURRENT_TIMESTAMP)",
+                (nova_url,)
+            )
+            db.commit()
+            return jsonify({"status": "success", "url_base_servidor": nova_url})
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/versao_app', methods=['GET', 'OPTIONS'])
 def versao_app():

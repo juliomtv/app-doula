@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS ebooks (
     url_pdf TEXT NOT NULL,
     url_capa TEXT,
     ativo INTEGER DEFAULT 1,
-    data_upload TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Tabela de Configuração do Admin
@@ -159,7 +159,8 @@ INSERT OR IGNORE INTO config_global (chave, valor, descricao) VALUES
 ('whatsapp_numero', '5500000000000', 'Numero de WhatsApp da Doula'),
 ('whatsapp_mensagem', 'Ola! Tudo bem? Sou a Nalin, sua doula. Como posso ajuda-la?', 'Mensagem padrao do WhatsApp'),
 ('instagram_url', '', 'URL do Instagram'),
-('email_contato', '', 'E-mail para contato');
+('email_contato', '', 'E-mail para contato'),
+('url_base_servidor', '', 'URL base do servidor (IP local). Configurada pelo admin. O app usa para descobrir a URL publica do tunnel automaticamente.');
 
 -- Tabela de Logs de Atividade
 CREATE TABLE IF NOT EXISTS logs_atividade (

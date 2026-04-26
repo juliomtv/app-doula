@@ -394,27 +394,48 @@ function setApiUrl(url) {
 }
 
 /**
- * Busca /server-info na URL_BASE e atualiza API_URL com a url_publica do tunnel.
- * Chamada silenciosamente ao iniciar o app — sem interação do usuário.
+ * Descobre a URL do servidor automaticamente, sem interação do usuário.
+ * Estratégia em 3 camadas:
+ * 1. URL_BASE local → busca /server-info para obter url_publica do tunnel
+ * 2. Sem URL_BASE → tenta buscar url_base_servidor do admin via scan de rede
+ * 3. Fallback: usa URL_BASE diretamente se tunnel não estiver ativo
  */
+const CANDIDATE_IPS = ['192.168.1.1','192.168.0.1','192.168.1.100','192.168.1.15','192.168.0.100'];
+
+async function buscarUrlBaseDoAdmin() {
+  for (const ip of CANDIDATE_IPS) {
+    try {
+      const res = await fetch(`http://${ip}:5000/api/url-servidor`, {
+        signal: AbortSignal.timeout(3000)
+      });
+      if(!res.ok) continue;
+      const info = await res.json();
+      if(info && info.url_base_servidor) {
+        setUrlBase(info.url_base_servidor);
+        return info;
+      }
+    } catch(e) { /* continua */ }
+  }
+  return null;
+}
+
 async function descobrirUrlPublica() {
-  if(!URL_BASE) return;
+  if(!URL_BASE) {
+    const adminInfo = await buscarUrlBaseDoAdmin();
+    if(!adminInfo) return;
+  }
   try {
     const res = await fetch(`${URL_BASE}/server-info`, {
       signal: AbortSignal.timeout(8000)
     });
-    if(!res.ok) return;
+    if(!res.ok) { setApiUrl(URL_BASE); return; }
     const info = await res.json();
     if(info && info.url_publica) {
       setApiUrl(info.url_publica);
-      console.log('[API] URL pública do tunnel obtida:', info.url_publica);
     } else {
-      // Tunnel não ativo: usa URL_BASE diretamente
       setApiUrl(URL_BASE);
-      console.log('[API] Tunnel inativo, usando URL base:', URL_BASE);
     }
   } catch(e) {
-    console.warn('[API] Não foi possível obter URL pública, usando URL base:', URL_BASE);
     if(URL_BASE && !API_URL) setApiUrl(URL_BASE);
   }
 }

@@ -296,6 +296,29 @@ tr:hover td{background:rgba(247,237,232,.5);}
           </div>
         </div>
       </div>
+      <!-- Card de URL do Servidor -->
+      <div class="table-card" style="margin-top:20px;">
+        <div class="tc-hdr"><h3>🌐 Conexão do App com o Servidor</h3></div>
+        <div style="padding:20px;display:flex;flex-direction:column;gap:12px;">
+          <div style="background:#fff8f0;border:1px solid #f5c6a0;border-radius:10px;padding:14px;font-size:13px;line-height:1.6;color:#7a4a2a;">
+            <strong>Como funciona:</strong> Configure aqui o IP local do seu computador (ex: <code>http://192.168.1.15:5000</code>).
+            Todas as clientes que instalarem o app vão se conectar automaticamente — sem precisar configurar nada.
+            O app descobre a URL pública do tunnel sozinho a partir desse IP.
+          </div>
+          <div class="mfield">
+            <label>URL Base do Servidor (IP local)</label>
+            <input type="text" id="cfg-url-servidor" placeholder="http://192.168.1.15:5000" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+            <small style="font-size:11px;color:var(--lite);margin-top:4px;display:block;">
+              IP local do computador onde o servidor roda. Configure uma única vez.
+            </small>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <button class="btn-sm btn-rose-sm" onclick="saveUrlServidor()">Salvar URL do Servidor</button>
+            <div id="cfg-url-msg" style="font-size:13px;color:var(--ok);"></div>
+          </div>
+          <div id="cfg-url-status" style="font-size:12px;color:var(--lite);"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -454,27 +477,48 @@ function setApiUrl(url) {
 }
 
 /**
- * Busca /server-info na URL_BASE e atualiza API_URL com a url_publica do tunnel.
- * Chamada silenciosamente ao iniciar o app — sem interação do usuário.
+ * Descobre a URL do servidor automaticamente, sem interação do usuário.
+ * Estratégia em 3 camadas:
+ * 1. URL_BASE local → busca /server-info para obter url_publica do tunnel
+ * 2. Sem URL_BASE → tenta buscar url_base_servidor do admin via scan de rede
+ * 3. Fallback: usa URL_BASE diretamente se tunnel não estiver ativo
  */
+const CANDIDATE_IPS = ['192.168.1.1','192.168.0.1','192.168.1.100','192.168.1.15','192.168.0.100'];
+
+async function buscarUrlBaseDoAdmin() {
+  for (const ip of CANDIDATE_IPS) {
+    try {
+      const res = await fetch(`http://${ip}:5000/api/url-servidor`, {
+        signal: AbortSignal.timeout(3000)
+      });
+      if(!res.ok) continue;
+      const info = await res.json();
+      if(info && info.url_base_servidor) {
+        setUrlBase(info.url_base_servidor);
+        return info;
+      }
+    } catch(e) { /* continua */ }
+  }
+  return null;
+}
+
 async function descobrirUrlPublica() {
-  if(!URL_BASE) return;
+  if(!URL_BASE) {
+    const adminInfo = await buscarUrlBaseDoAdmin();
+    if(!adminInfo) return;
+  }
   try {
     const res = await fetch(`${URL_BASE}/server-info`, {
       signal: AbortSignal.timeout(8000)
     });
-    if(!res.ok) return;
+    if(!res.ok) { setApiUrl(URL_BASE); return; }
     const info = await res.json();
     if(info && info.url_publica) {
       setApiUrl(info.url_publica);
-      console.log('[API] URL pública do tunnel obtida:', info.url_publica);
     } else {
-      // Tunnel não ativo: usa URL_BASE diretamente
       setApiUrl(URL_BASE);
-      console.log('[API] Tunnel inativo, usando URL base:', URL_BASE);
     }
   } catch(e) {
-    console.warn('[API] Não foi possível obter URL pública, usando URL base:', URL_BASE);
     if(URL_BASE && !API_URL) setApiUrl(URL_BASE);
   }
 }
@@ -979,6 +1023,47 @@ async function loadConfig() {
   document.getElementById('cfg-whatsapp-msg').value = configMap.whatsapp_mensagem || '';
   document.getElementById('cfg-instagram').value = configMap.instagram_url || '';
   document.getElementById('cfg-email').value = configMap.email_contato || '';
+
+  // Carregar URL base do servidor
+  const urlInfo = await apiFetch('/api/url-servidor') || {};
+  const urlInput = document.getElementById('cfg-url-servidor');
+  if (urlInput) {
+    urlInput.value = urlInfo.url_base_servidor || localStorage.getItem('url_base') || '';
+    const statusEl = document.getElementById('cfg-url-status');
+    if (statusEl) {
+      if (urlInfo.url_publica) {
+        statusEl.innerHTML = `✅ Tunnel ativo: <strong>${urlInfo.url_publica}</strong>`;
+        statusEl.style.color = 'var(--ok)';
+      } else {
+        statusEl.textContent = '⚠️ Tunnel não ativo. Inicie o servidor com cloudflared.';
+        statusEl.style.color = '#e67e22';
+      }
+    }
+  }
+}
+
+async function saveUrlServidor() {
+  const url = document.getElementById('cfg-url-servidor').value.trim();
+  const msgEl = document.getElementById('cfg-url-msg');
+  if (!url) {
+    msgEl.textContent = 'Informe a URL base do servidor.';
+    msgEl.style.color = 'var(--err)';
+    return;
+  }
+  // Salva localmente para uso imediato
+  setUrlBase(url);
+  // Salva no banco via API
+  const res = await apiFetch('/api/url-servidor', { method: 'POST', body: JSON.stringify({ url_base_servidor: url }) });
+  if (res && res.status === 'success') {
+    msgEl.textContent = '✅ URL salva! Todas as clientes vão se conectar automaticamente.';
+    msgEl.style.color = 'var(--ok)';
+    setTimeout(() => msgEl.textContent = '', 4000);
+    // Atualizar status do tunnel
+    await loadConfig();
+  } else {
+    msgEl.textContent = 'Erro ao salvar URL.';
+    msgEl.style.color = 'var(--err)';
+  }
 }
 
 async function saveConfig() {
