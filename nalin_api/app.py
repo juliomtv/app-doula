@@ -304,14 +304,21 @@ def login():
 
 @app.route('/api/admin/login', methods=['POST'])
 def admin_login():
-    data = request.json
-    user = data.get('user')
-    passw = data.get('pass')
+    data = request.json or {}
+    # Aceita 'usuario'/'senha' (padrão do app) ou 'user'/'pass' (legado)
+    user = data.get('usuario') or data.get('user')
+    passw = data.get('senha') or data.get('pass')
+    if not user or not passw:
+        return jsonify({"ok": False, "erro": "Usuário e senha obrigatórios."}), 400
     db = get_db()
-    admin = db.execute('SELECT * FROM admin_config WHERE username = ? AND password = ?', (user, passw)).fetchone()
+    # Verifica na tabela admin_config
+    admin = db.execute('SELECT * FROM admin_config WHERE usuario = ? AND senha = ?', (user, passw)).fetchone()
+    if not admin:
+        # Tenta com username/password (legado)
+        admin = db.execute('SELECT * FROM admin_config WHERE username = ? AND password = ?', (user, passw)).fetchone()
     if admin:
-        return jsonify({"status": "success", "token": "admin-session-token"})
-    return jsonify({"status": "error", "message": "Acesso negado."}), 401
+        return jsonify({"ok": True, "token": "admin-session-token"})
+    return jsonify({"ok": False, "erro": "Usuário ou senha incorretos."}), 401
 
 @app.route('/api/users', methods=['GET'])
 def list_users():

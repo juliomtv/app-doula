@@ -1,6 +1,6 @@
 {
-  "versao": "1.0.0",
+  "versao": "1.0.1",
   "data": "2026-04-26",
-  "notas": "Versão inicial do app",
+  "notas": "Plano de parto: abas Cesárea e Recém-Nascido adicionadas. Login admin via modal. Jornada de gestação semanas 1-42. Layout responsivo mini curso.",
   "obrigatoria": false
 }
