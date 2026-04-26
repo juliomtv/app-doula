@@ -19,8 +19,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);min-height:100vh;d
 input,select,textarea,button{font-family:'DM Sans',sans-serif;}
 
 /* ── SCREENS ── */
-.screen{display:none;flex-direction:column;height:100vh;background:var(--warm);overflow:hidden;}
-.screen.active{display:flex;}
+.screen{display:none;flex-direction:column;background:var(--warm);}
+.screen.active{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 
 /* ── STATUS BAR ── */
 .sbar{height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:13px;font-weight:600;color:var(--dark);flex-shrink:0;background:inherit;}
@@ -104,7 +104,7 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif;}
 .consult-time{font-size:12px;color:var(--mid);margin-top:1px;}
 
 /* ══════════════════════ CONTEÚDO ══════════════════════ */
-#conteudo{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+#conteudo.active{flex-direction:column;height:100vh;overflow:hidden;}
 .cont-hdr{background:linear-gradient(135deg,var(--rose-pale),var(--cream));padding:16px 22px 22px;flex-shrink:0;}
 .cont-hdr h2{font-family:'Cormorant Garamond',serif;font-size:28px;font-style:italic;color:var(--dark);}
 .cont-hdr p{font-size:13px;color:var(--mid);margin-top:3px;}
@@ -1125,16 +1125,22 @@ function selecionarVideo(conteudoId, url, titulo, duracao) {
   const playerBtn = document.getElementById('player-check-btn');
   if (!playerArea) return;
 
-  // Montar player
-  const embedUrl = getYTEmbed(url);
-  if (embedUrl) {
-    playerArea.innerHTML = `<iframe src="${embedUrl}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-  } else if (url && url.match(/\.(mp4|webm|ogg)$/i)) {
-    playerArea.innerHTML = `<video src="${url}" controls autoplay></video>`;
-  } else if (url && url !== '#') {
-    playerArea.innerHTML = `<div class="player-placeholder"><div class="pp-icon">🎬</div><p>Clique para abrir o vídeo</p><button onclick="window.open('${url}','_blank')" style="margin-top:12px;padding:8px 20px;background:var(--rose);color:white;border:none;border-radius:20px;cursor:pointer;">Abrir vídeo ↗</button></div>`;
+  // Montar player — abre no YouTube/link externo (sem iframe para evitar erro 153)
+  const ytId2 = getYTId(url);
+  const ytThumb2 = ytId2 ? `https://img.youtube.com/vi/${ytId2}/hqdefault.jpg` : null;
+  const openUrl2 = ytId2 ? `https://www.youtube.com/watch?v=${ytId2}` : url;
+  if (url && url !== '#') {
+    const thumbStyle = ytThumb2 ? `background-image:url('${ytThumb2}');background-size:cover;background-position:center;` : 'background:linear-gradient(135deg,#3a2820,#7a5a50);';
+    playerArea.innerHTML = `
+      <div class="player-placeholder" style="cursor:pointer;${thumbStyle}" onclick="window.open('${openUrl2}','_blank')">
+        <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:12px;background:rgba(0,0,0,0.35);padding:24px 20px;border-radius:12px;">
+          <div style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 16px rgba(0,0,0,.3);">&#9654;</div>
+          <div style="font-size:14px;font-weight:600;color:white;text-shadow:0 1px 4px rgba(0,0,0,.6);">Toque para assistir</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.85);text-shadow:0 1px 3px rgba(0,0,0,.5);">${ytId2 ? 'Abre no YouTube' : 'Abre o v&iacute;deo'}</div>
+        </div>
+      </div>`;
   } else {
-    playerArea.innerHTML = `<div class="player-placeholder"><div class="pp-icon">⚠️</div><p>URL do vídeo não disponível</p></div>`;
+    playerArea.innerHTML = `<div class="player-placeholder"><div class="pp-icon">&#9888;&#65039;</div><p>URL do v&iacute;deo n&atilde;o dispon&iacute;vel</p></div>`;
   }
 
   // Info do vídeo
