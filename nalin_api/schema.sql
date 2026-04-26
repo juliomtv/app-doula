@@ -91,8 +91,11 @@ INSERT OR IGNORE INTO admin_config (id, username, password) VALUES (1, 'admin@na
 
 -- Tabela de Dicas Personalizadas
 CREATE TABLE IF NOT EXISTS dicas_personalizadas (
-    semana INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    semana INTEGER NOT NULL UNIQUE,
+    titulo TEXT,
     dica TEXT NOT NULL,
+    emoji TEXT,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

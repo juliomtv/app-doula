@@ -100,13 +100,43 @@ def migrate():
             print("[migrate] Tabela ebooks OK.")
 
     # ── 3. Tabelas novas (se não existirem) ───────────────────────────────────
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS dicas_personalizadas (
-        semana INTEGER PRIMARY KEY,
-        dica TEXT NOT NULL,
-        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
+    # ── Tabela dicas_personalizadas: migrar para nova estrutura com id, titulo, emoji ──
+    if 'dicas_personalizadas' not in all_tables:
+        print("[migrate] Criando tabela dicas_personalizadas com nova estrutura...")
+        cursor.execute("""
+        CREATE TABLE dicas_personalizadas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            semana INTEGER NOT NULL UNIQUE,
+            titulo TEXT,
+            dica TEXT NOT NULL,
+            emoji TEXT,
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+    else:
+        cursor.execute("PRAGMA table_info(dicas_personalizadas)")
+        dica_cols = [row[1] for row in cursor.fetchall()]
+        if 'id' not in dica_cols:
+            print("[migrate] Migrando dicas_personalizadas para nova estrutura (adicionando id, titulo, emoji)...")
+            cursor.execute("ALTER TABLE dicas_personalizadas RENAME TO dicas_personalizadas_old")
+            cursor.execute("""
+            CREATE TABLE dicas_personalizadas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                semana INTEGER NOT NULL UNIQUE,
+                titulo TEXT,
+                dica TEXT NOT NULL,
+                emoji TEXT,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """)
+            cursor.execute("""
+            INSERT INTO dicas_personalizadas (semana, dica, criado_em)
+            SELECT semana, dica, criado_em FROM dicas_personalizadas_old
+            """)
+            cursor.execute("DROP TABLE dicas_personalizadas_old")
+            print("[migrate] Tabela dicas_personalizadas migrada com sucesso.")
+        else:
+            print("[migrate] Tabela dicas_personalizadas OK.")
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS logs_atividade (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

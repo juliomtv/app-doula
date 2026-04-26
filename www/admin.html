@@ -266,7 +266,7 @@ tr:hover td{background:rgba(247,237,232,.5);}
     <div class="page" id="p-dicas">
       <div class="page-hdr" style="display:flex;align-items:flex-start;justify-content:space-between;">
         <div><h1>Dicas Semanais</h1><p>Gerencie as dicas que aparecem para cada semana de gestação</p></div>
-        <button class="btn-sm btn-rose-sm" onclick="openModal('modal-dica')">+ Adicionar Dica</button>
+        <button class="btn-sm btn-rose-sm" onclick="abrirModalNovaDica()">+ Adicionar Dica</button>
       </div>
       <div class="table-card"><table><thead><tr><th>Semana</th><th>Título</th><th>Dica</th><th>Ações</th></tr></thead><tbody id="dicas-tbody"></tbody></table></div>
     </div>
@@ -420,15 +420,16 @@ tr:hover td{background:rgba(247,237,232,.5);}
 
 <div class="modal-overlay" id="modal-dica">
   <div class="modal">
-    <div class="modal-hdr"><h3>Adicionar Dica Semanal</h3><button class="modal-close" onclick="closeModal('modal-dica')">✕</button></div>
+    <div class="modal-hdr"><h3 id="modal-dica-titulo">Adicionar Dica Semanal</h3><button class="modal-close" onclick="closeModal('modal-dica')">✕</button></div>
     <div class="modal-body">
-      <div class="mfield"><label>Semana de Gestacao</label><input type="number" id="md-semana" min="1" max="40" placeholder="Ex: 12"></div>
+      <input type="hidden" id="md-id" value="">
+      <div class="mfield"><label>Semana de Gestacao</label><input type="number" id="md-semana" min="1" max="42" placeholder="Ex: 12"></div>
       <div class="mfield"><label>Titulo da Dica</label><input type="text" id="md-titulo" placeholder="Ex: Fim do 1o Trimestre"></div>
       <div class="mfield"><label>Dica</label><textarea id="md-dica" placeholder="Digite a dica que sera exibida para a doulanda nesta semana..." style="height:100px;"></textarea></div>
-      <div class="mfield"><label>Emoji (Opcional)</label><input type="text" id="md-emoji" placeholder="Ex: 🎉" maxlength="2"></div>
-      <div id="md-err" style="color:var(--err);font-size:13px;"></div>
+      <div class="mfield"><label>Emoji (Opcional)</label><input type="text" id="md-emoji" placeholder="Ex: 🎉" maxlength="4"></div>
+      <div id="md-err" style="color:var(--err);font-size:13px;min-height:16px;"></div>
     </div>
-    <div class="modal-footer"><button class="btn-full btn-cancel" onclick="closeModal('modal-dica')">Cancelar</button><button class="btn-full btn-save" onclick="saveDica()">Salvar Dica</button></div>
+    <div class="modal-footer"><button class="btn-full btn-cancel" onclick="closeModal('modal-dica')">Cancelar</button><button class="btn-full btn-save" id="btn-salvar-dica" onclick="saveDica()">Salvar Dica</button></div>
   </div>
 </div>
 
@@ -1085,54 +1086,106 @@ async function saveConfig() {
   }
 }
 
+function limparModalDica() {
+  document.getElementById('md-id').value = '';
+  document.getElementById('md-semana').value = '';
+  document.getElementById('md-titulo').value = '';
+  document.getElementById('md-dica').value = '';
+  document.getElementById('md-emoji').value = '';
+  document.getElementById('md-err').textContent = '';
+  document.getElementById('modal-dica-titulo').textContent = 'Adicionar Dica Semanal';
+  document.getElementById('btn-salvar-dica').textContent = 'Salvar Dica';
+}
+
+function abrirModalNovaDica() {
+  limparModalDica();
+  openModal('modal-dica');
+}
+
+async function editDica(id) {
+  const dica = await apiFetch(`/api/admin/dicas/${id}`);
+  if (!dica) { alert('Erro ao carregar dica.'); return; }
+  document.getElementById('md-id').value = dica.id;
+  document.getElementById('md-semana').value = dica.semana;
+  document.getElementById('md-titulo').value = dica.titulo || '';
+  document.getElementById('md-dica').value = dica.dica || '';
+  document.getElementById('md-emoji').value = dica.emoji || '';
+  document.getElementById('md-err').textContent = '';
+  document.getElementById('modal-dica-titulo').textContent = 'Editar Dica Semanal';
+  document.getElementById('btn-salvar-dica').textContent = 'Atualizar Dica';
+  openModal('modal-dica');
+}
+
 async function renderDicas() {
   const dicas = await apiFetch('/api/admin/dicas') || [];
   const tbody = document.getElementById('dicas-tbody');
   tbody.innerHTML = '';
+  if (dicas.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--lite);padding:24px;">Nenhuma dica cadastrada ainda.</td></tr>';
+    return;
+  }
   dicas.forEach(d => {
+    const dicaPreview = (d.dica || '').length > 60 ? d.dica.substring(0, 60) + '...' : (d.dica || '');
+    const emoji = d.emoji ? `${d.emoji} ` : '';
     tbody.innerHTML += `<tr>
-      <td>${d.semana}</td>
-      <td>${d.titulo}</td>
-      <td>${d.dica.substring(0, 50)}...</td>
+      <td style="font-weight:600;text-align:center;">${d.semana}</td>
+      <td>${emoji}${d.titulo || '<em style="color:var(--lite)">Sem título</em>'}</td>
+      <td style="font-size:12px;color:var(--lite);">${dicaPreview}</td>
       <td class="td-actions">
-        <button class="btn-sm btn-ghost" onclick="editDica(${d.id}, ${d.semana})">Editar</button>
-        <button class="btn-sm btn-danger" onclick="deleteDica(${d.id})">Deletar</button>
+        <button class="btn-sm btn-ghost" onclick="editDica(${d.id})">✏️ Editar</button>
+        <button class="btn-sm btn-danger" onclick="deleteDica(${d.id})">🗑️ Excluir</button>
       </td>
     </tr>`;
   });
 }
 
 async function saveDica() {
+  const id     = document.getElementById('md-id').value;
   const semana = document.getElementById('md-semana').value;
-  const titulo = document.getElementById('md-titulo').value;
-  const dica = document.getElementById('md-dica').value;
-  const emoji = document.getElementById('md-emoji').value;
-  
-  if (!semana || !titulo || !dica) {
-    alert('Preencha todos os campos!');
+  const titulo = document.getElementById('md-titulo').value.trim();
+  const dica   = document.getElementById('md-dica').value.trim();
+  const emoji  = document.getElementById('md-emoji').value.trim();
+  const errEl  = document.getElementById('md-err');
+
+  if (!semana || !dica) {
+    errEl.textContent = 'Semana e dica são obrigatórios.';
     return;
   }
-  
-  const res = await apiFetch('/api/admin/dicas', {
-    method: 'POST',
-    body: JSON.stringify({ semana: parseInt(semana), titulo, dica, emoji })
-  });
-  
+  errEl.textContent = '';
+
+  const payload = { semana: parseInt(semana), titulo, dica, emoji };
+  let res;
+  if (id) {
+    res = await apiFetch(`/api/admin/dicas/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+  } else {
+    res = await apiFetch('/api/admin/dicas', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
   if (res && res.status === 'success') {
     closeModal('modal-dica');
+    limparModalDica();
     renderDicas();
-    document.getElementById('md-semana').value = '';
-    document.getElementById('md-titulo').value = '';
-    document.getElementById('md-dica').value = '';
-    document.getElementById('md-emoji').value = '';
+  } else {
+    errEl.textContent = (res && res.message) ? res.message : 'Erro ao salvar dica. Tente novamente.';
   }
 }
 
 async function deleteDica(id) {
-  if (!confirm('Deletar esta dica?')) return;
+  if (!confirm('Tem certeza que deseja excluir esta dica?')) return;
   const res = await apiFetch(`/api/admin/dicas/${id}`, { method: 'DELETE' });
-  if (res) renderDicas();
+  if (res && res.status === 'success') {
+    renderDicas();
+  } else {
+    alert('Erro ao excluir dica.');
+  }
 }
+
 
 // Inicialização: descobre URL pública e restaura sessão
 (async function initAdmin(){

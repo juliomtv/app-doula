@@ -417,8 +417,19 @@ def config():
         db.commit()
         return jsonify({"status": "success"})
 
-@app.route('/api/dicas', methods=['GET', 'POST', 'OPTIONS'])
-def dicas():
+# ── DICAS SEMANAIS ──────────────────────────────────────────────────────────────────────────────
+@app.route('/api/dicas', methods=['GET', 'OPTIONS'])
+def dicas_publicas():
+    """Endpoint público para o app das clientes buscar as dicas (sem autenticação)."""
+    if request.method == 'OPTIONS':
+        return '', 204
+    db = get_db()
+    dicas = db.execute('SELECT * FROM dicas_personalizadas ORDER BY semana ASC').fetchall()
+    return jsonify([dict(d) for d in dicas])
+
+@app.route('/api/admin/dicas', methods=['GET', 'POST', 'OPTIONS'])
+def admin_dicas():
+    """Endpoint do admin para listar e criar dicas."""
     if request.method == 'OPTIONS':
         return '', 204
     db = get_db()
@@ -426,18 +437,55 @@ def dicas():
         dicas = db.execute('SELECT * FROM dicas_personalizadas ORDER BY semana ASC').fetchall()
         return jsonify([dict(d) for d in dicas])
     else:
-        data = request.json
-        db.execute('INSERT OR REPLACE INTO dicas_personalizadas (semana, dica) VALUES (?, ?)',
-                   (data.get('semana'), data.get('dica')))
+        data = request.json or {}
+        semana = data.get('semana')
+        titulo = data.get('titulo', '')
+        dica   = data.get('dica', '')
+        emoji  = data.get('emoji', '')
+        if not semana or not dica:
+            return jsonify({"status": "error", "message": "Semana e dica são obrigatórios"}), 400
+        try:
+            db.execute(
+                'INSERT OR REPLACE INTO dicas_personalizadas (semana, titulo, dica, emoji) VALUES (?, ?, ?, ?)',
+                (int(semana), titulo, dica, emoji)
+            )
+            db.commit()
+            return jsonify({"status": "success"})
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/admin/dicas/<int:dica_id>', methods=['GET', 'PUT', 'DELETE', 'OPTIONS'])
+def admin_dica_detail(dica_id):
+    """Endpoint do admin para obter, editar ou excluir uma dica pelo id."""
+    if request.method == 'OPTIONS':
+        return '', 204
+    db = get_db()
+    if request.method == 'GET':
+        dica = db.execute('SELECT * FROM dicas_personalizadas WHERE id = ?', (dica_id,)).fetchone()
+        if not dica:
+            return jsonify({"status": "error", "message": "Dica não encontrada"}), 404
+        return jsonify(dict(dica))
+    elif request.method == 'PUT':
+        data = request.json or {}
+        semana = data.get('semana')
+        titulo = data.get('titulo', '')
+        dica   = data.get('dica', '')
+        emoji  = data.get('emoji', '')
+        if not semana or not dica:
+            return jsonify({"status": "error", "message": "Semana e dica são obrigatórios"}), 400
+        try:
+            db.execute(
+                'UPDATE dicas_personalizadas SET semana=?, titulo=?, dica=?, emoji=? WHERE id=?',
+                (int(semana), titulo, dica, emoji, dica_id)
+            )
+            db.commit()
+            return jsonify({"status": "success"})
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
+    else:  # DELETE
+        db.execute('DELETE FROM dicas_personalizadas WHERE id = ?', (dica_id,))
         db.commit()
         return jsonify({"status": "success"})
-
-@app.route('/api/dicas/<int:semana>', methods=['DELETE'])
-def delete_dica(semana):
-    db = get_db()
-    db.execute('DELETE FROM dicas_personalizadas WHERE semana = ?', (semana,))
-    db.commit()
-    return jsonify({"status": "success"})
 
 @app.route('/api/maternidade', methods=['GET', 'POST', 'OPTIONS'])
 def maternidade():
