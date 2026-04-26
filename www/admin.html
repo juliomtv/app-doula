@@ -171,13 +171,16 @@ tr:hover td{background:rgba(247,237,232,.5);}
       <label>Senha</label>
       <input type="password" id="a-pass" placeholder="••••••••" value="admin123">
     </div>
-    <div class="afield">
-      <label>URL do Servidor</label>
-      <input type="text" id="a-api-url" placeholder="https://xxxx.trycloudflare.com" value="" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
-      <small style="font-size:11px;color:var(--lite);margin-top:4px;display:block;line-height:1.5;">Cole a URL que aparece no terminal do servidor.<br>Ex: <strong>https://xxxx.trycloudflare.com</strong></small>
+    <div class="afield" id="campo-url-servidor" style="display:none;">
+      <label>URL Base do Servidor (IP local)</label>
+      <input type="text" id="a-api-url" placeholder="http://192.168.1.15:5000" value="" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+      <small style="font-size:11px;color:var(--lite);margin-top:4px;display:block;line-height:1.5;">IP local do computador onde o servidor roda.<br>Configure uma única vez. Ex: <strong>http://192.168.1.15:5000</strong></small>
     </div>
     <button class="abtn" onclick="adminLogin()">Entrar no painel</button>
     <div class="aerr" id="a-err"></div>
+    <div style="text-align:center;margin-top:8px;">
+      <button onclick="toggleCampoUrl()" style="background:none;border:none;color:var(--lite);font-size:11px;cursor:pointer;padding:4px 8px;">⚙️ Configurar servidor</button>
+    </div>
     <div style="text-align:center;margin-top:20px;">
       <a href="app.html" style="font-size:12px;color:var(--lite);">← Voltar ao app das doulandas</a>
     </div>
@@ -410,63 +413,117 @@ tr:hover td{background:rgba(247,237,232,.5);}
 
 <script>
 // ════ CONFIGURAÇÃO DINÂMICA DA API ════
-// URL do servidor: usa a salva no localStorage ou vazia
-let API_URL = localStorage.getItem('api_url') || '';
+// ════ CONFIGURAÇÃO DINÂMICA DA API ════
+// URL_BASE: IP local do servidor (ex: http://192.168.1.15:5000) — configurado uma vez
+// API_URL: URL ativa usada nas requisições (pode ser a url_publica do tunnel)
+let URL_BASE = localStorage.getItem('url_base') || '';
+let API_URL  = localStorage.getItem('api_url')  || URL_BASE;
 
-const DB={get:k=>{try{return JSON.parse(localStorage.getItem(k));}catch{return null;}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),del:k=>localStorage.removeItem(k)};
+const DB = {
+  get:(k)=>{ try{return JSON.parse(localStorage.getItem(k));}catch{return null;}},
+  set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
+  del:(k)=>localStorage.removeItem(k)
+};
 
+function normalizeUrl(url) {
+  if(!url) return '';
+  url = url.trim();
+  if(!url.startsWith('http')) url = 'http://' + url;
+  return url.replace(/\/$/, '');
+}
+
+function setUrlBase(url) {
+  url = normalizeUrl(url);
+  if(!url) return;
+  URL_BASE = url;
+  localStorage.setItem('url_base', url);
+  // Ao definir a base, usa ela como API_URL até descobrir a pública
+  if(!API_URL) {
+    API_URL = url;
+    localStorage.setItem('api_url', url);
+  }
+  console.log('[API] URL Base definida:', URL_BASE);
+}
+
+function setApiUrl(url) {
+  url = normalizeUrl(url);
+  if(!url) return;
+  API_URL = url;
+  localStorage.setItem('api_url', url);
+  console.log('[API] URL ativa atualizada:', API_URL);
+}
+
+/**
+ * Busca /server-info na URL_BASE e atualiza API_URL com a url_publica do tunnel.
+ * Chamada silenciosamente ao iniciar o app — sem interação do usuário.
+ */
+async function descobrirUrlPublica() {
+  if(!URL_BASE) return;
+  try {
+    const res = await fetch(`${URL_BASE}/server-info`, {
+      signal: AbortSignal.timeout(8000)
+    });
+    if(!res.ok) return;
+    const info = await res.json();
+    if(info && info.url_publica) {
+      setApiUrl(info.url_publica);
+      console.log('[API] URL pública do tunnel obtida:', info.url_publica);
+    } else {
+      // Tunnel não ativo: usa URL_BASE diretamente
+      setApiUrl(URL_BASE);
+      console.log('[API] Tunnel inativo, usando URL base:', URL_BASE);
+    }
+  } catch(e) {
+    console.warn('[API] Não foi possível obter URL pública, usando URL base:', URL_BASE);
+    if(URL_BASE && !API_URL) setApiUrl(URL_BASE);
+  }
+}
+
+// ════ API FETCH HELPERS ════
 async function apiFetch(endpoint, options = {}) {
   try {
-    let baseUrl = API_URL;
-    if (!baseUrl) return null;
-    if (!baseUrl.startsWith('http')) baseUrl = 'http://' + baseUrl;
-    const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
+    if(!API_URL) return { status: 'error', message: 'Servidor não configurado.' };
+    const url = `${API_URL}/${endpoint.replace(/^\//, '')}`;
     const res = await fetch(url, {
       ...options,
-      headers: { 'Content-Type': 'application/json', ...options.headers }
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      signal: AbortSignal.timeout(15000)
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (e) {
-    console.error("Erro na API:", e);
-    console.error("URL tentada:", API_URL + endpoint);
-    return null;
+    console.error('[API] Erro:', e, 'URL:', API_URL);
+    return {
+      status: 'error',
+      message: `Não foi possível conectar ao servidor. Verifique se ele está ligado.`
+    };
   }
 }
-
-// Função para atualizar a URL da API
-function setApiUrl(url) {
-  if(!url) return;
-  if(!url.startsWith('http')) url = 'http://' + url;
-  API_URL = url;
-  localStorage.setItem('api_url', url);
-  console.log('API URL atualizada para:', API_URL);
+function toggleCampoUrl() {
+  const campo = document.getElementById('campo-url-servidor');
+  if(!campo) return;
+  campo.style.display = campo.style.display === 'none' ? 'block' : 'none';
 }
-// Preenche o campo de URL com o valor salvo
-function preencherCampoUrl() {
-  const saved = localStorage.getItem('api_url');
-  const input = document.getElementById('a-api-url');
-  if (input && saved) input.value = saved;
-}
-
 async function adminLogin(){
   const user=document.getElementById('a-user').value.trim().toLowerCase();
   const pass=document.getElementById('a-pass').value;
-  const customUrl=document.getElementById('a-api-url').value.trim();
+  const campoUrl=document.getElementById('a-api-url');
+  const customUrl=campoUrl ? campoUrl.value.trim() : '';
   const errEl=document.getElementById('a-err');
 
-  if(!customUrl && !API_URL){
-    errEl.textContent='⚠️ Informe a URL do servidor antes de entrar.';
-    document.getElementById('a-api-url').focus();
+  if(customUrl){
+    setUrlBase(customUrl);
+    errEl.textContent='🔄 Conectando ao servidor...';
+    await descobrirUrlPublica();
+  }
+
+  if(!API_URL){
+    errEl.textContent='⚠️ Informe o IP do servidor no campo acima.';
+    if(campoUrl) campoUrl.focus();
     return;
   }
 
-  if(customUrl){
-    setApiUrl(customUrl);
-    errEl.textContent='🔄 Conectando ao servidor...';
-    errEl.style.color='var(--mid)';
-  }
-
+  errEl.textContent='🔄 Entrando...';
   const res = await apiFetch('/api/admin/login', {
     method: 'POST',
     body: JSON.stringify({ user, pass })
@@ -477,7 +534,7 @@ async function adminLogin(){
     document.getElementById('admin-shell').classList.add('active');
     renderDashboard();
   } else {
-    errEl.textContent = res ? (res.message || 'Credenciais incorretas.') : '❌ Não foi possível conectar ao servidor. Verifique a URL.';
+    errEl.textContent = res ? (res.message || 'Credenciais incorretas.') : '❌ Não foi possível conectar ao servidor.';
     errEl.style.color = '#c0392b';
   }
 }
@@ -992,13 +1049,24 @@ async function deleteDica(id) {
   if (res) renderDicas();
 }
 
-// Preenche o campo de URL com o valor salvo
-preencherCampoUrl();
-if(DB.get('nn_admin_session') && API_URL){
-  document.getElementById('admin-login').style.display='none';
-  document.getElementById('admin-shell').classList.add('active');
-  renderDashboard();
-}
+// Inicialização: descobre URL pública e restaura sessão
+(async function initAdmin(){
+  // Preenche o campo de URL base com o valor salvo
+  const campoUrl = document.getElementById('a-api-url');
+  if(campoUrl && URL_BASE) campoUrl.value = URL_BASE;
+
+  // Descobre a URL pública do tunnel automaticamente
+  await descobrirUrlPublica();
+
+  if(DB.get('nn_admin_session') && API_URL){
+    document.getElementById('admin-login').style.display='none';
+    document.getElementById('admin-shell').classList.add('active');
+    renderDashboard();
+  }
+
+  // Atualiza URL pública a cada 5 minutos
+  setInterval(descobrirUrlPublica, 5 * 60 * 1000);
+})();
 </script>
 </body>
 </html>

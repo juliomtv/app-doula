@@ -234,14 +234,17 @@ textarea.dta:focus{border-color:var(--rose);}
       <label>Senha</label>
       <input type="password" id="l-senha" placeholder="••••••••" value="">
     </div>
-    <div class="field">
-      <label>URL do Servidor</label>
-      <input type="text" id="l-api-url" placeholder="https://xxxx.trycloudflare.com" value="" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
-      <small style="font-size:11px;color:var(--light);margin-top:4px;display:block;line-height:1.5;">Cole a URL que aparece no terminal do servidor ao iniciar.<br>Ex: <strong>https://xxxx.trycloudflare.com</strong> (funciona em qualquer rede)<br>Ou: <strong>http://192.168.1.15:5000</strong> (somente Wi-Fi local)</small>
+    <div class="field" id="campo-url-servidor" style="display:none;">
+      <label>URL Base do Servidor (IP local)</label>
+      <input type="text" id="l-api-url" placeholder="http://192.168.1.15:5000" value="" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+      <small style="font-size:11px;color:var(--light);margin-top:4px;display:block;line-height:1.5;">IP local do computador onde o servidor roda.<br>Configure uma única vez. Ex: <strong>http://192.168.1.15:5000</strong></small>
     </div>
     <button class="btn-rose" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="l-err"></div>
     <div class="login-note">Não tem conta? Peça à sua doula para criar seu acesso 🌺</div>
+    <div style="text-align:center;margin-top:8px;">
+      <button onclick="toggleCampoUrl()" style="background:none;border:none;color:var(--light);font-size:11px;cursor:pointer;padding:4px 8px;">⚙️ Configurar servidor</button>
+    </div>
     <hr style="border:0;border-top:1px solid var(--rose-pale);margin:20px 0;">
     <button class="btn-rose" style="background:var(--dark);margin-top:0;" onclick="window.location.href='admin.html'">Acesso Administrador 🔐</button>
   </div>
@@ -588,34 +591,75 @@ textarea.dta:focus{border-color:var(--rose);}
 
 <script>
 // ════ CONFIGURAÇÃO DINÂMICA DA API ════
-// URL do servidor: usa a salva no localStorage ou vazia (usuario deve informar no login)
-let API_URL = localStorage.getItem('api_url') || '';
+// URL_BASE: IP local do servidor (ex: http://192.168.1.15:5000) — configurado uma vez
+// API_URL: URL ativa usada nas requisições (pode ser a url_publica do tunnel)
+let URL_BASE = localStorage.getItem('url_base') || '';
+let API_URL  = localStorage.getItem('api_url')  || URL_BASE;
+
 const DB = {
   get:(k)=>{ try{return JSON.parse(localStorage.getItem(k));}catch{return null;}},
   set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
   del:(k)=>localStorage.removeItem(k)
 };
 
-function setApiUrl(url) {
-  if(!url) return;
+function normalizeUrl(url) {
+  if(!url) return '';
+  url = url.trim();
   if(!url.startsWith('http')) url = 'http://' + url;
-  API_URL = url;
-  localStorage.setItem('api_url', url);
-  console.log('API URL atualizada para:', API_URL);
+  return url.replace(/\/$/, '');
 }
 
-// Preenche o campo de URL da API com o valor salvo anteriormente (se houver)
-function preencherCampoUrl() {
-  const saved = localStorage.getItem('api_url');
-  const input = document.getElementById('l-api-url');
-  if (input && saved) {
-    input.value = saved;
+function setUrlBase(url) {
+  url = normalizeUrl(url);
+  if(!url) return;
+  URL_BASE = url;
+  localStorage.setItem('url_base', url);
+  // Ao definir a base, usa ela como API_URL até descobrir a pública
+  if(!API_URL) {
+    API_URL = url;
+    localStorage.setItem('api_url', url);
+  }
+  console.log('[API] URL Base definida:', URL_BASE);
+}
+
+function setApiUrl(url) {
+  url = normalizeUrl(url);
+  if(!url) return;
+  API_URL = url;
+  localStorage.setItem('api_url', url);
+  console.log('[API] URL ativa atualizada:', API_URL);
+}
+function toggleCampoUrl() {
+  const campo = document.getElementById('campo-url-servidor');
+  if(!campo) return;
+  campo.style.display = campo.style.display === 'none' ? 'block' : 'none';
+}
+
+/**
+ * Busca /server-info na URL_BASE e atualiza API_URL com a url_publica do tunnel.
+ * Chamada silenciosamente ao iniciar o app — sem interação do usuário.
+ */
+async function descobrirUrlPublica() {
+  if(!URL_BASE) return;
+  try {
+    const res = await fetch(`${URL_BASE}/server-info`, {
+      signal: AbortSignal.timeout(8000)
+    });
+    if(!res.ok) return;
+    const info = await res.json();
+    if(info && info.url_publica) {
+      setApiUrl(info.url_publica);
+      console.log('[API] URL pública do tunnel obtida:', info.url_publica);
+    } else {
+      // Tunnel não ativo: usa URL_BASE diretamente
+      setApiUrl(URL_BASE);
+      console.log('[API] Tunnel inativo, usando URL base:', URL_BASE);
+    }
+  } catch(e) {
+    console.warn('[API] Não foi possível obter URL pública, usando URL base:', URL_BASE);
+    if(URL_BASE && !API_URL) setApiUrl(URL_BASE);
   }
 }
-// Executa quando a tela de login estiver pronta
-document.addEventListener('DOMContentLoaded', preencherCampoUrl);
-// Fallback caso DOMContentLoaded já tenha disparado
-if (document.readyState !== 'loading') preencherCampoUrl();
 
 // ════ SEED DATA ════
 function seedData(){
@@ -662,28 +706,20 @@ let currentUser=null, currentMood='😊', currentTab=0, editingAgendaIndex=null,
 // ════ API FETCH HELPERS ════
 async function apiFetch(endpoint, options = {}) {
   try {
-    // Garantir que a URL seja válida e não cause erro de fetch imediato
-    let baseUrl = API_URL;
-    if (!baseUrl.startsWith('http')) {
-      baseUrl = 'http://' + baseUrl;
-    }
-    // Remover barra duplicada se necessário
-    const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
-    
+    if(!API_URL) return { status: 'error', message: 'Servidor não configurado.' };
+    const url = `${API_URL}/${endpoint.replace(/^\//, '')}`;
     const res = await fetch(url, {
       ...options,
-      headers: { 'Content-Type': 'application/json', ...options.headers }
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      signal: AbortSignal.timeout(15000)
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (e) {
-    console.error("Erro na API:", e);
-    // Retornar um objeto de erro padronizado para que a UI possa tratar
-    const currentIp = API_URL.replace('http://', '').split(':')[0];
-    const currentAddr = API_URL || 'servidor';
-    return { 
-      status: 'error', 
-      message: `Não foi possível conectar ao servidor (${currentAddr}). Verifique se o servidor está ligado e se a URL está correta.` 
+    console.error('[API] Erro:', e, 'URL:', API_URL);
+    return {
+      status: 'error',
+      message: `Não foi possível conectar ao servidor. Verifique se ele está ligado.`
     };
   }
 }
@@ -692,36 +728,38 @@ async function apiFetch(endpoint, options = {}) {
 async function doLogin(){
   const email=document.getElementById('l-email').value.trim().toLowerCase();
   const senha=document.getElementById('l-senha').value;
-  const customUrl=document.getElementById('l-api-url').value.trim();
+  const campoUrl=document.getElementById('l-api-url');
+  const customUrl=campoUrl ? campoUrl.value.trim() : '';
   const errEl=document.getElementById('l-err');
 
-  // Validação: URL do servidor é obrigatória
-  if(!customUrl && !API_URL){
-    errEl.textContent='⚠️ Informe a URL do servidor antes de entrar.';
+  // Se o usuário digitou uma URL base manualmente, salva e tenta descobrir a pública
+  if(customUrl){
+    setUrlBase(customUrl);
+    errEl.textContent='🔄 Conectando ao servidor...';
+    errEl.style.color='var(--mid)';
+    await descobrirUrlPublica();
+  }
+
+  if(!API_URL){
+    errEl.textContent='⚠️ Configure a URL do servidor. Toque em ⚙️ Configurar servidor.';
     errEl.style.color='#c0392b';
-    document.getElementById('l-api-url').focus();
     return;
   }
 
-  if(customUrl){
-    setApiUrl(customUrl);
-    errEl.textContent='🔄 Conectando ao servidor...';
-    errEl.style.color='var(--mid)';
-  }
+  errEl.textContent='🔄 Entrando...';
+  errEl.style.color='var(--mid)';
 
-  // Tentar login via API
   const res = await apiFetch('/api/login', {
     method: 'POST',
     body: JSON.stringify({ email, senha })
   });
-
   if(res && res.status === 'success'){
     currentUser = res.user;
     DB.set('nn_session', currentUser.id);
     errEl.textContent='';
     goApp();
   } else {
-    // Fallback para localStorage se API falhar (modo offline parcial)
+    // Fallback para localStorage se API falhar
     const users=DB.get('nn_users')||[];
     const u=users.find(x=>x.email.toLowerCase()===email && x.senha===senha && x.ativo);
     if(u){
@@ -730,15 +768,7 @@ async function doLogin(){
       errEl.textContent='';
       goApp();
     } else {
-      // Mensagem de erro clara para o usuário
-      let msg;
-      if(res && res.status === 'error' && res.message && res.message.includes('conectar')){
-        msg = '❌ Não foi possível conectar ao servidor. Verifique se o servidor está ligado e se a URL está correta.';
-      } else if(res && res.status === 'error'){
-        msg = res.message;
-      } else {
-        msg = 'E-mail ou senha incorretos.';
-      }
+      const msg = (res && res.status === 'error') ? res.message : 'E-mail ou senha incorretos.';
       errEl.textContent = msg;
       errEl.style.color = '#c0392b';
     }
@@ -1611,14 +1641,21 @@ async function syncUserData(){
 // ════ INIT ════
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('login').classList.contains('active'))doLogin();});
 seedData();
-loadDicas();
-// Preenche o campo de URL com o valor salvo no localStorage
-preencherCampoUrl();
-// Tenta restaurar sessão salva (somente se houver URL configurada)
-(async function initSession(){
+// Inicialização assíncrona: descobre URL pública e restaura sessão
+(async function init(){
+  // 1. Tenta atualizar a URL pública do tunnel silenciosamente
+  await descobrirUrlPublica();
+
+  // 2. Preenche o campo de URL base (oculto) com o valor salvo
+  const campoUrl = document.getElementById('l-api-url');
+  if(campoUrl && URL_BASE) campoUrl.value = URL_BASE;
+
+  // 3. Carrega dicas
+  loadDicas();
+
+  // 4. Tenta restaurar sessão salva
   const savedSession=DB.get('nn_session');
   if(savedSession && API_URL){
-    // Tenta validar sessão via API
     const users = await apiFetch('/api/users');
     if(users && Array.isArray(users)){
       const u=users.find(x=>x.id===savedSession&&x.ativo);
@@ -1630,6 +1667,8 @@ preencherCampoUrl();
     if(u){currentUser=u;goApp();syncUserData();}
   }
 })();
+// Atualiza URL pública a cada 5 minutos (caso o tunnel reinicie)
+setInterval(descobrirUrlPublica, 5 * 60 * 1000);
 setInterval(syncUserData, 30000);
 setInterval(loadDicas, 60000);
 </script>
