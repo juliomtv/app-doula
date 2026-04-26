@@ -1,6 +1,6 @@
 {
-  "versao": "1.0.3",
+  "versao": "1.0.4",
   "data": "2026-04-26",
-  "notas": "OTA corrigido (comparação semântica de versões). Modal admin: X e Cancelar funcionando. Salvar Maternidade e Plano de Parto fecham o modal automaticamente.",
+  "notas": "Botão Acesso Administrador abre admin.html diretamente. Login admin corrigido (nalinnazareth/apolo1895). Modal duplicado removido.",
   "obrigatoria": false
 }

@@ -305,29 +305,10 @@ textarea.dta:focus{border-color:var(--rose);}
       <button onclick="toggleCampoUrl()" style="background:none;border:none;color:var(--light);font-size:11px;cursor:pointer;padding:4px 8px;">⚙️ Configurar servidor</button>
     </div>
     <hr style="border:0;border-top:1px solid var(--rose-pale);margin:20px 0;">
-    <button class="btn-rose" style="background:var(--dark);margin-top:0;" onclick="abrirLoginAdmin()">Acesso Administrador 🔐</button>
+    <button class="btn-rose" style="background:var(--dark);margin-top:0;" onclick="window.location.href='admin.html'">Acesso Administrador 🔐</button>
 
 <!-- Modal de login admin -->
-<div class="modal-overlay" id="modal-admin-login" style="z-index:9999;">
-  <div class="modal" style="max-width:360px;">
-    <div class="modal-hdr"><h3>Acesso Administrativo</h3><button class="modal-close" onclick="closeModal('modal-admin-login')">✕</button></div>
-    <div class="modal-body" style="padding:20px;">
-      <div class="mfield" style="margin-bottom:14px;">
-        <label style="font-size:12px;color:var(--mid);text-transform:uppercase;letter-spacing:1px;">Usuário</label>
-        <input type="text" id="admin-login-user" placeholder="admin" style="width:100%;padding:10px;border:1px solid var(--rose-pale);border-radius:8px;margin-top:4px;">
-      </div>
-      <div class="mfield" style="margin-bottom:6px;">
-        <label style="font-size:12px;color:var(--mid);text-transform:uppercase;letter-spacing:1px;">Senha</label>
-        <input type="password" id="admin-login-pass" placeholder="••••••••" style="width:100%;padding:10px;border:1px solid var(--rose-pale);border-radius:8px;margin-top:4px;" onkeydown="if(event.key==='Enter')confirmarLoginAdmin()">
-      </div>
-      <div id="admin-login-err" style="font-size:12px;color:var(--err);min-height:16px;margin-bottom:10px;"></div>
-    </div>
-    <div class="modal-footer" style="display:flex;gap:10px;">
-      <button class="btn-full btn-cancel" onclick="closeModal('modal-admin-login')" style="flex:1;">Cancelar</button>
-      <button class="btn-full btn-save" onclick="confirmarLoginAdmin()" style="flex:1;">Entrar</button>
-    </div>
-  </div>
-</div>
+
   </div>
 </div>
 
@@ -1660,31 +1641,8 @@ function renderPerfil(){
 }
 
 // ════ PLANEJAMENTO ════
-function abrirLoginAdmin() {
-  document.getElementById('admin-login-user').value = '';
-  document.getElementById('admin-login-pass').value = '';
-  document.getElementById('admin-login-err').textContent = '';
-  document.getElementById('modal-admin-login').classList.add('active');
-}
-async function confirmarLoginAdmin() {
-  const user = document.getElementById('admin-login-user').value.trim();
-  const pass = document.getElementById('admin-login-pass').value.trim();
-  if (!user || !pass) {
-    document.getElementById('admin-login-err').textContent = 'Preencha usuário e senha.';
-    return;
-  }
-  try {
-    const res = await apiFetch('/api/admin/login', { method: 'POST', body: JSON.stringify({ usuario: user, senha: pass }) });
-    if (res && res.ok) {
-      closeModal('modal-admin-login');
-      setTimeout(() => { window.location.href = 'admin.html'; }, 200);
-    } else {
-      document.getElementById('admin-login-err').textContent = res?.erro || 'Usuário ou senha incorretos.';
-    }
-  } catch(e) {
-    document.getElementById('admin-login-err').textContent = 'Erro ao conectar com o servidor.';
-  }
-}
+
+
 function switchPPTab(n, el) {
   document.querySelectorAll('.pp-tab-content').forEach(d => d.style.display = 'none');
   const tab = document.getElementById('pp-tab-' + n);
