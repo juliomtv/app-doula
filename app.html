@@ -646,7 +646,15 @@ let currentUser=null, currentMood='😊', currentTab=0, editingAgendaIndex=null,
 // ════ API FETCH HELPERS ════
 async function apiFetch(endpoint, options = {}) {
   try {
-    const res = await fetch(`${API_URL}${endpoint}`, {
+    // Garantir que a URL seja válida e não cause erro de fetch imediato
+    let baseUrl = API_URL;
+    if (!baseUrl.startsWith('http')) {
+      baseUrl = 'http://' + baseUrl;
+    }
+    // Remover barra duplicada se necessário
+    const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
+    
+    const res = await fetch(url, {
       ...options,
       headers: { 'Content-Type': 'application/json', ...options.headers }
     });
@@ -654,8 +662,8 @@ async function apiFetch(endpoint, options = {}) {
     return await res.json();
   } catch (e) {
     console.error("Erro na API:", e);
-    console.error("URL tentada:", `${API_URL}${endpoint}`);
-    return null;
+    // Retornar um objeto de erro padronizado para que a UI possa tratar
+    return { status: 'error', message: 'Falha na conexão com o servidor. Verifique a URL da API.' };
   }
 }
 
@@ -692,7 +700,10 @@ async function doLogin(){
       document.getElementById('l-err').textContent='';
       goApp();
     } else {
-      document.getElementById('l-err').textContent= res?.message || 'E-mail ou senha incorretos.';
+      // Se res for nulo ou tiver erro de conexão, mostrar mensagem apropriada
+      const msg = (res && res.status === 'error') ? res.message : 'E-mail ou senha incorretos.';
+      document.getElementById('l-err').textContent = msg;
+      document.getElementById('l-err').style.color = '#c0392b';
     }
   }
 }

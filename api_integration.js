@@ -10,7 +10,11 @@ function setApiUrl(url) {
 const API = {
     async post(endpoint, data) {
         try {
-            const res = await fetch(`${API_URL}${endpoint}`, {
+            let baseUrl = API_URL;
+            if (!baseUrl.startsWith('http')) baseUrl = 'http://' + baseUrl;
+            const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
+            
+            const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -19,29 +23,34 @@ const API = {
             return await res.json();
         } catch (e) {
             console.error("Erro na API:", e);
-            console.error("URL tentada:", `${API_URL}${endpoint}`);
-            return { status: "error", message: "Falha na conexao com o servidor." };
+            return { status: "error", message: "Falha na conexão com o servidor. Verifique a URL da API." };
         }
     },
     async get(endpoint) {
         try {
-            const res = await fetch(`${API_URL}${endpoint}`);
+            let baseUrl = API_URL;
+            if (!baseUrl.startsWith('http')) baseUrl = 'http://' + baseUrl;
+            const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
+            
+            const res = await fetch(url);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return await res.json();
         } catch (e) {
             console.error("Erro na API:", e);
-            console.error("URL tentada:", `${API_URL}${endpoint}`);
             return [];
         }
     },
     async delete(endpoint) {
         try {
-            const res = await fetch(`${API_URL}${endpoint}`, { method: 'DELETE' });
+            let baseUrl = API_URL;
+            if (!baseUrl.startsWith('http')) baseUrl = 'http://' + baseUrl;
+            const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
+            
+            const res = await fetch(url, { method: 'DELETE' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return await res.json();
         } catch (e) {
             console.error("Erro na API:", e);
-            console.error("URL tentada:", `${API_URL}${endpoint}`);
             return { status: "error" };
         }
     }
