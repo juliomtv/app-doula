@@ -22,6 +22,18 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    // Nome personalizado do APK gerado
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            def versionName = variant.versionName
+            def buildType = variant.buildType.name
+            if (buildType == 'debug') {
+                outputFileName = "doula-nalin-nazareth.apk"
+            } else {
+                outputFileName = "doula-nalin-nazareth-v${versionName}.apk"
+            }
+        }
+    }
 }
 
 repositories {
