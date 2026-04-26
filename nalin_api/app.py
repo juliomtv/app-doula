@@ -417,6 +417,49 @@ def config():
         db.commit()
         return jsonify({"status": "success"})
 
+# ── CONFIGURAÇÕES GLOBAIS DO ADMIN ──────────────────────────────────────────────────────────────────────────────
+@app.route('/api/admin/config', methods=['GET', 'POST', 'OPTIONS'])
+def admin_config():
+    """Endpoint para ler e salvar as configurações globais do sistema (WhatsApp, Instagram, e-mail)."""
+    if request.method == 'OPTIONS':
+        return '', 204
+    db = get_db()
+    if request.method == 'GET':
+        rows = db.execute('SELECT chave, valor FROM config_global').fetchall()
+        return jsonify([dict(r) for r in rows])
+    else:
+        data = request.json or {}
+        campos = ['whatsapp_numero', 'whatsapp_mensagem', 'instagram_url', 'email_contato']
+        try:
+            for campo in campos:
+                if campo in data:
+                    db.execute(
+                        "INSERT OR REPLACE INTO config_global (chave, valor, atualizado_em) VALUES (?, ?, CURRENT_TIMESTAMP)",
+                        (campo, data[campo])
+                    )
+            db.commit()
+            return jsonify({"status": "success"})
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/admin/change-password', methods=['POST', 'OPTIONS'])
+def admin_change_password():
+    """Endpoint para o admin trocar a própria senha."""
+    if request.method == 'OPTIONS':
+        return '', 204
+    data = request.json or {}
+    old_pass = data.get('old_password', '')
+    new_pass = data.get('new_password', '')
+    if not old_pass or not new_pass:
+        return jsonify({"status": "error", "message": "Senha atual e nova senha são obrigatórias"}), 400
+    db = get_db()
+    admin = db.execute('SELECT * FROM admin_config WHERE id = 1').fetchone()
+    if not admin or admin['password'] != old_pass:
+        return jsonify({"status": "error", "message": "Senha atual incorreta"}), 401
+    db.execute('UPDATE admin_config SET password = ? WHERE id = 1', (new_pass,))
+    db.commit()
+    return jsonify({"status": "success"})
+
 # ── DICAS SEMANAIS ──────────────────────────────────────────────────────────────────────────────
 @app.route('/api/dicas', methods=['GET', 'OPTIONS'])
 def dicas_publicas():
