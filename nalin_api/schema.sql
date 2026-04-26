@@ -89,13 +89,10 @@ CREATE TABLE IF NOT EXISTS config_global (
 -- Inserir admin padrão se não existir
 INSERT OR IGNORE INTO admin_config (id, username, password) VALUES (1, 'admin@nalinnazareth.com', 'admin123');
 
--- Tabela de Dicas Semanais
-CREATE TABLE IF NOT EXISTS dicas_semanais (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    semana INTEGER NOT NULL UNIQUE,
-    titulo TEXT NOT NULL,
+-- Tabela de Dicas Personalizadas
+CREATE TABLE IF NOT EXISTS dicas_personalizadas (
+    semana INTEGER PRIMARY KEY,
     dica TEXT NOT NULL,
-    emoji TEXT DEFAULT '💡',
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

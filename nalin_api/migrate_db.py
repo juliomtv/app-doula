@@ -1,19 +1,19 @@
 import sqlite3
 import os
 
-# Caminho para o banco de dados (ajustado para rodar na pasta nalin_api)
-# O banco 'dados.db' está na raiz do projeto, um nível acima de 'nalin_api'
+# Caminho para o banco de dados
 DATABASE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'dados.db'))
 
 def migrate():
     if not os.path.exists(DATABASE):
         print(f"Banco de dados não encontrado em: {DATABASE}")
+        # Se não existe, o init_db no app.py criará via schema.sql
         return
 
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
 
-    # Lista de colunas que devem existir na tabela users (baseado no schema.sql atual)
+    # 1. Verificar colunas faltantes na tabela users
     required_columns = [
         ('rg_orgao', 'TEXT'),
         ('cpf', 'TEXT'),
@@ -48,22 +48,42 @@ def migrate():
         ('expectativas_desejos_parto', 'TEXT')
     ]
 
-    # Obter colunas atuais
     cursor.execute("PRAGMA table_info(users)")
     current_columns = [row[1] for row in cursor.fetchall()]
 
     added_count = 0
     for col_name, col_type in required_columns:
         if col_name not in current_columns:
-            print(f"Adicionando coluna faltante: {col_name}")
+            print(f"Adicionando coluna faltante em users: {col_name}")
             try:
                 cursor.execute(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}")
                 added_count += 1
             except Exception as e:
                 print(f"Erro ao adicionar {col_name}: {e}")
 
-    # Criar tabela de logs se não existir
-    print("Verificando tabela de logs...")
+    # 2. Criar tabelas novas se não existirem
+    print("Verificando tabelas novas...")
+    
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS ebooks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        titulo TEXT NOT NULL,
+        descricao TEXT,
+        url_pdf TEXT NOT NULL,
+        url_capa TEXT,
+        ativo INTEGER DEFAULT 1,
+        data_upload TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS dicas_personalizadas (
+        semana INTEGER PRIMARY KEY,
+        dica TEXT NOT NULL,
+        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS logs_atividade (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -77,11 +97,7 @@ def migrate():
 
     conn.commit()
     conn.close()
-    
-    if added_count > 0:
-        print(f"Migração concluída! {added_count} colunas adicionadas.")
-    else:
-        print("O banco de dados já está atualizado.")
+    print("Migração concluída com sucesso.")
 
 if __name__ == "__main__":
     migrate()
