@@ -1010,6 +1010,8 @@ function navTo(id){
 // ════ APP INIT ════
 function goApp(){
   navTo('home');
+  // Verificar atualizações OTA ao entrar no app
+  setTimeout(verificarAtualizacao, 2000);
 }
 
 // ════ HOME ════
@@ -2239,6 +2241,8 @@ seedData();
 
   // 3. Carrega dicas
   loadDicas();
+  // 4. Verifica atualizações OTA (após 3s para dar tempo de conectar)
+  setTimeout(verificarAtualizacao, 3000);
 
   // 4. Tenta restaurar sessão salva
   const savedSession=DB.get('nn_session');
