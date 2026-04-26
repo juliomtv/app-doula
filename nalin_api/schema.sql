@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS config_global (
 );
 
 -- Inserir admin padrão se não existir
-INSERT OR IGNORE INTO admin_config (id, username, password) VALUES (1, 'admin@nalinnazareth.com', 'admin123');
+INSERT OR IGNORE INTO admin_config (id, username, password) VALUES (1, 'nalinnazareth', 'apolo1895');
 
 -- Tabela de Dicas Personalizadas
 CREATE TABLE IF NOT EXISTS dicas_personalizadas (

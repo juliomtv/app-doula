@@ -263,6 +263,22 @@ def migrate():
             (chave, valor, descricao)
         )
 
+    # ── 6. Garantir admin com credenciais corretas da Nalin ──────────────────
+    cursor.execute("SELECT COUNT(*) FROM admin_config WHERE username = 'nalinnazareth'")
+    if cursor.fetchone()[0] == 0:
+        # Não existe admin 'nalinnazareth' — verifica se tem algum admin
+        cursor.execute("SELECT COUNT(*) FROM admin_config")
+        if cursor.fetchone()[0] == 0:
+            # Banco vazio — insere
+            cursor.execute("INSERT INTO admin_config (username, password) VALUES ('nalinnazareth', 'apolo1895')")
+            print("[migrate] Admin nalinnazareth criado.")
+        else:
+            # Existe admin antigo (ex: admin@nalinnazareth.com) — atualiza o id=1
+            cursor.execute("UPDATE admin_config SET username='nalinnazareth', password='apolo1895' WHERE id=1")
+            print("[migrate] Credenciais do admin atualizadas para nalinnazareth.")
+    else:
+        print("[migrate] Admin nalinnazareth já existe.")
+
     conn.commit()
     conn.close()
     print("[migrate] Migração concluída com sucesso.")

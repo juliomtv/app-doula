@@ -311,11 +311,8 @@ def admin_login():
     if not user or not passw:
         return jsonify({"ok": False, "erro": "Usuário e senha obrigatórios."}), 400
     db = get_db()
-    # Verifica na tabela admin_config
-    admin = db.execute('SELECT * FROM admin_config WHERE usuario = ? AND senha = ?', (user, passw)).fetchone()
-    if not admin:
-        # Tenta com username/password (legado)
-        admin = db.execute('SELECT * FROM admin_config WHERE username = ? AND password = ?', (user, passw)).fetchone()
+    # A tabela admin_config usa colunas 'username' e 'password'
+    admin = db.execute('SELECT * FROM admin_config WHERE username = ? AND password = ?', (user, passw)).fetchone()
     if admin:
         return jsonify({"ok": True, "token": "admin-session-token"})
     return jsonify({"ok": False, "erro": "Usuário ou senha incorretos."}), 401
