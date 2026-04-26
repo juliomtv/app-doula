@@ -215,7 +215,41 @@ def migrate():
     )
     """)
 
-    # ── 4. Configurações padrão no config_global ──────────────────────────────
+    # ── 4. Tabelas do Mini Curso ──────────────────────────────────────────────
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS curso_secoes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        titulo TEXT NOT NULL,
+        descricao TEXT,
+        ordem INTEGER DEFAULT 0,
+        ativo INTEGER DEFAULT 1,
+        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS video_progresso (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        conteudo_id INTEGER NOT NULL,
+        assistido INTEGER DEFAULT 0,
+        percentual INTEGER DEFAULT 0,
+        atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, conteudo_id),
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (conteudo_id) REFERENCES conteudos(id)
+    )
+    """)
+    # Adicionar colunas secao_id e ordem em conteudos (se não existirem)
+    cursor.execute("PRAGMA table_info(conteudos)")
+    current_cont_cols = [row[1] for row in cursor.fetchall()]
+    if 'secao_id' not in current_cont_cols:
+        print("[migrate] Adicionando coluna secao_id em conteudos")
+        cursor.execute("ALTER TABLE conteudos ADD COLUMN secao_id INTEGER DEFAULT NULL")
+    if 'ordem' not in current_cont_cols:
+        print("[migrate] Adicionando coluna ordem em conteudos")
+        cursor.execute("ALTER TABLE conteudos ADD COLUMN ordem INTEGER DEFAULT 0")
+
+    # ── 5. Configurações padrão no config_global ──────────────────────────────
     defaults = [
         ('whatsapp_numero', '5500000000000', 'Numero de WhatsApp da Doula'),
         ('whatsapp_mensagem', 'Ola! Tudo bem? Sou a Nalin, sua doula. Como posso ajuda-la?', 'Mensagem padrao do WhatsApp'),
