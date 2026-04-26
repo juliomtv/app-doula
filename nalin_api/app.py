@@ -383,8 +383,10 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"Erro ao executar migração automática: {e}")
     
-    print(f"\n{'='*50}")
-    print(f" API RODANDO LOCALMENTE")
-    print(f" Endereço para os APKS: {base_url}")
-    print(f"{'='*50}\n")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    print(f"\n{'='*60}")
+    print(f" 🚀 SERVIDOR API NALIN NAZARETH ATIVO")
+    print(f" 📱 No App, use este IP: {ip_local}")
+    print(f" 🔗 URL Completa: http://{ip_local}:5000")
+    print(f" 🌐 Certifique-se que o celular está no mesmo Wi-Fi!")
+    print(f"{'='*60}\n")
+    app.run(host='0.0.0.0', port=5000, debug=False)

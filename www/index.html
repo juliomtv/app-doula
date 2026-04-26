@@ -596,10 +596,29 @@ const DB = {
 };
 
 function setApiUrl(url) {
+  if(!url) return;
+  if(!url.startsWith('http')) url = 'http://' + url;
   API_URL = url;
   localStorage.setItem('api_url', url);
   console.log('API URL atualizada para:', API_URL);
 }
+
+// Tentar descobrir o IP da API automaticamente se estiver no localhost (comum em mobile/apk)
+async function discoverApi() {
+  // Se já temos uma URL salva que não é localhost, não fazemos nada
+  const saved = localStorage.getItem('api_url');
+  if (saved && !saved.includes('localhost') && !saved.includes('127.0.0.1')) return;
+
+  console.log("Tentando descobrir API na rede local...");
+  
+  // Lista de IPs comuns para testar (gateway padrão geralmente termina em .1 ou .100)
+  // Como não podemos escanear a rede toda via JS no browser facilmente, 
+  // vamos focar em permitir que o usuário insira ou usar o que o backend nos der.
+  
+  // Uma técnica comum é tentar buscar um arquivo de configuração estático se houver um servidor central,
+  // mas como é local, o melhor é o fallback para o que foi digitado.
+}
+discoverApi();
 
 // ════ SEED DATA ════
 function seedData(){
@@ -663,7 +682,11 @@ async function apiFetch(endpoint, options = {}) {
   } catch (e) {
     console.error("Erro na API:", e);
     // Retornar um objeto de erro padronizado para que a UI possa tratar
-    return { status: 'error', message: 'Falha na conexão com o servidor. Verifique a URL da API.' };
+    const currentIp = API_URL.replace('http://', '').split(':')[0];
+    return { 
+      status: 'error', 
+      message: `Não foi possível conectar em ${currentIp}. Verifique se o servidor está rodando e se você está na mesma rede Wi-Fi.` 
+    };
   }
 }
 
