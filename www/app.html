@@ -345,7 +345,7 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif;}
 
 <script>
 // ════ STORAGE HELPERS ════
-const API_URL = "http://192.168.1.8:5000";
+let API_URL = localStorage.getItem('api_url') || "http://192.168.1.8:5000";
 const DB = {
   get:(k)=>{ try{return JSON.parse(localStorage.getItem(k));}catch{return null;}},
   set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),

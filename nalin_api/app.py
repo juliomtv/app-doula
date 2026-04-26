@@ -6,7 +6,6 @@ import socket
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type"]}})
 
 # Configuração de caminhos baseada na localização do script
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -20,6 +19,26 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Criar o diretório de uploads se não existir
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
+
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "127.0.0.1"
+
+# Definição da base_url dinâmica para uso nas rotas
+ip_local = get_local_ip()
+base_url = f"http://{ip_local}:5000"
+
+# Configuração expandida do CORS para incluir rotas fora de /api/
+CORS(app, resources={
+    r"/api/*": {"origins": "*", "methods": ["GET", "POST", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type"]},
+    r"/versao_app": {"origins": "*", "methods": ["GET", "OPTIONS"], "allow_headers": ["Content-Type"]}
+})
 
 app.add_url_rule("/uploads/<path:filename>", endpoint="uploads", view_func=lambda filename: send_from_directory(app.config["UPLOAD_FOLDER"], filename))
 
@@ -61,16 +80,6 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def get_local_ip():
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
-        s.close()
-        return ip
-    except:
-        return "127.0.0.1"
-
 @app.route('/api/status', methods=['GET', 'OPTIONS'])
 def status():
     if request.method == 'OPTIONS':
@@ -81,7 +90,7 @@ def status():
 def versao_app():
     if request.method == 'OPTIONS':
         return '', 204
-    # O usuário solicitou este endpoint específico com este retorno
+    # Retorno com a base_url agora definida corretamente
     return jsonify({
         "versao_cliente": "1.1",
         "versao_admin": "1.1",
@@ -228,7 +237,7 @@ def delete_conteudo(cont_id):
 @app.route('/api/conteudos/<int:cont_id>/toggle', methods=['POST'])
 def toggle_conteudo(cont_id):
     db = get_db()
-    db.execute('UPDATE conteudos SET ativo = NOT ativo WHERE id = ?', (cont_id,))
+    db.execute('UPDATE users SET ativo = NOT ativo WHERE id = ?', (cont_id,))
     db.commit()
     return jsonify({"status": "success"})
 
@@ -258,210 +267,62 @@ def upload_ebook():
         titulo = request.form.get("titulo")
         descricao = request.form.get("descricao", "")
         if not titulo:
-            os.remove(filepath)
-            return jsonify({"status": "error", "message": "Título do eBook é obrigatório."}), 400
+            return jsonify({"status": "error", "message": "Título obrigatório."}), 400
             
         db = get_db()
-        try:
-            db.execute(
-                "INSERT INTO ebooks (titulo, descricao, url_pdf, url_capa) VALUES (?, ?, ?, ?)",
-                (titulo, descricao, f"/uploads/{filename}", url_capa),
-            )
-            db.commit()
-            return jsonify({"status": "success", "message": "eBook enviado com sucesso!"}), 201
-        except Exception as e:
-            if os.path.exists(filepath): os.remove(filepath)
-            return jsonify({"status": "error", "message": f"Erro ao salvar eBook: {str(e)}"}), 500
-    else:
-        return jsonify({"status": "error", "message": "Tipo de arquivo não permitido."}), 400
+        db.execute("INSERT INTO ebooks (titulo, descricao, url_pdf, url_capa) VALUES (?, ?, ?, ?)",
+                   (titulo, descricao, f"/uploads/{filename}", url_capa))
+        db.commit()
+        return jsonify({"status": "success"})
+    return jsonify({"status": "error", "message": "Tipo de arquivo não permitido."}), 400
 
-@app.route("/api/ebooks", methods=["GET"])
+@app.route('/api/ebooks', methods=['GET'])
 def list_ebooks():
     db = get_db()
-    try:
-        # Tenta adicionar a coluna url_capa se ela não existir (migração rápida)
-        try:
-            db.execute("ALTER TABLE ebooks ADD COLUMN url_capa TEXT")
-            db.commit()
-        except:
-            pass
-            
-        ebooks = db.execute("SELECT id, titulo, descricao, url_pdf, url_capa, data_upload FROM ebooks ORDER BY data_upload DESC").fetchall()
-        return jsonify([dict(e) for e in ebooks])
-    except sqlite3.OperationalError:
-        return jsonify([])
+    ebooks = db.execute('SELECT * FROM ebooks ORDER BY criado_em DESC').fetchall()
+    return jsonify([dict(e) for e in ebooks])
 
-@app.route("/api/ebook/<int:ebook_id>", methods=["GET"])
-def get_ebook(ebook_id):
-    db = get_db()
-    try:
-        ebook = db.execute("SELECT id, titulo, descricao, url_pdf, data_upload FROM ebooks WHERE id = ? AND ativo = 1", (ebook_id,)).fetchone()
-        if ebook: return jsonify(dict(ebook))
-        return jsonify({"status": "error", "message": "eBook não encontrado."}), 404
-    except sqlite3.OperationalError:
-        return jsonify({"status": "error", "message": "Tabela de eBooks não encontrada."}), 500
-
-@app.route("/api/ebook/<int:ebook_id>", methods=["DELETE"])
+@app.route('/api/ebooks/<int:ebook_id>', methods=['DELETE'])
 def delete_ebook(ebook_id):
     db = get_db()
-    db.execute("DELETE FROM ebooks WHERE id = ?", (ebook_id,))
+    db.execute('DELETE FROM ebooks WHERE id = ?', (ebook_id,))
     db.commit()
     return jsonify({"status": "success"})
 
-@app.route('/api/config', methods=['GET'])
-def get_config():
-    db = get_db()
-    try:
-        configs = db.execute('SELECT chave, valor FROM config_global').fetchall()
-        return jsonify({config['chave']: config['valor'] for config in configs})
-    except:
-        return jsonify({})
-
-@app.route('/api/admin/config', methods=['GET', 'POST', 'OPTIONS'])
-def admin_config():
+@app.route('/api/config', methods=['GET', 'POST', 'OPTIONS'])
+def config():
     if request.method == 'OPTIONS':
         return '', 204
-    
     db = get_db()
     if request.method == 'GET':
-        try:
-            configs = db.execute('SELECT chave, valor, descricao FROM config_global').fetchall()
-            return jsonify([dict(c) for c in configs])
-        except:
-            return jsonify([])
-    elif request.method == 'POST':
+        conf = db.execute('SELECT * FROM admin_config LIMIT 1').fetchone()
+        return jsonify(dict(conf) if conf else {})
+    else:
         data = request.json
-        try:
-            for chave, valor in data.items():
-                db.execute('INSERT OR REPLACE INTO config_global (chave, valor) VALUES (?, ?)', (chave, valor))
-            db.commit()
-            return jsonify({"status": "success"})
-        except Exception as e:
-            return jsonify({"status": "error", "message": str(e)}), 500
+        db.execute('UPDATE admin_config SET whatsapp_numero = ?, whatsapp_mensagem = ?, dpp_manual = ?',
+                   (data.get('whatsapp_numero'), data.get('whatsapp_mensagem'), data.get('dpp_manual')))
+        db.commit()
+        return jsonify({"status": "success"})
 
-@app.route('/api/dicas', methods=['GET'])
-def get_dicas():
+@app.route('/api/dicas', methods=['GET', 'POST', 'OPTIONS'])
+def dicas():
+    if request.method == 'OPTIONS':
+        return '', 204
     db = get_db()
-    try:
-        dicas = db.execute('SELECT * FROM dicas_semanais ORDER BY semana').fetchall()
+    if request.method == 'GET':
+        dicas = db.execute('SELECT * FROM dicas_personalizadas ORDER BY semana ASC').fetchall()
         return jsonify([dict(d) for d in dicas])
-    except:
-        return jsonify([])
-
-@app.route('/api/admin/dicas', methods=['GET', 'POST', 'OPTIONS'])
-def admin_dicas():
-    if request.method == 'OPTIONS':
-        return '', 204
-    
-    db = get_db()
-    if request.method == 'GET':
-        try:
-            dicas = db.execute('SELECT * FROM dicas_semanais ORDER BY semana').fetchall()
-            return jsonify([dict(d) for d in dicas])
-        except:
-            return jsonify([])
-    elif request.method == 'POST':
+    else:
         data = request.json
-        try:
-            db.execute('INSERT INTO dicas_semanais (semana, titulo, dica, emoji) VALUES (?, ?, ?, ?)',
-                      (data['semana'], data['titulo'], data['dica'], data.get('emoji', '')))
-            db.commit()
-            return jsonify({"status": "success"})
-        except Exception as e:
-            return jsonify({"status": "error", "message": str(e)}), 500
+        db.execute('INSERT OR REPLACE INTO dicas_personalizadas (semana, dica) VALUES (?, ?)',
+                   (data.get('semana'), data.get('dica')))
+        db.commit()
+        return jsonify({"status": "success"})
 
-@app.route('/api/admin/dicas/<int:dica_id>', methods=['PUT', 'DELETE', 'OPTIONS'])
-def admin_dica_detail(dica_id):
-    if request.method == 'OPTIONS':
-        return '', 204
-    
+@app.route('/api/dicas/<int:semana>', methods=['DELETE'])
+def delete_dica(semana):
     db = get_db()
-    if request.method == 'PUT':
-        data = request.json
-        try:
-            db.execute('UPDATE dicas_semanais SET semana=?, titulo=?, dica=?, emoji=? WHERE id=?',
-                      (data['semana'], data['titulo'], data['dica'], data.get('emoji', ''), dica_id))
-            db.commit()
-            return jsonify({"status": "success"})
-        except Exception as e:
-            return jsonify({"status": "error", "message": str(e)}), 500
-    elif request.method == 'DELETE':
-        try:
-            db.execute('DELETE FROM dicas_semanais WHERE id=?', (dica_id,))
-            db.commit()
-            return jsonify({"status": "success"})
-        except Exception as e:
-            return jsonify({"status": "error", "message": str(e)}), 500
-
-@app.route('/api/agenda', methods=['GET', 'POST', 'OPTIONS'])
-def agenda():
-    if request.method == 'OPTIONS':
-        return '', 204
-    
-    db = get_db()
-    user_id = request.args.get('user_id') or (request.json.get('user_id') if request.json else None)
-    
-    if request.method == 'GET':
-        try:
-            eventos = db.execute('SELECT * FROM agenda WHERE user_id = ? ORDER BY data_evento ASC', (user_id,)).fetchall()
-            return jsonify([dict(e) for e in eventos])
-        except:
-            return jsonify([])
-    elif request.method == 'POST':
-        data = request.json
-        try:
-            db.execute('INSERT INTO agenda (user_id, titulo, descricao, data_evento, hora_evento, tipo) VALUES (?, ?, ?, ?, ?, ?)',
-                      (data['user_id'], data['titulo'], data.get('descricao', ''), data['data_evento'], data.get('hora_evento', ''), data.get('tipo', 'outro')))
-            db.commit()
-            return jsonify({"status": "success"})
-        except Exception as e:
-            return jsonify({"status": "error", "message": str(e)}), 500
-
-@app.route('/api/agenda/<int:evento_id>', methods=['DELETE', 'OPTIONS'])
-def delete_agenda(evento_id):
-    if request.method == 'OPTIONS':
-        return '', 204
-    
-    db = get_db()
-    db.execute('DELETE FROM agenda WHERE id = ?', (evento_id,))
-    db.commit()
-    return jsonify({"status": "success"})
-
-@app.route('/api/enxoval', methods=['GET', 'POST', 'OPTIONS'])
-def enxoval():
-    if request.method == 'OPTIONS':
-        return '', 204
-    
-    db = get_db()
-    user_id = request.args.get('user_id') or (request.json.get('user_id') if request.json else None)
-    
-    if request.method == 'GET':
-        try:
-            itens = db.execute('SELECT * FROM enxoval WHERE user_id = ? ORDER BY prioridade DESC, criado_em DESC', (user_id,)).fetchall()
-            return jsonify([dict(i) for i in itens])
-        except:
-            return jsonify([])
-    elif request.method == 'POST':
-        data = request.json
-        try:
-            db.execute('INSERT INTO enxoval (user_id, item, quantidade, prioridade) VALUES (?, ?, ?, ?)',
-                      (data['user_id'], data['item'], data.get('quantidade', 1), data.get('prioridade', 'normal')))
-            db.commit()
-            return jsonify({"status": "success"})
-        except Exception as e:
-            return jsonify({"status": "error", "message": str(e)}), 500
-
-@app.route('/api/enxoval/<int:item_id>', methods=['DELETE', 'POST', 'OPTIONS'])
-def update_enxoval(item_id):
-    if request.method == 'OPTIONS':
-        return '', 204
-    
-    db = get_db()
-    if request.method == 'DELETE':
-        db.execute('DELETE FROM enxoval WHERE id = ?', (item_id,))
-    elif request.method == 'POST':
-        data = request.json
-        db.execute('UPDATE enxoval SET comprado = ? WHERE id = ?', (data.get('comprado', 0), item_id))
+    db.execute('DELETE FROM dicas_personalizadas WHERE semana = ?', (semana,))
     db.commit()
     return jsonify({"status": "success"})
 
@@ -469,10 +330,8 @@ def update_enxoval(item_id):
 def maternidade():
     if request.method == 'OPTIONS':
         return '', 204
-    
     db = get_db()
     user_id = request.args.get('user_id') or (request.json.get('user_id') if request.json else None)
-    
     if request.method == 'GET':
         try:
             mat = db.execute('SELECT * FROM maternidade WHERE user_id = ?', (user_id,)).fetchone()
@@ -524,9 +383,8 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"Erro ao executar migração automática: {e}")
     
-    ip = get_local_ip()
     print(f"\n{'='*50}")
     print(f" API RODANDO LOCALMENTE")
-    print(f" Endereço para os APKS: http://{ip}:5000")
+    print(f" Endereço para os APKS: {base_url}")
     print(f"{'='*50}\n")
     app.run(host='0.0.0.0', port=5000, debug=True)
