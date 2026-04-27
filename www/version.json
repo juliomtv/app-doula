@@ -1,6 +1,6 @@
 {
-  "versao": "1.0.5",
-  "data": "2026-04-26",
-  "notas": "OTA verificado ao abrir o app (tela de login). Admin também recebe notificação de atualização após login.",
+  "versao": "1.0.6",
+  "data": "2026-04-27",
+  "notas": "Login admin sem campos pré-preenchidos. Mini curso: player de vídeo em cima, lista de vídeos embaixo no celular.",
   "obrigatoria": false
 }

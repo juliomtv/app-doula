@@ -114,10 +114,36 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif;}
 .tab.active{background:var(--rose);color:white;border-color:var(--rose);}
 /* ══ LAYOUT DE DOIS PAINÉIS — MINI CURSO ══ */
 .curso-layout{display:flex;flex:1;overflow:hidden;min-height:0;}
-@media(max-width:500px){
-  .curso-sidebar{width:180px;min-width:150px;}
-  .sb-vid-title{font-size:10px;}
-  .sb-secao-titulo{font-size:11px;}
+/* MOBILE: layout vertical — player em cima, lista de vídeos embaixo */
+@media(max-width:600px){
+  .curso-layout{flex-direction:column;}
+  .curso-sidebar{
+    width:100% !important;
+    min-width:unset !important;
+    max-width:unset !important;
+    height:auto;
+    max-height:45vh;
+    border-right:none;
+    border-top:1px solid #f0e8e4;
+    flex-shrink:0;
+    order:2;
+  }
+  .curso-main{
+    order:1;
+    flex-shrink:0;
+    overflow:visible;
+  }
+  .player-area iframe,.player-area video{
+    width:100%;
+    aspect-ratio:16/9;
+    max-height:56vw;
+  }
+  .player-info{
+    padding:10px 14px;
+  }
+  .sb-vid-title{font-size:11px;}
+  .sb-secao-titulo{font-size:12px;}
+  .sidebar-progress{padding:8px 14px 6px;}
 }
 .curso-sidebar{width:260px;min-width:220px;max-width:300px;background:#faf7f5;border-right:1px solid #f0e8e4;display:flex;flex-direction:column;overflow:hidden;}
 .curso-sidebar-inner{flex:1;overflow-y:auto;padding:8px 0;}
