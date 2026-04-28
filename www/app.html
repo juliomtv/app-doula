@@ -917,7 +917,21 @@ function switchTab(idx, el){
 
 async function openConteudo(url, conteudoId = null, titulo = 'Conteúdo'){
   if(url){
-    window.open(url, '_blank');
+    // Se for PDF e estiver no Android/APK, usa Google Docs Viewer
+    const isAndroid = window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android';
+    const isPdf = url.toLowerCase().endsWith('.pdf');
+    if(isPdf && isAndroid){
+      const viewerUrl = 'https://docs.google.com/gview?url=' + encodeURIComponent(url);
+      if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser){
+        window.Capacitor.Plugins.Browser.open({url: viewerUrl});
+      } else {
+        window.open(viewerUrl,'_blank');
+      }
+    } else if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser){
+      window.Capacitor.Plugins.Browser.open({url: url});
+    } else {
+      window.open(url, '_blank');
+    }
     if(conteudoId){
       await marcarVideoAssistido(conteudoId, titulo);
     }

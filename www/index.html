@@ -1356,6 +1356,18 @@ function switchTab(idx,el){
 }
 function openConteudo(url){
   if(!url||url==='#'){showToast('Arquivo não disponível ainda.');return;}
+  // Se for PDF e estiver no Android/APK, usa Google Docs Viewer
+  const isAndroid = window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android';
+  const isPdf = url.toLowerCase().endsWith('.pdf');
+  if(isPdf && isAndroid){
+    const viewerUrl = 'https://docs.google.com/gview?url=' + encodeURIComponent(url);
+    if(window.Capacitor.Plugins && window.Capacitor.Plugins.Browser){
+      window.Capacitor.Plugins.Browser.open({url: viewerUrl});
+    } else {
+      window.open(viewerUrl,'_blank');
+    }
+    return;
+  }
   // Tenta usar Capacitor Browser plugin (APK), senão usa window.open
   if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser){
     window.Capacitor.Plugins.Browser.open({url: url});
