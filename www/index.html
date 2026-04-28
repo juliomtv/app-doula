@@ -1488,7 +1488,18 @@ async function exportDiaryPDF() {
     y += (splitText.length * 6) + 15;
   });
 
-  doc.save(`Diario_Gestacao_${currentUser.nome}.pdf`);
+  // No Android/APK, abre o PDF via Capacitor Browser (doc.save não funciona no nativo)
+  const isAndroid = window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android';
+  if (isAndroid) {
+    const pdfDataUri = doc.output('datauristring');
+    if (window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+      window.Capacitor.Plugins.Browser.open({ url: pdfDataUri });
+    } else {
+      window.open(pdfDataUri, '_blank');
+    }
+  } else {
+    doc.save(`Diario_Gestacao_${currentUser.nome}.pdf`);
+  }
   showToast('PDF baixado com sucesso! ✨');
 }
 
@@ -1558,7 +1569,18 @@ async function exportPlanoPartoPDF() {
   const inducaoSplit = doc.splitTextToSize(pp.inducao || 'Não informado.', pageWidth - (margin * 2));
   doc.text(inducaoSplit, margin, y);
 
-  doc.save(`Plano_de_Parto_${pp.nome}.pdf`);
+  // No Android/APK, abre o PDF via Google Docs Viewer (doc.save não funciona no nativo)
+  const isAndroid = window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android';
+  if (isAndroid) {
+    const pdfDataUri = doc.output('datauristring');
+    if (window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+      window.Capacitor.Plugins.Browser.open({ url: pdfDataUri });
+    } else {
+      window.open(pdfDataUri, '_blank');
+    }
+  } else {
+    doc.save(`Plano_de_Parto_${pp.nome}.pdf`);
+  }
   showToast('Plano de Parto baixado! ✨');
 }
 
