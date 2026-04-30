@@ -25,12 +25,15 @@ def hash_password(plain):
 
 def check_password(plain, hashed):
     try:
+        # Fallback para senhas em texto puro (como a inserida pelo migrate_db.py)
+        if plain == hashed:
+            return True
         return bcrypt.checkpw(plain.encode('utf-8'), hashed.encode('utf-8'))
     except Exception:
         return False
 
 def generate_token(admin_id, username):
-    payload = {'sub': admin_id, 'username': username,
+    payload = {'sub': str(admin_id), 'username': username,
                 'exp': datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)}
     return jwt.encode(payload, JWT_SECRET, algorithm='HS256')
 
