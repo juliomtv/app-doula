@@ -1432,6 +1432,28 @@ function renderDiario(){
   });
 }
 
+// ════ PDF DOWNLOAD — funciona no navegador e no APK Android ════
+async function _downloadPDF(doc, filename) {
+  const isAndroid = window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android';
+  if (!isAndroid) { doc.save(filename); return; }
+  if (!API_URL) { showToast('Sem conexão com o servidor para baixar o PDF.'); return; }
+  try {
+    showToast('Preparando download... ⏳');
+    const pdfBase64 = doc.output('datauristring').split(',')[1];
+    const res = await fetch(`${API_URL}/api/pdf/temp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pdf_base64: pdfBase64, filename })
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.erro || 'Erro no servidor');
+    window.open(`${API_URL}${data.url}`, '_system');
+  } catch (e) {
+    console.error('[PDF]', e);
+    showToast('Erro ao gerar PDF. Tente novamente.');
+  }
+}
+
 async function exportDiaryPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -1488,18 +1510,7 @@ async function exportDiaryPDF() {
     y += (splitText.length * 6) + 15;
   });
 
-  // No Android/APK, abre o PDF via Capacitor Browser (doc.save não funciona no nativo)
-  const isAndroid = window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android';
-  if (isAndroid) {
-    const pdfDataUri = doc.output('datauristring');
-    if (window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
-      window.Capacitor.Plugins.Browser.open({ url: pdfDataUri });
-    } else {
-      window.open(pdfDataUri, '_blank');
-    }
-  } else {
-    doc.save(`Diario_Gestacao_${currentUser.nome}.pdf`);
-  }
+  await _downloadPDF(doc, `Diario_Gestacao_${currentUser.nome}.pdf`);
   showToast('PDF baixado com sucesso! ✨');
 }
 
@@ -1569,18 +1580,7 @@ async function exportPlanoPartoPDF() {
   const inducaoSplit = doc.splitTextToSize(pp.inducao || 'Não informado.', pageWidth - (margin * 2));
   doc.text(inducaoSplit, margin, y);
 
-  // No Android/APK, abre o PDF via Google Docs Viewer (doc.save não funciona no nativo)
-  const isAndroid = window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android';
-  if (isAndroid) {
-    const pdfDataUri = doc.output('datauristring');
-    if (window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
-      window.Capacitor.Plugins.Browser.open({ url: pdfDataUri });
-    } else {
-      window.open(pdfDataUri, '_blank');
-    }
-  } else {
-    doc.save(`Plano_de_Parto_${pp.nome}.pdf`);
-  }
+  await _downloadPDF(doc, `Plano_de_Parto_${pp.nome}.pdf`);
   showToast('Plano de Parto baixado! ✨');
 }
 
@@ -2120,6 +2120,7 @@ async function syncUserData(){
 // ════ OTA — ATUALIZAÇÃO OVER THE AIR ════
 const OTA_VERSION_KEY = 'ota_versao_instalada';
 const OTA_SKIP_KEY    = 'ota_skip_versao';
+const OTA_HASH_KEY    = 'ota_hash_local';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")
@@ -2139,12 +2140,15 @@ async function verificarAtualizacao() {
     if (!res.ok) return;
     const dados = await res.json();
     const versaoServidor = dados.versao || '1.0.0';
+    const hashServidor   = dados.hash   || '';
     const versaoLocal    = localStorage.getItem(OTA_VERSION_KEY) || '0.0.0';
+    const hashLocal      = localStorage.getItem(OTA_HASH_KEY)    || '';
     const skipVersao     = localStorage.getItem(OTA_SKIP_KEY)    || '';
-    // Se o usuário escolheu "Agora não" para esta versão exata, não mostra de novo
     if (skipVersao === versaoServidor) return;
-    // Só mostra o modal se a versão do servidor for MAIOR que a local
-    if (compararVersao(versaoServidor, versaoLocal)) {
+    // Detecta por versão OU por mudança de hash
+    const versaoNova = compararVersao(versaoServidor, versaoLocal);
+    const hashMudou  = hashServidor && hashLocal && hashServidor !== hashLocal;
+    if (versaoNova || hashMudou) {
       mostrarModalOTA(versaoServidor, versaoLocal, dados.notas || 'Melhorias e correções de bugs.', dados.obrigatoria || false);
     }
   } catch (e) {
@@ -2205,37 +2209,39 @@ async function otaAtualizar() {
     if (fill) fill.style.width = '80%';
     if (txt)  txt.textContent  = 'Aplicando atualização...';
 
-    // Verificar se o Capacitor está disponível (APK)
+    const versaoNova = modal.dataset.versaoNova || '';
+    let hashNovo = '';
+    try {
+      const verRes = await fetch(`${API_URL}/ota/versao`, { signal: AbortSignal.timeout(8000) });
+      if (verRes.ok) { const vd = await verRes.json(); hashNovo = vd.hash || ''; }
+    } catch(_) {}
+
     if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
-      // No APK: usar o plugin de filesystem do Capacitor para sobrescrever o index.html
       try {
-        const { Filesystem, Directory } = await import('@capacitor/filesystem');
-        await Filesystem.writeFile({
-          path: 'index.html',
-          data: btoa(unescape(encodeURIComponent(novoHtml))),
-          directory: Directory.Data,
-          encoding: 'base64'
-        });
+        const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
+        await Filesystem.writeFile({ path: 'index.html', data: novoHtml, directory: Directory.Data, encoding: Encoding.UTF8 });
         if (fill) fill.style.width = '100%';
         if (txt)  txt.textContent  = 'Atualização concluída! Reiniciando...';
-        // Salvar nova versão
-        const verDados = await (await fetch(`${API_URL}/ota/versao`)).json();
-        localStorage.setItem(OTA_VERSION_KEY, verDados.versao || '');
-        localStorage.setItem('ota_hash_local', verDados.hash || '');
+        localStorage.setItem(OTA_VERSION_KEY, versaoNova);
+        localStorage.setItem(OTA_HASH_KEY,    hashNovo);
         localStorage.removeItem(OTA_SKIP_KEY);
         setTimeout(() => window.location.reload(), 1500);
       } catch (capErr) {
-        // Fallback: recarregar a página (o servidor serve o novo index)
-        if (fill) fill.style.width = '100%';
-        localStorage.setItem(OTA_VERSION_KEY, modal.dataset.versaoNova || '');
-        localStorage.removeItem(OTA_SKIP_KEY);
-        setTimeout(() => window.location.reload(), 1000);
+        try {
+          localStorage.setItem('ota_html_pendente', novoHtml);
+          localStorage.setItem(OTA_VERSION_KEY, versaoNova);
+          localStorage.setItem(OTA_HASH_KEY,    hashNovo);
+          localStorage.removeItem(OTA_SKIP_KEY);
+          if (fill) fill.style.width = '100%';
+          if (txt)  txt.textContent  = 'Atualização baixada! Reiniciando...';
+          setTimeout(() => window.location.reload(), 1500);
+        } catch(lsErr) { throw new Error('Não foi possível salvar: ' + lsErr.message); }
       }
     } else {
-      // No navegador (modo desenvolvimento): simular atualização
       if (fill) fill.style.width = '100%';
       if (txt)  txt.textContent  = 'Atualização concluída! Recarregando...';
-      localStorage.setItem(OTA_VERSION_KEY, modal.dataset.versaoNova || '');
+      localStorage.setItem(OTA_VERSION_KEY, versaoNova);
+      localStorage.setItem(OTA_HASH_KEY,    hashNovo);
       localStorage.removeItem(OTA_SKIP_KEY);
       setTimeout(() => window.location.reload(true), 1500);
     }

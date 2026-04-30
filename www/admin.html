@@ -593,15 +593,27 @@ async function descobrirUrlPublica() {
 }
 
 // ════ API FETCH HELPERS ════
+function getAdminToken() {
+  return localStorage.getItem('nn_admin_token') || '';
+}
 async function apiFetch(endpoint, options = {}) {
   try {
     if(!API_URL) return { status: 'error', message: 'Servidor não configurado.' };
     const url = `${API_URL}/${endpoint.replace(/^\//, '')}`;
+    const token = getAdminToken();
+    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
     const res = await fetch(url, {
       ...options,
-      headers: { 'Content-Type': 'application/json', ...options.headers },
+      headers: { 'Content-Type': 'application/json', ...options.headers, ...authHeaders },
       signal: AbortSignal.timeout(15000)
     });
+    if (res.status === 401) {
+      localStorage.removeItem('nn_admin_token');
+      DB.del('nn_admin_session');
+      alert('Sua sessão expirou. Faça login novamente.');
+      location.reload();
+      return { status: 'error', message: 'Sessão expirada.' };
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (e) {
@@ -643,6 +655,7 @@ async function adminLogin(){
   });
   if(res && res.ok){
     DB.set('nn_admin_session',true);
+    if(res.token) localStorage.setItem('nn_admin_token', res.token);
     document.getElementById('admin-login').style.display='none';
     document.getElementById('admin-shell').classList.add('active');
     renderDashboard();
@@ -653,7 +666,7 @@ async function adminLogin(){
     errEl.style.color = '#c0392b';
   }
 }
-function adminLogout(){DB.del('nn_admin_session');location.reload();}
+function adminLogout(){DB.del('nn_admin_session');localStorage.removeItem('nn_admin_token');location.reload();}
 
 function goPage(id,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -1490,7 +1503,7 @@ async function deleteDica(id) {
   // Descobre a URL pública do tunnel automaticamente
   await descobrirUrlPublica();
 
-  if(DB.get('nn_admin_session') && API_URL){
+  if(DB.get('nn_admin_session') && getAdminToken() && API_URL){
     document.getElementById('admin-login').style.display='none';
     document.getElementById('admin-shell').classList.add('active');
     renderDashboard();
@@ -1502,8 +1515,9 @@ async function deleteDica(id) {
 })();
 
 // ════ OTA UPDATE (ADMIN) ════
-const ADMIN_OTA_VERSION_KEY = 'ota_versao_instalada';
-const ADMIN_OTA_SKIP_KEY    = 'ota_skip_versao';
+const ADMIN_OTA_VERSION_KEY = 'ota_versao_instalada_admin';
+const ADMIN_OTA_SKIP_KEY    = 'ota_skip_versao_admin';
+const ADMIN_OTA_HASH_KEY    = 'ota_hash_local_admin';
 function compararVersaoAdmin(a, b) {
   const pa = String(a).split('.').map(Number);
   const pb = String(b).split('.').map(Number);
@@ -1521,10 +1535,14 @@ async function verificarAtualizacaoAdmin() {
     if (!res.ok) return;
     const dados = await res.json();
     const versaoServidor = dados.versao || '1.0.0';
+    const hashServidor   = dados.hash   || '';
     const versaoLocal    = localStorage.getItem(ADMIN_OTA_VERSION_KEY) || '0.0.0';
+    const hashLocal      = localStorage.getItem(ADMIN_OTA_HASH_KEY)    || '';
     const skipVersao     = localStorage.getItem(ADMIN_OTA_SKIP_KEY)    || '';
     if (skipVersao === versaoServidor) return;
-    if (compararVersaoAdmin(versaoServidor, versaoLocal)) {
+    const versaoNova = compararVersaoAdmin(versaoServidor, versaoLocal);
+    const hashMudou  = hashServidor && hashLocal && hashServidor !== hashLocal;
+    if (versaoNova || hashMudou) {
       const banner = document.getElementById('ota-banner');
       const txt    = document.getElementById('ota-banner-txt');
       if (banner) {
@@ -1541,11 +1559,16 @@ async function otaAtualizarAdmin() {
   const txt = document.getElementById('ota-banner-txt');
   if (txt) txt.textContent = '⏳ Baixando atualização...';
   try {
-    const res = await fetch(`${API_URL}/ota/index.html`, { signal: AbortSignal.timeout(30000) });
+    // Baixa o admin.html correto (não o index.html do app da cliente)
+    const res = await fetch(`${API_URL}/ota/admin.html`, { signal: AbortSignal.timeout(30000) });
     if (!res.ok) throw new Error('Falha no download');
     if (txt) txt.textContent = '✅ Atualização concluída! Recarregando...';
     localStorage.setItem(ADMIN_OTA_VERSION_KEY, versaoNova || '');
     localStorage.removeItem(ADMIN_OTA_SKIP_KEY);
+    try {
+      const verRes = await fetch(`${API_URL}/ota/versao`, { signal: AbortSignal.timeout(8000) });
+      if (verRes.ok) { const vd = await verRes.json(); localStorage.setItem(ADMIN_OTA_HASH_KEY, vd.hash || ''); }
+    } catch(_) {}
     setTimeout(() => window.location.reload(true), 1500);
   } catch (e) {
     if (txt) txt.textContent = '❌ Erro ao baixar. Verifique a conexão.';
