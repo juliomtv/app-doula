@@ -381,9 +381,9 @@ textarea.dta:focus{border-color:var(--rose);}
     <div class="consult-box">
       <div class="consult-icon">📅</div>
       <div>
-        <div class="consult-lbl">Próxima consulta</div>
+        <!-- <div class="consult-lbl">Próxima consulta</div>
         <div class="consult-name">Pré-natal · 28 de Abril</div>
-        <div class="consult-time">Dr. Fernanda Santos · 10:00h</div>
+        <div class="consult-time">Dr. Fernanda Santos · 10:00h</div> -->
       </div>
     </div>
   </div>
@@ -559,6 +559,7 @@ textarea.dta:focus{border-color:var(--rose);}
     <div style="text-align:center;padding:4px 0 12px;">
       <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;color:var(--light);">Nalin Nazareth — Doula</div>
     </div>
+    <button onclick="verificarAtualizacaoManual()" style="width:100%;background:var(--rose-pale);color:var(--rose);border:1px solid var(--rose);border-radius:50px;padding:12px;font-size:13px;cursor:pointer;font-weight:600;margin-bottom:10px;">🔄 Verificar atualização</button>
     <button class="logout-btn" onclick="doLogout()">Sair da conta</button>
   </div>
   <div class="bnav">
@@ -829,11 +830,15 @@ async function descobrirUrlPublica() {
 
 // ════ SEED DATA ════
 function seedData(){
-  if(!DB.get('nn_users')){
-    DB.set('nn_users',[
-      {id:1,nome:'Ana Clara',email:'ana@email.com',senha:'123456',bebe:'Aurora',semanas:24,dpp:'2025-07-15',parto:'normal',ativo:true,criadoEm:new Date().toISOString()},
-      {id:2,nome:'Mariana Silva',email:'mari@email.com',senha:'123456',bebe:'Miguel',semanas:32,dpp:'2025-06-01',parto:'normal',ativo:true,criadoEm:new Date().toISOString()}
-    ]);
+  // Limpa qualquer seed antigo de usuários de exemplo (Ana Clara, Mariana Silva)
+  // que possa estar persistido em instalações anteriores. Os usuários reais vêm
+  // sempre da API; nunca devem existir usuários "fake" no localStorage.
+  const usersLocal = DB.get('nn_users');
+  if (usersLocal && Array.isArray(usersLocal)) {
+    const temFake = usersLocal.some(u =>
+      (u && (u.email === 'ana@email.com' || u.email === 'mari@email.com'))
+    );
+    if (temFake) DB.del('nn_users');
   }
   if(!DB.get('nn_conteudos')){
     DB.set('nn_conteudos',[
@@ -968,26 +973,22 @@ async function doLogin(){
   if(res && res.status === 'success'){
     currentUser = res.user;
     DB.set('nn_session', currentUser.id);
+    // Salva também os dados do usuário real para fallback offline futuro
+    DB.set('nn_user_cache', currentUser);
     errEl.textContent='';
     goApp();
   } else {
-    // Fallback para localStorage se API falhar
-    const users=DB.get('nn_users')||[];
-    const u=users.find(x=>x.email.toLowerCase()===email && x.senha===senha && x.ativo);
-    if(u){
-      currentUser=u;
-      DB.set('nn_session',u.id);
-      errEl.textContent='';
-      goApp();
-    } else {
-      const msg = (res && res.status === 'error') ? res.message : 'E-mail ou senha incorretos.';
-      errEl.textContent = msg;
-      errEl.style.color = '#c0392b';
-    }
+    // Nada de fallback com seed local: só mostra a mensagem de erro real.
+    const msg = (res && res.status === 'error') ? res.message
+              : !API_URL ? 'Configure a URL do servidor.'
+              : 'E-mail ou senha incorretos. Verifique sua conexão.';
+    errEl.textContent = msg;
+    errEl.style.color = '#c0392b';
   }
 }
 function doLogout(){
   DB.del('nn_session');
+  DB.del('nn_user_cache');
   currentUser=null;
   location.reload(); // Recarrega para garantir que a tela de login volte ao estado inicial limpo com o botão Admin
 }
@@ -1433,44 +1434,99 @@ function renderDiario(){
 }
 
 // ════ PDF DOWNLOAD — funciona no navegador e no APK Android ════
+// Estratégia para Android (APK):
+//   1) Salva o PDF em Directory.Cache do app (não precisa de permissão)
+//   2) Abre o menu de compartilhamento nativo (@capacitor/share) com o
+//      caminho do arquivo. Usuário escolhe: Salvar no celular, Drive,
+//      WhatsApp, Email, etc.
+// Para web: faz download direto via blob.
 async function _downloadPDF(doc, filename) {
+  const safeName = (filename || 'documento.pdf')
+    .replace(/[\/\\:*?"<>|]/g, '_')
+    .replace(/\s+/g, '_');
+
   try {
-    const isAndroid = window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android';
-    
-    if (!isAndroid) {
-      doc.save(filename);
+    const isNative = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+
+    if (isNative) {
+      // ── ANDROID/iOS NATIVO ──────────────────────────────────────────
+      showToast('Gerando PDF... ⏳');
+
+      const pdfBase64 = doc.output('datauristring').split(',')[1];
+
+      // Carrega plugins
+      let Filesystem, Directory, Share;
+      try {
+        const fsMod = await import('@capacitor/filesystem');
+        Filesystem = fsMod.Filesystem; Directory = fsMod.Directory;
+      } catch (e) {
+        throw new Error('Plugin Filesystem não disponível. Reinstale o app.');
+      }
+      try {
+        const shareMod = await import('@capacitor/share');
+        Share = shareMod.Share;
+      } catch (e) {
+        // Sem Share, ainda conseguimos salvar — mas avisamos
+        console.warn('[PDF] Plugin Share não disponível:', e);
+      }
+
+      // 1) Salva em Cache (sem precisar de permissão)
+      const result = await Filesystem.writeFile({
+        path: safeName,
+        data: pdfBase64,
+        directory: Directory.Cache
+      });
+
+      const fileUri = result && result.uri ? result.uri : null;
+
+      // 2) Compartilha (abre menu nativo)
+      if (Share && fileUri) {
+        try {
+          await Share.share({
+            title: safeName,
+            text: 'PDF gerado pelo App Doula Nalin',
+            url: fileUri,
+            dialogTitle: 'Onde salvar o PDF?'
+          });
+          showToast('✅ PDF pronto!');
+          return;
+        } catch (shareErr) {
+          // Usuário cancelou — não é erro
+          if (shareErr && (shareErr.message || '').toLowerCase().includes('cancel')) return;
+          console.warn('[PDF] Share falhou:', shareErr);
+        }
+      }
+
+      // Fallback: avisa onde está salvo
+      if (fileUri) {
+        showToast('PDF salvo no cache do app: ' + safeName);
+      } else {
+        showToast('PDF gerado, mas houve um problema ao localizá-lo.');
+      }
       return;
     }
-    
-    if (!API_URL) {
-      showToast('Sem conexão com o servidor. Tentando salvar localmente...');
-      doc.save(filename);
-      return;
-    }
-    
-    showToast('Preparando download... ⏳');
-    const pdfBase64 = doc.output('datauristring').split(',')[1];
-    
-    const res = await fetch(`${API_URL}/api/pdf/temp`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pdf_base64: pdfBase64, filename })
-    });
-    
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.erro || 'Erro no servidor');
-    
-    const pdfUrl = `${API_URL}${data.url}`;
-    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
-      await window.Capacitor.Plugins.Browser.open({ url: pdfUrl });
-    } else {
-      window.open(pdfUrl, '_system');
+
+    // ── WEB (browser) ─────────────────────────────────────────────────
+    // Download direto via blob URL + anchor com download attribute
+    try {
+      const blob = doc.output('blob');
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = safeName;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+      }, 1000);
+    } catch (e) {
+      // Último recurso
+      doc.save(safeName);
     }
   } catch (e) {
     console.error('[PDF]', e);
-    showToast('Erro ao gerar PDF. Tente novamente.');
+    showToast('Erro ao gerar PDF: ' + (e.message || 'tente novamente'));
   }
 }
 
@@ -2232,14 +2288,21 @@ async function syncUserData(){
     if(updated){
       currentUser = updated;
       DB.set('nn_session', currentUser.id);
+      DB.set('nn_user_cache', currentUser);
       if(document.getElementById('home').classList.contains('active'))renderHome();
       if(document.getElementById('perfil').classList.contains('active'))renderPerfil();
+    } else {
+      // Usuário não existe mais no servidor: derruba a sessão
+      DB.del('nn_session');
+      DB.del('nn_user_cache');
+      currentUser = null;
+      location.reload();
     }
   }
 }
 
 
-// ════ OTA — ATUALIZAÇÃO OVER THE AIR ════
+// ════ OTA — ATUALIZAÇÃO OVER THE AIR (via @capgo/capacitor-updater) ════
 const OTA_VERSION_KEY = 'ota_versao_instalada';
 const OTA_SKIP_KEY    = 'ota_skip_versao';
 const OTA_HASH_KEY    = 'ota_hash_local';
@@ -2255,10 +2318,26 @@ function compararVersao(a, b) {
   }
   return false; // iguais
 }
-async function verificarAtualizacao() {
-  if (!API_URL) return; // Sem servidor configurado, pula
+
+// Helper: tenta carregar o plugin CapacitorUpdater (só funciona em APK)
+async function _getUpdater() {
   try {
-    const res = await fetch(`${API_URL}/ota/versao`, { signal: AbortSignal.timeout(8000) });
+    if (!window.Capacitor || !window.Capacitor.isNativePlatform || !window.Capacitor.isNativePlatform()) return null;
+    const mod = await import('@capgo/capacitor-updater');
+    return mod.CapacitorUpdater || null;
+  } catch (e) {
+    console.warn('[OTA] CapacitorUpdater indisponível:', e);
+    return null;
+  }
+}
+
+async function verificarAtualizacao() {
+  if (!API_URL) return;
+  try {
+    const res = await fetch(`${API_URL}/ota/versao?_=${Date.now()}`, {
+      signal: AbortSignal.timeout(8000),
+      cache: 'no-store'
+    });
     if (!res.ok) return;
     const dados = await res.json();
     const versaoServidor = dados.versao || '1.0.0';
@@ -2266,15 +2345,53 @@ async function verificarAtualizacao() {
     const versaoLocal    = localStorage.getItem(OTA_VERSION_KEY) || '0.0.0';
     const hashLocal      = localStorage.getItem(OTA_HASH_KEY)    || '';
     const skipVersao     = localStorage.getItem(OTA_SKIP_KEY)    || '';
-    if (skipVersao === versaoServidor) return;
-    // Detecta por versão OU por mudança de hash
-    const versaoNova = compararVersao(versaoServidor, versaoLocal);
+
+    // Primeira instalação: registra a versão atual sem mostrar modal
+    if (!hashLocal && hashServidor) {
+      localStorage.setItem(OTA_HASH_KEY, hashServidor);
+      if (!localStorage.getItem(OTA_VERSION_KEY)) {
+        localStorage.setItem(OTA_VERSION_KEY, versaoServidor);
+      }
+      return;
+    }
+
+    if (skipVersao && skipVersao === versaoServidor) return;
+
     const hashMudou  = hashServidor && hashLocal && hashServidor !== hashLocal;
-    if (versaoNova || hashMudou) {
+    const versaoNova = compararVersao(versaoServidor, versaoLocal);
+
+    if (hashMudou || versaoNova) {
       mostrarModalOTA(versaoServidor, versaoLocal, dados.notas || 'Melhorias e correções de bugs.', dados.obrigatoria || false);
     }
+  } catch (e) { /* silencioso */ }
+}
+
+async function verificarAtualizacaoManual() {
+  if (!API_URL) {
+    showToast('Configure a URL do servidor primeiro.');
+    return;
+  }
+  showToast('Verificando atualizações... ⏳');
+  try {
+    const res = await fetch(`${API_URL}/ota/versao?_=${Date.now()}`, { signal: AbortSignal.timeout(8000), cache: 'no-store' });
+    if (!res.ok) { showToast('Servidor indisponível.'); return; }
+    const dados = await res.json();
+    const versaoServidor = dados.versao || '1.0.0';
+    const hashServidor   = dados.hash   || '';
+    const hashLocal      = localStorage.getItem(OTA_HASH_KEY) || '';
+    const versaoLocal    = localStorage.getItem(OTA_VERSION_KEY) || '0.0.0';
+
+    const hashMudou  = hashServidor && hashLocal && hashServidor !== hashLocal;
+    const versaoNova = compararVersao(versaoServidor, versaoLocal);
+
+    if (hashMudou || versaoNova) {
+      localStorage.removeItem(OTA_SKIP_KEY);
+      mostrarModalOTA(versaoServidor, versaoLocal, dados.notas || 'Melhorias e correções de bugs.', dados.obrigatoria || false);
+    } else {
+      showToast('Você já está na versão mais recente! ✨');
+    }
   } catch (e) {
-    // Silencioso — sem servidor ou sem internet, ignora
+    showToast('Erro ao verificar atualizações.');
   }
 }
 
@@ -2288,20 +2405,31 @@ function mostrarModalOTA(versaoNova, versaoAtual, notas, obrigatoria) {
   if (verTxt)   verTxt.textContent  = `Versão ${versaoNova} disponível (você tem ${versaoAtual})`;
   if (notasTxt) notasTxt.textContent = notas;
 
-  // Se atualização obrigatória, esconde o botão "Agora não"
-  if (btns && obrigatoria) {
-    btns.innerHTML = `<button class="ota-btn-update" style="width:100%" onclick="otaAtualizar()">✓ Atualizar agora</button>`;
+  // Reset estado do progresso
+  const progress = document.getElementById('ota-progress');
+  const txt      = document.getElementById('ota-progress-txt');
+  const fill     = document.getElementById('ota-progress-fill');
+  if (progress) progress.style.display = 'none';
+  if (txt)      txt.style.display      = 'none';
+  if (fill)     fill.style.width       = '0%';
+
+  if (btns) {
+    btns.style.display = 'flex';
+    if (obrigatoria) {
+      btns.innerHTML = `<button class="ota-btn-update" style="width:100%" onclick="otaAtualizar()">✓ Atualizar agora</button>`;
+    } else {
+      btns.innerHTML = `<button class="ota-btn-later" onclick="otaAdiar()">Agora não</button>
+        <button class="ota-btn-update" onclick="otaAtualizar()">✓ Atualizar agora</button>`;
+    }
   }
 
   modal.classList.add('active');
-  // Salva a versão nova para usar no download
   modal.dataset.versaoNova = versaoNova;
 }
 
 function otaAdiar() {
   const modal = document.getElementById('ota-modal');
   if (!modal) return;
-  // Marca para não mostrar de novo nesta sessão
   localStorage.setItem(OTA_SKIP_KEY, modal.dataset.versaoNova || '');
   modal.classList.remove('active');
 }
@@ -2314,70 +2442,100 @@ async function otaAtualizar() {
   const btns     = document.getElementById('ota-btns');
   if (!modal || !API_URL) return;
 
-  // Mostrar progresso
   if (btns)     btns.style.display    = 'none';
   if (progress) progress.style.display = 'block';
   if (txt)      txt.style.display     = 'block';
-  if (fill)     fill.style.width      = '20%';
-  if (txt)      txt.textContent       = 'Baixando atualização...';
+  if (fill)     fill.style.width      = '10%';
+  if (txt)      txt.textContent       = 'Iniciando atualização...';
 
   try {
-    // Baixar o novo index.html do servidor
-    const res = await fetch(`${API_URL}/ota/index.html`, { signal: AbortSignal.timeout(30000) });
-    if (!res.ok) throw new Error('Falha no download');
-    if (fill) fill.style.width = '60%';
-
-    const novoHtml = await res.text();
-    if (fill) fill.style.width = '80%';
-    if (txt)  txt.textContent  = 'Aplicando atualização...';
-
     const versaoNova = modal.dataset.versaoNova || '';
+    const cacheBust  = Date.now();
+    const zipUrl     = `${API_URL}/ota/bundle.zip?_=${cacheBust}`;
+
+    // Pega o hash atualizado pra registrar depois
     let hashNovo = '';
     try {
-      const verRes = await fetch(`${API_URL}/ota/versao`, { signal: AbortSignal.timeout(8000) });
+      const verRes = await fetch(`${API_URL}/ota/versao?_=${cacheBust}`, { signal: AbortSignal.timeout(8000), cache: 'no-store' });
       if (verRes.ok) { const vd = await verRes.json(); hashNovo = vd.hash || ''; }
     } catch(_) {}
 
-    if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+    const Updater = await _getUpdater();
+
+    if (Updater) {
+      // ─── Caminho NATIVO (APK) — usa @capgo/capacitor-updater ─────────
+      if (txt) txt.textContent = 'Baixando atualização...';
+      if (fill) fill.style.width = '30%';
+
+      // Listener opcional pra mostrar progresso
+      let progressListener = null;
       try {
-        const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
-        await Filesystem.writeFile({ path: 'index.html', data: novoHtml, directory: Directory.Data, encoding: Encoding.UTF8 });
-        if (fill) fill.style.width = '100%';
-        if (txt)  txt.textContent  = 'Atualização concluída! Reiniciando...';
-        localStorage.setItem(OTA_VERSION_KEY, versaoNova);
-        localStorage.setItem(OTA_HASH_KEY,    hashNovo);
-        localStorage.removeItem(OTA_SKIP_KEY);
-        setTimeout(() => window.location.reload(), 1500);
-      } catch (capErr) {
-        try {
-          localStorage.setItem('ota_html_pendente', novoHtml);
-          localStorage.setItem(OTA_VERSION_KEY, versaoNova);
-          localStorage.setItem(OTA_HASH_KEY,    hashNovo);
-          localStorage.removeItem(OTA_SKIP_KEY);
-          if (fill) fill.style.width = '100%';
-          if (txt)  txt.textContent  = 'Atualização baixada! Reiniciando...';
-          setTimeout(() => window.location.reload(), 1500);
-        } catch(lsErr) { throw new Error('Não foi possível salvar: ' + lsErr.message); }
-      }
-    } else {
-      if (fill) fill.style.width = '100%';
-      if (txt)  txt.textContent  = 'Atualização concluída! Recarregando...';
+        progressListener = await Updater.addListener('download', (info) => {
+          if (info && typeof info.percent === 'number' && fill) {
+            // Mapeia 0-100% do download para 30-85% do progresso visual
+            fill.style.width = (30 + (info.percent * 0.55)) + '%';
+          }
+        });
+      } catch(_) {}
+
+      const bundle = await Updater.download({
+        url: zipUrl,
+        version: versaoNova || ('1.0.' + Date.now())
+      });
+
+      try { if (progressListener && progressListener.remove) await progressListener.remove(); } catch(_){}
+
+      if (fill) fill.style.width = '90%';
+      if (txt)  txt.textContent  = 'Aplicando atualização...';
+
+      // Salva versão e hash ANTES do set (que reinicia a webview)
       localStorage.setItem(OTA_VERSION_KEY, versaoNova);
       localStorage.setItem(OTA_HASH_KEY,    hashNovo);
       localStorage.removeItem(OTA_SKIP_KEY);
-      setTimeout(() => window.location.reload(true), 1500);
+
+      if (fill) fill.style.width = '100%';
+
+      // set() destrói o contexto JS atual e recarrega o WebView com a versão nova.
+      // O nosso try/catch não vai executar nada depois disso — o app reinicia.
+      await Updater.set(bundle);
+      // Por garantia, se por algum motivo set() não recarregar:
+      setTimeout(() => window.location.reload(), 800);
+    } else {
+      // ─── Caminho WEB (browser de desenvolvimento) ───────────────────
+      // Não tem como aplicar update real no browser; apenas registra que viu
+      if (txt) txt.textContent = 'Atualização registrada (modo browser).';
+      if (fill) fill.style.width = '100%';
+      localStorage.setItem(OTA_VERSION_KEY, versaoNova);
+      localStorage.setItem(OTA_HASH_KEY,    hashNovo);
+      localStorage.removeItem(OTA_SKIP_KEY);
+      setTimeout(() => window.location.reload(), 1200);
     }
   } catch (e) {
+    console.error('[OTA]', e);
     if (progress) progress.style.display = 'none';
     if (txt)      txt.style.display      = 'none';
     if (btns)     btns.style.display     = 'flex';
-    alert('Erro ao baixar atualização. Verifique a conexão com o servidor.');
+    alert('Erro ao aplicar atualização: ' + (e.message || e) + '\n\nVerifique a conexão com o servidor.');
   }
 }
 
 // ════ INIT ════
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('login').classList.contains('active'))doLogin();});
 seedData();
+
+// Notifica o CapacitorUpdater que a versão atual carregou OK
+// (sem isso, o plugin faz rollback pra versão anterior)
+(async function notifyReady(){
+  try {
+    if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+      const mod = await import('@capgo/capacitor-updater');
+      if (mod && mod.CapacitorUpdater && mod.CapacitorUpdater.notifyAppReady) {
+        await mod.CapacitorUpdater.notifyAppReady();
+      }
+    }
+  } catch(_) { /* plugin não instalado ou modo browser */ }
+})();
+
 // Inicialização assíncrona: descobre URL pública e restaura sessão
 (async function init(){
   // 1. Tenta atualizar a URL pública do tunnel silenciosamente
@@ -2398,12 +2556,26 @@ seedData();
     const users = await apiFetch('/api/users');
     if(users && Array.isArray(users)){
       const u=users.find(x=>x.id===savedSession&&x.ativo);
-      if(u){currentUser=u;goApp();syncUserData();return;}
+      if(u){
+        currentUser=u;
+        DB.set('nn_user_cache', u);
+        goApp();
+        syncUserData();
+        return;
+      }
+      // Se a API respondeu mas o usuário não existe mais, derruba a sessão.
+      DB.del('nn_session');
+      DB.del('nn_user_cache');
+      return;
     }
-    // Fallback: usa dados locais se API não responder
-    const localUsers=DB.get('nn_users')||[];
-    const u=localUsers.find(x=>x.id===savedSession&&x.ativo);
-    if(u){currentUser=u;goApp();syncUserData();}
+    // API não respondeu (sem internet): só restaura se tivermos o cache do
+    // usuário REAL (gravado no último login bem-sucedido) e se o id bater.
+    const cached = DB.get('nn_user_cache');
+    if(cached && cached.id === savedSession && cached.ativo){
+      currentUser = cached;
+      goApp();
+      syncUserData();
+    }
   }
 })();
 // Atualiza URL pública a cada 5 minutos (caso o tunnel reinicie)

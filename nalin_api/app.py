@@ -192,6 +192,38 @@ def ota_versao():
     if request.method == 'OPTIONS': return '', 204
     ver = get_app_version(); ver['hash'] = get_index_hash(); return jsonify(ver)
 
+@app.route('/ota/bundle.zip', methods=['GET','OPTIONS'])
+def ota_bundle_zip():
+    """
+    Empacota a pasta www/ em um zip on-the-fly e devolve.
+    O @capgo/capacitor-updater baixa esse zip, extrai e troca o WebView.
+    Estrutura: o zip deve ter os arquivos do bundle direto na raiz
+    (index.html no topo) — é exatamente o que esta função produz.
+    """
+    if request.method == 'OPTIONS': return '', 204
+    import io, zipfile
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for root, dirs, files in os.walk(WWW_DIR):
+            # ignora diretórios ocultos e admin (não faz parte do app cliente)
+            dirs[:] = [d for d in dirs if not d.startswith('.')]
+            for fname in files:
+                if fname.startswith('.'): continue
+                # admin.html não vai pro app cliente
+                if fname == 'admin.html': continue
+                full = os.path.join(root, fname)
+                # Caminho relativo dentro do zip (a partir de www/)
+                rel = os.path.relpath(full, WWW_DIR).replace('\\', '/')
+                zf.write(full, rel)
+    buf.seek(0)
+    from flask import send_file
+    return send_file(
+        buf,
+        mimetype='application/zip',
+        as_attachment=True,
+        download_name='bundle.zip'
+    )
+
 @app.route('/ota/index.html', methods=['GET','OPTIONS'])
 def ota_index():
     if request.method == 'OPTIONS': return '', 204

@@ -15,6 +15,9 @@
       "launchAutoHide": true,
       "backgroundColor": "#FBF7F4",
       "showSpinner": false
+    },
+    "CapacitorUpdater": {
+      "autoUpdate": false
     }
   }
 }
