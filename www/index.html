@@ -649,7 +649,7 @@ textarea.dta:focus{border-color:var(--rose);}
 
 <div class="modal-overlay" id="modal-maternidade">
   <div class="modal" style="max-width:600px; height:90vh; display:flex; flex-direction:column;">
-    <div class="modal-hdr"><h3>Maternidade</h3><button class="modal-close" onclick="closeModal('modal-maternidade')">✕</button></div>
+    <div class="modal-hdr"><h3>Maternidade</h3><div style="display:flex; gap:10px; align-items:center;"><button onclick="exportMaternidadePDF()" style="background:var(--rose-pale); color:var(--rose); border:1px solid var(--rose); border-radius:50px; padding:4px 12px; font-size:11px; cursor:pointer; font-weight:600;">📥 PDF</button><button class="modal-close" onclick="closeModal('modal-maternidade')">✕</button></div></div>
     <div class="modal-body" style="flex:1; overflow-y:auto; padding:16px;">
       <div style="display:flex; gap:10px; margin-bottom:20px;">
         <div style="flex:1;"><label style="font-size:12px; color:var(--mid);">Nome da Maternidade</label><input type="text" id="mat-nome" placeholder="Ex: Hospital Santa Maria" style="width:100%;padding:8px;border:1px solid var(--rose-pale);border-radius:8px;"></div>
@@ -1434,20 +1434,40 @@ function renderDiario(){
 
 // ════ PDF DOWNLOAD — funciona no navegador e no APK Android ════
 async function _downloadPDF(doc, filename) {
-  const isAndroid = window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android';
-  if (!isAndroid) { doc.save(filename); return; }
-  if (!API_URL) { showToast('Sem conexão com o servidor para baixar o PDF.'); return; }
   try {
+    const isAndroid = window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android';
+    
+    if (!isAndroid) {
+      doc.save(filename);
+      return;
+    }
+    
+    if (!API_URL) {
+      showToast('Sem conexão com o servidor. Tentando salvar localmente...');
+      doc.save(filename);
+      return;
+    }
+    
     showToast('Preparando download... ⏳');
     const pdfBase64 = doc.output('datauristring').split(',')[1];
+    
     const res = await fetch(`${API_URL}/api/pdf/temp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pdf_base64: pdfBase64, filename })
     });
+    
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    
     const data = await res.json();
     if (!data.ok) throw new Error(data.erro || 'Erro no servidor');
-    window.open(`${API_URL}${data.url}`, '_system');
+    
+    const pdfUrl = `${API_URL}${data.url}`;
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+      await window.Capacitor.Plugins.Browser.open({ url: pdfUrl });
+    } else {
+      window.open(pdfUrl, '_system');
+    }
   } catch (e) {
     console.error('[PDF]', e);
     showToast('Erro ao gerar PDF. Tente novamente.');
@@ -1579,9 +1599,111 @@ async function exportPlanoPartoPDF() {
   doc.setTextColor(60, 60, 60);
   const inducaoSplit = doc.splitTextToSize(pp.inducao || 'Não informado.', pageWidth - (margin * 2));
   doc.text(inducaoSplit, margin, y);
+  y += (inducaoSplit.length * 6) + 15;
+
+  // Seção 3
+  if (y > 250) { doc.addPage(); y = 20; }
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(201, 144, 122);
+  doc.text("3. EM CASO DE CESÁREA", margin, y);
+  y += 8;
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(60, 60, 60);
+  const cesareaSplit = doc.splitTextToSize(pp.cesarea || 'Não informado.', pageWidth - (margin * 2));
+  doc.text(cesareaSplit, margin, y);
+  y += (cesareaSplit.length * 6) + 15;
+
+  // Seção 4
+  if (y > 250) { doc.addPage(); y = 20; }
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(201, 144, 122);
+  doc.text("4. ASSISTÊNCIA AO RECÉM-NASCIDO", margin, y);
+  y += 8;
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(60, 60, 60);
+  const recemNascidoSplit = doc.splitTextToSize(pp.recem_nascido || 'Não informado.', pageWidth - (margin * 2));
+  doc.text(recemNascidoSplit, margin, y);
 
   await _downloadPDF(doc, `Plano_de_Parto_${pp.nome}.pdf`);
   showToast('Plano de Parto baixado! ✨');
+}
+
+async function exportMaternidadePDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const matKey = `nn_mat_${currentUser.id}`;
+  const matData = DB.get(matKey) || {};
+
+  showToast('Gerando Maternidade em PDF... ⌛');
+
+  // Título
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.setTextColor(169, 107, 85);
+  doc.text("Maternidade", 105, 20, { align: "center" });
+
+  let y = 40;
+  const margin = 20;
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  // Informações Básicas
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(169, 107, 85);
+  doc.text(`MATERNIDADE: `, margin, y);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(60, 60, 60);
+  doc.text(`${matData.nome || 'Não informado'}`, margin + 35, y);
+  y += 10;
+
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(169, 107, 85);
+  doc.text(`CIDADE: `, margin, y);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(60, 60, 60);
+  doc.text(`${matData.cidade || 'Não informado'}`, margin + 20, y);
+  y += 15;
+
+  // Checklists
+  const categorias = [
+    { chave: 'bebe', titulo: 'MALA DO BEBÊ' },
+    { chave: 'mamae', titulo: 'MALA DA MAMÃE' },
+    { chave: 'lista', titulo: 'LISTA MATERNIDADE' },
+    { chave: 'sala', titulo: 'SALA DE PARTO' }
+  ];
+
+  categorias.forEach(cat => {
+    if (y > 250) { doc.addPage(); y = 20; }
+    
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(201, 144, 122);
+    doc.setFontSize(11);
+    doc.text(cat.titulo, margin, y);
+    y += 8;
+
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(60, 60, 60);
+    doc.setFontSize(10);
+
+    const items = matData[cat.chave] || [];
+    if (items.length === 0) {
+      doc.text('Nenhum item adicionado', margin, y);
+      y += 6;
+    } else {
+      items.forEach(item => {
+        if (y > 270) { doc.addPage(); y = 20; }
+        const checkbox = item.c ? '✓' : '☐';
+        const itemText = `${checkbox} ${item.n}`;
+        const splitText = doc.splitTextToSize(itemText, pageWidth - (margin * 2) - 5);
+        doc.text(splitText, margin + 2, y);
+        y += (splitText.length * 5) + 2;
+      });
+    }
+    y += 8;
+  });
+
+  await _downloadPDF(doc, `Maternidade_${matData.nome || 'documento'}.pdf`);
+  showToast('Maternidade baixada! ✨');
 }
 
 // ════ AGENDA ════
