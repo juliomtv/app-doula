@@ -6,7 +6,7 @@ import socket
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type"]}})
+CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type", "Authorization"]}})
 
 # Configuração de caminhos baseada na localização do script
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -35,8 +35,8 @@ def handle_preflight():
     if request.method == 'OPTIONS':
         response = app.make_default_options_response()
         response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, DELETE, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
         return response
 
 @app.teardown_appcontext
@@ -203,9 +203,16 @@ def upload_ebook():
             
         db = get_db()
         try:
+            # Garante que a coluna categoria existe (migração automática)
+            try:
+                db.execute("ALTER TABLE ebooks ADD COLUMN categoria TEXT DEFAULT 'Geral'")
+                db.commit()
+            except:
+                pass
+            categoria = request.form.get("categoria", "Geral") or "Geral"
             db.execute(
-                "INSERT INTO ebooks (titulo, descricao, url_pdf, url_capa) VALUES (?, ?, ?, ?)",
-                (titulo, descricao, f"/uploads/{filename}", url_capa),
+                "INSERT INTO ebooks (titulo, descricao, categoria, url_pdf, url_capa) VALUES (?, ?, ?, ?, ?)",
+                (titulo, descricao, categoria, f"/uploads/{filename}", url_capa),
             )
             db.commit()
             return jsonify({"status": "success", "message": "eBook enviado com sucesso!"}), 201
@@ -226,10 +233,61 @@ def list_ebooks():
         except:
             pass
             
-        ebooks = db.execute("SELECT id, titulo, descricao, url_pdf, url_capa, data_upload FROM ebooks ORDER BY data_upload DESC").fetchall()
+        # Garante que a coluna categoria existe
+        try:
+            db.execute("ALTER TABLE ebooks ADD COLUMN categoria TEXT DEFAULT 'Geral'")
+            db.commit()
+        except:
+            pass
+        try:
+            ebooks = db.execute("SELECT id, titulo, descricao, categoria, url_pdf, url_capa, data_upload FROM ebooks ORDER BY data_upload DESC").fetchall()
+        except:
+            ebooks = db.execute("SELECT id, titulo, descricao, url_pdf, url_capa, data_upload FROM ebooks ORDER BY data_upload DESC").fetchall()
         return jsonify([dict(e) for e in ebooks])
     except sqlite3.OperationalError:
         return jsonify([])
+
+@app.route("/api/ebooks/<int:ebook_id>", methods=["PUT", "DELETE", "OPTIONS"])
+def manage_ebook(ebook_id):
+    if request.method == 'OPTIONS':
+        return '', 204
+    db = get_db()
+    if request.method == 'DELETE':
+        db.execute("DELETE FROM ebooks WHERE id = ?", (ebook_id,))
+        db.commit()
+        return jsonify({"status": "success"})
+    # PUT — atualiza metadados e opcionalmente a capa
+    try:
+        db.execute("ALTER TABLE ebooks ADD COLUMN categoria TEXT DEFAULT 'Geral'")
+        db.commit()
+    except:
+        pass
+    if request.content_type and 'multipart' in request.content_type:
+        titulo = request.form.get('titulo', '')
+        descricao = request.form.get('descricao', '')
+        categoria = request.form.get('categoria', 'Geral') or 'Geral'
+        capa = request.files.get('capa')
+        url_capa = None
+        if capa and allowed_file(capa.filename):
+            capa_filename = 'capa_eb_' + secure_filename(capa.filename)
+            capa.save(os.path.join(app.config['UPLOAD_FOLDER'], capa_filename))
+            url_capa = f'/uploads/{capa_filename}'
+        if url_capa:
+            db.execute('UPDATE ebooks SET titulo=?,descricao=?,categoria=?,url_capa=? WHERE id=?',
+                       (titulo, descricao, categoria, url_capa, ebook_id))
+        else:
+            db.execute('UPDATE ebooks SET titulo=?,descricao=?,categoria=? WHERE id=?',
+                       (titulo, descricao, categoria, ebook_id))
+    else:
+        import json as _json
+        data = request.json or {}
+        titulo = data.get('titulo', '')
+        descricao = data.get('descricao', '')
+        categoria = data.get('categoria', 'Geral') or 'Geral'
+        db.execute('UPDATE ebooks SET titulo=?,descricao=?,categoria=? WHERE id=?',
+                   (titulo, descricao, categoria, ebook_id))
+    db.commit()
+    return jsonify({'status': 'success'})
 
 @app.route("/api/ebook/<int:ebook_id>", methods=["GET"])
 def get_ebook(ebook_id):

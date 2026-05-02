@@ -1303,7 +1303,7 @@ function openEbookModal(editData) {
   document.getElementById('modal-ebook-h3').textContent = editData ? 'Editar E-book' : 'Enviar E-book (PDF)';
   document.getElementById('eb-titulo').value = editData ? (editData.titulo || '') : '';
   document.getElementById('eb-desc').value = editData ? (editData.descricao || '') : '';
-  document.getElementById('eb-categoria').value = editData ? (editData.categoria || 'Geral') : 'Geral';
+  document.getElementById('eb-categoria').value = editData ? (editData.categoria || '') : '';
   // No modo edição esconde só o campo PDF, capa sempre visível
   const fileWrap = document.getElementById('eb-file-wrap');
   const pdfField = fileWrap.querySelector('.mfield:first-child');
@@ -1350,23 +1350,22 @@ function uploadEbook() {
   if (!titulo) { document.getElementById('eb-err').textContent = 'Preencha o título.'; return; }
 
   if (editingEbookId) {
-    // Modo edição — usa endpoint POST dedicado (evita problemas de CORS com PUT)
+    // Modo edição — usa PUT /api/ebooks/{id} (compatível com todas as versões do backend)
     const token = getAdminToken();
     let p;
     if (selectedCapa) {
       const fd = new FormData();
-      fd.append('id', editingEbookId);
       fd.append('titulo', titulo); fd.append('descricao', descricao); fd.append('categoria', categoria);
       fd.append('capa', selectedCapa);
-      p = fetch(`${API_URL}/api/admin/ebooks/update`, {
-        method: 'POST',
+      p = fetch(`${API_URL}/api/ebooks/${editingEbookId}`, {
+        method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` },
         body: fd
-      }).then(r => r.json());
+      }).then(r => { if (!r.ok) return r.json().then(d => { throw new Error(d.message || 'Erro HTTP ' + r.status); }); return r.json(); });
     } else {
-      p = apiFetch('/api/admin/ebooks/update', {
-        method: 'POST',
-        body: JSON.stringify({ id: editingEbookId, titulo, descricao, categoria })
+      p = apiFetch(`/api/ebooks/${editingEbookId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ titulo, descricao, categoria })
       });
     }
     p.then(res => {
@@ -1380,7 +1379,7 @@ function uploadEbook() {
       }
     }).catch((err) => { 
       console.error('[EBOOK FETCH ERROR]', err);
-      document.getElementById('eb-err').textContent = 'Erro de conexão.'; 
+      document.getElementById('eb-err').textContent = 'Erro ao salvar: ' + (err.message || 'Erro de conexão.'); 
     });
     return;
   }
@@ -1405,6 +1404,7 @@ function uploadEbook() {
         closeModal('modal-ebook');
         document.getElementById('eb-titulo').value = '';
         document.getElementById('eb-desc').value = '';
+        document.getElementById('eb-categoria').value = '';
         document.getElementById('eb-file').value = '';
         document.getElementById('eb-capa').value = '';
         document.getElementById('eb-file-name').textContent = '';

@@ -428,7 +428,7 @@ def upload_ebook():
         if not titulo: return jsonify({"status":"error","message":"Título obrigatório."}), 400
         db = get_db()
         db.execute("INSERT INTO ebooks (titulo,descricao,categoria,url_pdf,url_capa) VALUES (?,?,?,?,?)",
-                   (titulo, request.form.get("descricao",""), request.form.get("categoria",""), f"/uploads/{filename}", url_capa))
+                   (titulo, request.form.get("descricao",""), request.form.get("categoria","Geral") or "Geral", f"/uploads/{filename}", url_capa))
         db.commit(); return jsonify({"status":"success"})
     return jsonify({"status":"error","message":"Tipo de arquivo não permitido."}), 400
 
@@ -449,7 +449,7 @@ def manage_ebook(ebook_id):
     if request.content_type and 'multipart' in request.content_type:
         titulo = request.form.get('titulo','')
         descricao = request.form.get('descricao','')
-        categoria = request.form.get('categoria','Geral')
+        categoria = request.form.get('categoria','Geral') or 'Geral'
         capa = request.files.get('capa')
         url_capa = None
         if capa and allowed_file(capa.filename):
@@ -465,7 +465,7 @@ def manage_ebook(ebook_id):
     else:
         data = request.json or {}
         db.execute('UPDATE ebooks SET titulo=?,descricao=?,categoria=? WHERE id=?',
-                   (data.get('titulo',''), data.get('descricao',''), data.get('categoria',''), ebook_id))
+                   (data.get('titulo',''), data.get('descricao',''), data.get('categoria','Geral') or 'Geral', ebook_id))
     db.commit()
     return jsonify({'status':'success'})
 
