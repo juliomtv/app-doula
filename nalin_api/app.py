@@ -428,7 +428,7 @@ def upload_ebook():
         if not titulo: return jsonify({"status":"error","message":"Título obrigatório."}), 400
         db = get_db()
         db.execute("INSERT INTO ebooks (titulo,descricao,categoria,url_pdf,url_capa) VALUES (?,?,?,?,?)",
-                   (titulo, request.form.get("descricao",""), request.form.get("categoria","Geral"), f"/uploads/{filename}", url_capa))
+                   (titulo, request.form.get("descricao",""), request.form.get("categoria",""), f"/uploads/{filename}", url_capa))
         db.commit(); return jsonify({"status":"success"})
     return jsonify({"status":"error","message":"Tipo de arquivo não permitido."}), 400
 
@@ -465,7 +465,7 @@ def manage_ebook(ebook_id):
     else:
         data = request.json or {}
         db.execute('UPDATE ebooks SET titulo=?,descricao=?,categoria=? WHERE id=?',
-                   (data.get('titulo',''), data.get('descricao',''), data.get('categoria','Geral'), ebook_id))
+                   (data.get('titulo',''), data.get('descricao',''), data.get('categoria',''), ebook_id))
     db.commit()
     return jsonify({'status':'success'})
 
@@ -498,7 +498,7 @@ def admin_update_ebook():
             ebook_id = data.get('id')
             if not ebook_id: return jsonify({'status':'error','message':'ID ausente'}), 400
             db.execute('UPDATE ebooks SET titulo=?,descricao=?,categoria=? WHERE id=?',
-                       (data.get('titulo',''), data.get('descricao',''), data.get('categoria','Geral'), ebook_id))
+                       (data.get('titulo',''), data.get('descricao',''), data.get('categoria',''), ebook_id))
         db.commit()
         return jsonify({'status':'success'})
     except Exception as e:

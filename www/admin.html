@@ -1346,7 +1346,7 @@ function handleCapaSelect() {
 function uploadEbook() {
   const titulo = document.getElementById('eb-titulo').value.trim();
   const descricao = document.getElementById('eb-desc').value;
-  const categoria = document.getElementById('eb-categoria').value.trim() || 'Geral';
+  const categoria = document.getElementById('eb-categoria').value.trim();
   if (!titulo) { document.getElementById('eb-err').textContent = 'Preencha o título.'; return; }
 
   if (editingEbookId) {
@@ -1374,8 +1374,14 @@ function uploadEbook() {
         showToastA('Atualizado!');
         closeModal('modal-ebook');
         loadEbooks();
-      } else { document.getElementById('eb-err').textContent = 'Erro ao salvar: ' + (res && res.message ? res.message : 'verifique o servidor.'); }
-    }).catch(() => { document.getElementById('eb-err').textContent = 'Erro de conexão.'; });
+      } else { 
+        console.error('[EBOOK SAVE ERROR]', res);
+        document.getElementById('eb-err').textContent = 'Erro ao salvar: ' + (res && res.message ? res.message : 'verifique o servidor.'); 
+      }
+    }).catch((err) => { 
+      console.error('[EBOOK FETCH ERROR]', err);
+      document.getElementById('eb-err').textContent = 'Erro de conexão.'; 
+    });
     return;
   }
 

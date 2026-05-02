@@ -67,6 +67,7 @@ def migrate():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             titulo TEXT NOT NULL,
             descricao TEXT,
+            categoria TEXT DEFAULT 'Geral',
             url_pdf TEXT NOT NULL,
             url_capa TEXT,
             ativo INTEGER DEFAULT 1,
@@ -84,6 +85,7 @@ def migrate():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 titulo TEXT NOT NULL,
                 descricao TEXT,
+                categoria TEXT DEFAULT 'Geral',
                 url_pdf TEXT NOT NULL,
                 url_capa TEXT,
                 ativo INTEGER DEFAULT 1,
@@ -91,12 +93,17 @@ def migrate():
             )
             """)
             cursor.execute("""
-            INSERT INTO ebooks (id, titulo, descricao, url_pdf, url_capa, ativo, criado_em)
-            SELECT id, titulo, descricao, url_pdf, url_capa, ativo, data_upload FROM ebooks_old
+            INSERT INTO ebooks (id, titulo, descricao, categoria, url_pdf, url_capa, ativo, criado_em)
+            SELECT id, titulo, descricao, 'Geral', url_pdf, url_capa, ativo, data_upload FROM ebooks_old
             """)
             cursor.execute("DROP TABLE ebooks_old")
             print("[migrate] Tabela ebooks corrigida com sucesso.")
         else:
+            cursor.execute("PRAGMA table_info(ebooks)")
+            ebook_cols = [row[1] for row in cursor.fetchall()]
+            if 'categoria' not in ebook_cols:
+                print("[migrate] Adicionando coluna categoria em ebooks...")
+                cursor.execute("ALTER TABLE ebooks ADD COLUMN categoria TEXT DEFAULT 'Geral'")
             print("[migrate] Tabela ebooks OK.")
 
     # ── 3. Tabelas novas (se não existirem) ───────────────────────────────────
