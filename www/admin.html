@@ -298,9 +298,9 @@ tr:hover td{background:rgba(247,237,232,.5);}
     <div class="page" id="p-ebooks">
       <div class="page-hdr" style="display:flex;align-items:flex-start;justify-content:space-between;">
         <div><h1>E-books</h1><p>Gerencie seus materiais PDF</p></div>
-        <button class="btn-sm btn-rose-sm" onclick="openModal('modal-ebook')">+ Adicionar E-book</button>
+        <button class="btn-sm btn-rose-sm" onclick="openEbookModal(null)">+ Adicionar E-book</button>
       </div>
-      <div class="table-card"><table><thead><tr><th>Título</th><th>Descrição</th><th>Data de Upload</th><th>Status</th><th>Ações</th></tr></thead><tbody id="ebooks-tbody"></tbody></table></div>
+      <div class="table-card"><table><thead><tr><th>Título</th><th>Categoria</th><th>Data de Upload</th><th>Status</th><th>Ações</th></tr></thead><tbody id="ebooks-tbody"></tbody></table></div>
     </div>
 
     <div class="page" id="p-meditacoes">
@@ -437,7 +437,15 @@ tr:hover td{background:rgba(247,237,232,.5);}
         </select>
       </div>
       <div class="mfield" id="mc-ordem-wrap"><label>Ordem dentro da seção</label><input type="number" id="mc-ordem" value="1" min="1"></div>
-      <div class="mfield"><label>URL</label><input type="url" id="mc-url"></div>
+      <div class="mfield"><label id="mc-url-label">URL</label><input type="text" id="mc-url" autocorrect="off" autocapitalize="none" spellcheck="false"></div>
+      <div class="mfield" id="mc-capa-wrap" style="display:none;">
+        <label>Capa do Vídeo</label>
+        <div id="mc-capa-preview" style="margin-bottom:8px;display:none;">
+          <img id="mc-capa-img" src="" alt="Capa atual" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;border:1px solid var(--border);">
+        </div>
+        <input type="file" id="mc-capa-file" accept="image/*" style="width:100%;padding:6px;border:1.5px dashed var(--border);border-radius:8px;font-size:13px;cursor:pointer;">
+        <small style="font-size:11px;color:var(--lite);margin-top:4px;display:block;">JPG, PNG ou WebP. Recomendado: 1280×720px.</small>
+      </div>
       <div class="mfield"><label>Cor</label><input type="text" id="mc-cor" value="#e8b4a0,#c9907a"></div>
       <div id="mc-err" style="color:var(--err);font-size:13px;"></div>
     </div>
@@ -461,10 +469,12 @@ tr:hover td{background:rgba(247,237,232,.5);}
 </div>
 <div class="modal-overlay" id="modal-ebook">
   <div class="modal">
-    <div class="modal-hdr"><h3>Enviar E-book (PDF)</h3><button class="modal-close" onclick="closeModal('modal-ebook')">✕</button></div>
+    <div class="modal-hdr"><h3 id="modal-ebook-h3">Enviar E-book (PDF)</h3><button class="modal-close" onclick="closeModal('modal-ebook')">✕</button></div>
     <div class="modal-body">
       <div class="mfield"><label>Título</label><input type="text" id="eb-titulo"></div>
       <div class="mfield"><label>Descrição</label><textarea id="eb-desc"></textarea></div>
+      <div class="mfield"><label>Categoria</label><input type="text" id="eb-categoria" placeholder="Ex: Pré-natal, Pós-parto, Amamentação..."></div>
+      <div id="eb-file-wrap">
 	      <div class="mrow">
 	        <div class="mfield">
 	          <label>Arquivo PDF</label>
@@ -473,12 +483,14 @@ tr:hover td{background:rgba(247,237,232,.5);}
 	          <div id="eb-file-name" style="font-size:11px;margin-top:4px;color:var(--ok);"></div>
 	        </div>
 	        <div class="mfield">
-	          <label>Capa (Opcional)</label>
-	          <div class="upload-area" onclick="document.getElementById('eb-capa').click()"><div class="ui">🖼️</div><p>Selecionar Capa</p></div>
+	          <label>Capa <span id="eb-capa-label-opt">(Opcional)</span></label>
+	          <div class="upload-area" onclick="document.getElementById('eb-capa').click()"><div class="ui">🖼️</div><p>Selecionar Imagem</p></div>
 	          <input type="file" id="eb-capa" accept="image/*" style="display:none;" onchange="handleCapaSelect()">
 	          <div id="eb-capa-name" style="font-size:11px;margin-top:4px;color:var(--ok);"></div>
+	          <div id="eb-capa-preview" style="margin-top:6px;display:none;"><img id="eb-capa-preview-img" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid #eee;"></div>
 	        </div>
 	      </div>
+      </div>
       <div id="eb-err" style="color:var(--err);font-size:13px;"></div>
       <div id="eb-loading" style="display:none;text-align:center;margin-top:12px;"><div style="font-size:12px;">Enviando...</div><div style="width:100%;height:4px;background:var(--rose-p);margin-top:8px;overflow:hidden;"><div style="height:100%;background:var(--rose);animation:progress 1.5s infinite;"></div></div></div>
     </div>
@@ -614,14 +626,15 @@ async function apiFetch(endpoint, options = {}) {
       location.reload();
       return { status: 'error', message: 'Sessão expirada.' };
     }
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      let msg = `Erro HTTP ${res.status}`;
+      try { const d = await res.json(); if (d.message) msg += ': ' + d.message; } catch(_) {}
+      return { status: 'error', message: msg };
+    }
     return await res.json();
   } catch (e) {
     console.error('[API] Erro:', e, 'URL:', API_URL);
-    return {
-      status: 'error',
-      message: `Não foi possível conectar ao servidor. Verifique se ele está ligado.`
-    };
+    return { status: 'error', message: `Conexão falhou: ${e.message}` };
   }
 }
 function toggleCampoUrl() {
@@ -1095,6 +1108,21 @@ async function deleteSecao(id){
   }
 }
 
+function _setUrlFieldLabel(cat){
+  const lbl = document.getElementById('mc-url-label');
+  const inp = document.getElementById('mc-url');
+  const capaWrap = document.getElementById('mc-capa-wrap');
+  if(cat === 'video'){
+    if(lbl) lbl.textContent = 'Video ID (Cloudflare Stream)';
+    if(inp) inp.placeholder = 'Ex: abc123def456789abcdef0123456789';
+    if(capaWrap) capaWrap.style.display = 'block';
+  } else {
+    if(lbl) lbl.textContent = 'URL';
+    if(inp) inp.placeholder = 'https://...';
+    if(capaWrap) capaWrap.style.display = 'none';
+  }
+}
+
 async function openAddConteudo(cat){
   document.getElementById('mcont-title').textContent={video:'Novo Vídeo',ebook:'Novo E-book',meditacao:'Nova Meditação'}[cat]||'Novo Conteúdo';
   document.getElementById('mc-cat').value=cat;
@@ -1103,6 +1131,11 @@ async function openAddConteudo(cat){
   document.getElementById('mc-cor').value='#e8b4a0,#c9907a';
   document.getElementById('mc-dur-wrap').style.display=cat!=='ebook'?'block':'none';
   document.getElementById('mc-pag-wrap').style.display=cat==='ebook'?'block':'none';
+  _setUrlFieldLabel(cat);
+  const capaFile = document.getElementById('mc-capa-file');
+  const capaPreview = document.getElementById('mc-capa-preview');
+  if(capaFile) capaFile.value = '';
+  if(capaPreview) capaPreview.style.display = 'none';
   // Carregar seções no select (apenas para vídeos)
   const secaoWrap = document.getElementById('mc-secao-wrap');
   const ordemWrap = document.getElementById('mc-ordem-wrap');
@@ -1140,6 +1173,18 @@ async function editConteudo(id){
   document.getElementById('mc-cor').value=c.cor||'#e8b4a0,#c9907a';
   document.getElementById('mc-dur-wrap').style.display=c.categoria!=='ebook'?'block':'none';
   document.getElementById('mc-pag-wrap').style.display=c.categoria==='ebook'?'block':'none';
+  _setUrlFieldLabel(c.categoria);
+  // Reset capa file input e mostrar preview se existir
+  const capaFile = document.getElementById('mc-capa-file');
+  const capaPreview = document.getElementById('mc-capa-preview');
+  const capaImg = document.getElementById('mc-capa-img');
+  if(capaFile) capaFile.value = '';
+  if(c.categoria === 'video' && c.capa && capaPreview && capaImg){
+    capaImg.src = (API_URL||'') + c.capa;
+    capaPreview.style.display = 'block';
+  } else if(capaPreview){
+    capaPreview.style.display = 'none';
+  }
   // Seção e ordem (apenas para vídeos)
   const secaoWrap = document.getElementById('mc-secao-wrap');
   const ordemWrap = document.getElementById('mc-ordem-wrap');
@@ -1156,8 +1201,11 @@ async function editConteudo(id){
 async function saveConteudo(){
   const titulo=document.getElementById('mc-titulo').value.trim();
   const url = document.getElementById('mc-url').value;
-  if(!titulo || !url){document.getElementById('mc-err').textContent='Preencha título e URL.';return;}
   const cat = document.getElementById('mc-cat').value;
+  if(!titulo || !url){
+    document.getElementById('mc-err').textContent = cat === 'video' ? 'Preencha título e Video ID.' : 'Preencha título e URL.';
+    return;
+  }
   const secaoEl = document.getElementById('mc-secao');
   const ordemEl = document.getElementById('mc-ordem');
   const obj={
@@ -1179,6 +1227,20 @@ async function saveConteudo(){
     body: JSON.stringify(obj)
   });
   if(res && res.status === 'success'){
+    // Upload de capa se categoria for vídeo e arquivo selecionado
+    const capaFile = document.getElementById('mc-capa-file');
+    if(cat === 'video' && capaFile && capaFile.files && capaFile.files[0]){
+      const videoId = res.id;
+      const fd = new FormData();
+      fd.append('capa', capaFile.files[0]);
+      try{
+        await fetch(`${API_URL}/api/admin/conteudo/${videoId}/capa`, {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + getAdminToken() },
+          body: fd
+        });
+      }catch(e){ console.warn('Erro upload capa:', e); }
+    }
     showToastA('Conteúdo salvo! ✨');
     closeModal('modal-cont');
     renderConteudoTable(obj.categoria);
@@ -1234,6 +1296,35 @@ function showToastA(msg){
 // ════ EBOOK UPLOAD ════
 let selectedFile = null;
 let selectedCapa = null;
+let editingEbookId = null;
+
+function openEbookModal(editData) {
+  editingEbookId = editData ? editData.id : null;
+  document.getElementById('modal-ebook-h3').textContent = editData ? 'Editar E-book' : 'Enviar E-book (PDF)';
+  document.getElementById('eb-titulo').value = editData ? (editData.titulo || '') : '';
+  document.getElementById('eb-desc').value = editData ? (editData.descricao || '') : '';
+  document.getElementById('eb-categoria').value = editData ? (editData.categoria || 'Geral') : 'Geral';
+  // No modo edição esconde só o campo PDF, capa sempre visível
+  const fileWrap = document.getElementById('eb-file-wrap');
+  const pdfField = fileWrap.querySelector('.mfield:first-child');
+  if (pdfField) pdfField.style.display = editData ? 'none' : '';
+  document.getElementById('eb-capa-label-opt').textContent = editData ? '(trocar imagem)' : '(Opcional)';
+  // Mostra preview da capa atual se tiver
+  const preview = document.getElementById('eb-capa-preview');
+  const previewImg = document.getElementById('eb-capa-preview-img');
+  if (editData && editData.url_capa) {
+    previewImg.src = API_URL + editData.url_capa;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
+  document.getElementById('eb-err').textContent = '';
+  document.getElementById('eb-file-name').textContent = '';
+  document.getElementById('eb-capa-name').textContent = '';
+  document.getElementById('eb-submit').textContent = editData ? 'Salvar' : 'Enviar 🚀';
+  selectedFile = null; selectedCapa = null;
+  openModal('modal-ebook');
+}
 
 function handleFileSelect() {
   const file = document.getElementById('eb-file').files[0];
@@ -1254,34 +1345,68 @@ function handleCapaSelect() {
 
 function uploadEbook() {
   const titulo = document.getElementById('eb-titulo').value.trim();
-  if (!titulo || !selectedFile) { document.getElementById('eb-err').textContent = 'Preencha título e PDF.'; return; }
+  const descricao = document.getElementById('eb-desc').value;
+  const categoria = document.getElementById('eb-categoria').value.trim() || 'Geral';
+  if (!titulo) { document.getElementById('eb-err').textContent = 'Preencha o título.'; return; }
+
+  if (editingEbookId) {
+    // Modo edição — usa endpoint POST dedicado (evita problemas de CORS com PUT)
+    const token = getAdminToken();
+    let p;
+    if (selectedCapa) {
+      const fd = new FormData();
+      fd.append('id', editingEbookId);
+      fd.append('titulo', titulo); fd.append('descricao', descricao); fd.append('categoria', categoria);
+      fd.append('capa', selectedCapa);
+      p = fetch(`${API_URL}/api/admin/ebooks/update`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: fd
+      }).then(r => r.json());
+    } else {
+      p = apiFetch('/api/admin/ebooks/update', {
+        method: 'POST',
+        body: JSON.stringify({ id: editingEbookId, titulo, descricao, categoria })
+      });
+    }
+    p.then(res => {
+      if (res && res.status === 'success') {
+        showToastA('Atualizado!');
+        closeModal('modal-ebook');
+        loadEbooks();
+      } else { document.getElementById('eb-err').textContent = 'Erro ao salvar: ' + (res && res.message ? res.message : 'verifique o servidor.'); }
+    }).catch(() => { document.getElementById('eb-err').textContent = 'Erro de conexão.'; });
+    return;
+  }
+
+  // Modo criação — FormData POST
+  if (!selectedFile) { document.getElementById('eb-err').textContent = 'Selecione o arquivo PDF.'; return; }
   const formData = new FormData();
   formData.append('titulo', titulo);
-  formData.append('descricao', document.getElementById('eb-desc').value);
+  formData.append('descricao', descricao);
+  formData.append('categoria', categoria);
   formData.append('file', selectedFile);
   if (selectedCapa) formData.append('capa', selectedCapa);
-  
+
   document.getElementById('eb-loading').style.display = 'block';
   document.getElementById('eb-submit').disabled = true;
-  fetch(`${API_URL}/api/admin/upload_ebook`, { method: 'POST', body: formData })
+  fetch(`${API_URL}/api/admin/upload_ebook`, { method: 'POST', headers: { 'Authorization': `Bearer ${getAdminToken()}` }, body: formData })
     .then(r => r.json()).then(data => {
       document.getElementById('eb-loading').style.display = 'none';
       document.getElementById('eb-submit').disabled = false;
       if (data.status === 'success') {
         showToastA('Enviado! 🎉');
         closeModal('modal-ebook');
-        // Resetar campos
         document.getElementById('eb-titulo').value = '';
         document.getElementById('eb-desc').value = '';
         document.getElementById('eb-file').value = '';
         document.getElementById('eb-capa').value = '';
         document.getElementById('eb-file-name').textContent = '';
         document.getElementById('eb-capa-name').textContent = '';
-        selectedFile = null;
-        selectedCapa = null;
+        selectedFile = null; selectedCapa = null;
         loadEbooks();
       } else { document.getElementById('eb-err').textContent = data.message; }
-    }).catch(() => { 
+    }).catch(() => {
       document.getElementById('eb-loading').style.display = 'none';
       document.getElementById('eb-submit').disabled = false;
     });
@@ -1298,16 +1423,16 @@ async function loadEbooks() {
           </div>
           <div>
             <div class="td-name">${e.titulo}</div>
-            <div style="font-size:11px;color:var(--lite);">${e.descricao || ''}</div>
+            <div style="font-size:11px;color:var(--lite);">${e.categoria || 'Geral'} ${e.descricao ? '· ' + e.descricao.substring(0,30) : ''}</div>
           </div>
         </div>
       </td>
-      <td>${e.descricao ? (e.descricao.substring(0, 30) + '...') : '-'}</td>
-      <td>${new Date(e.data_upload).toLocaleDateString('pt-BR')}</td>
+      <td>${e.categoria || 'Geral'}</td>
+      <td>${e.criado_em ? new Date(e.criado_em).toLocaleDateString('pt-BR') : '-'}</td>
       <td><span class="badge badge-ok">✓ Ativo</span></td>
       <td class="td-actions">
         <button class="btn-sm btn-ghost" onclick="window.open('${API_URL}${e.url_pdf}', '_blank')">Ver PDF</button>
-        ${e.url_capa ? `<button class="btn-sm btn-ghost" onclick="window.open('${API_URL}${e.url_capa}', '_blank')">Capa</button>` : ''}
+        <button class="btn-sm btn-primary" onclick='openEbookModal(${JSON.stringify(e)})'>Editar</button>
         <button class="btn-sm btn-danger" onclick="deleteEbook(${e.id})">Excluir</button>
       </td>
     </tr>
@@ -1315,8 +1440,8 @@ async function loadEbooks() {
 }
 
 async function deleteEbook(id) {
-  if (!confirm('Excluir?')) return;
-  await apiFetch(`/api/ebook/${id}`, { method: 'DELETE' });
+  if (!confirm('Excluir este e-book?')) return;
+  await apiFetch(`/api/ebooks/${id}`, { method: 'DELETE' });
   loadEbooks();
 }
 

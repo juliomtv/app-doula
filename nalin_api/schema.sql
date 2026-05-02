@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS ebooks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     titulo TEXT NOT NULL,
     descricao TEXT,
+    categoria TEXT DEFAULT 'Geral',
     url_pdf TEXT NOT NULL,
     url_capa TEXT,
     ativo INTEGER DEFAULT 1,
@@ -185,6 +186,32 @@ CREATE TABLE IF NOT EXISTS video_progresso (
     conteudo_id INTEGER NOT NULL,
     assistido INTEGER DEFAULT 0,
     percentual INTEGER DEFAULT 0,
+    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, conteudo_id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (conteudo_id) REFERENCES conteudos(id)
+);
+
+-- Tabela do Diário da Gestante
+CREATE TABLE IF NOT EXISTS diario (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    txt TEXT NOT NULL,
+    mood TEXT DEFAULT '',
+    semanas INTEGER DEFAULT 0,
+    data TEXT NOT NULL,
+    dia TEXT NOT NULL,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Tabela de Anotações por Vídeo
+CREATE TABLE IF NOT EXISTS video_comentarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    conteudo_id INTEGER NOT NULL,
+    comentario TEXT NOT NULL,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, conteudo_id),
     FOREIGN KEY (user_id) REFERENCES users(id),

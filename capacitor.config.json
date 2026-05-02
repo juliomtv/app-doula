@@ -5,7 +5,7 @@
   "server": {
     "androidScheme": "https",
     "cleartext": true,
-    "allowNavigation": ["*.trycloudflare.com", "*.youtube.com", "wa.me"]
+    "allowNavigation": ["*.trycloudflare.com", "*.youtube.com", "wa.me", "*.videodelivery.net", "*.cloudflarestream.com"]
   },
   "android": {
     "allowMixedContent": true
@@ -17,7 +17,8 @@
       "showSpinner": false
     },
     "CapacitorUpdater": {
-      "autoUpdate": false
+      "autoUpdate": false,
+      "appReadyTimeout": 30000
     }
   }
 }

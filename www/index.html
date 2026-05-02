@@ -115,23 +115,23 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif;}
 /* ══ LAYOUT DE DOIS PAINÉIS — MINI CURSO ══ */
 .curso-layout{display:flex;flex:1;overflow:hidden;min-height:0;}
 /* MOBILE: layout vertical — player em cima, lista de vídeos embaixo */
-@media(max-width:600px){
-  .curso-layout{flex-direction:column;}
+@media(max-width:768px){
+  .curso-layout{flex-direction:column;overflow-y:auto;overflow-x:hidden;}
   .curso-sidebar{
     width:100% !important;
     min-width:unset !important;
     max-width:unset !important;
     height:auto;
-    max-height:45vh;
+    max-height:50vh;
     border-right:none;
+    border-left:none;
     border-top:1px solid #f0e8e4;
     flex-shrink:0;
-    order:2;
   }
   .curso-main{
-    order:1;
     flex-shrink:0;
     overflow:visible;
+    min-height:0;
   }
   .player-area iframe,.player-area video{
     width:100%;
@@ -141,11 +141,12 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif;}
   .player-info{
     padding:10px 14px;
   }
+  .player-anotacao-area{display:none;}
   .sb-vid-title{font-size:11px;}
   .sb-secao-titulo{font-size:12px;}
   .sidebar-progress{padding:8px 14px 6px;}
 }
-.curso-sidebar{width:260px;min-width:220px;max-width:300px;background:#faf7f5;border-right:1px solid #f0e8e4;display:flex;flex-direction:column;overflow:hidden;}
+.curso-sidebar{width:260px;min-width:220px;max-width:300px;background:#faf7f5;border-left:1px solid #f0e8e4;display:flex;flex-direction:column;overflow:hidden;}
 .curso-sidebar-inner{flex:1;overflow-y:auto;padding:8px 0;}
 .sidebar-progress{padding:12px 14px 8px;border-bottom:1px solid #f0e8e4;flex-shrink:0;}
 .sidebar-progress-title{font-size:11px;font-weight:600;color:var(--dark);margin-bottom:6px;}
@@ -174,6 +175,7 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif;}
 .sb-vid-check{font-size:12px;color:var(--rose);flex-shrink:0;}
 .curso-main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#fff;}
 .player-area{flex-shrink:0;background:#000;position:relative;}
+.player-fs-overlay{position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,0.55);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;z-index:10;backdrop-filter:blur(2px);}
 .player-area iframe,.player-area video{width:100%;aspect-ratio:16/9;display:block;border:none;}
 .player-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;background:linear-gradient(135deg,#f5ede8,#e8d8d0);text-align:center;aspect-ratio:16/9;}
 .player-placeholder .pp-icon{font-size:48px;margin-bottom:12px;}
@@ -183,9 +185,17 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif;}
 .player-meta{font-size:11px;color:var(--lite);margin-top:4px;}
 .player-check-btn{margin-top:10px;padding:8px 16px;background:var(--rose);color:white;border:none;border-radius:20px;font-size:12px;cursor:pointer;font-weight:500;}
 .player-check-btn.done{background:#9ec49e;cursor:default;}
+.player-fullscreen-btn{margin-top:10px;margin-left:8px;padding:8px 14px;background:#5a4a42;color:white;border:none;border-radius:20px;font-size:12px;cursor:pointer;font-weight:500;}
+.player-anotacao-area{padding:12px 16px;border-top:1px solid #f0e8e4;flex-shrink:0;}
+.player-anotacao-label{font-size:12px;font-weight:600;color:var(--mid);margin-bottom:6px;}
+.player-anotacao-txt{width:100%;min-height:80px;border:1px solid #e8d8d0;border-radius:10px;padding:10px;font-size:13px;color:var(--dark);background:#faf7f5;resize:vertical;font-family:inherit;box-sizing:border-box;outline:none;}
+.player-anotacao-txt:focus{border-color:var(--rose);}
+.player-anotacao-salvar{margin-top:6px;padding:7px 16px;background:var(--rose);color:white;border:none;border-radius:20px;font-size:12px;cursor:pointer;font-weight:500;}
 /* Grade para e-books/meditacoes/outros */
-.cont-scroll{overflow-y:auto;flex:1;}
-.cont-grid{padding:14px 12px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.cont-scroll{overflow-y:auto;flex:1;min-height:0;}
+.cont-grid{padding:14px 12px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:100%;box-sizing:border-box;}
+.eb-cat-hdr{grid-column:1/-1;font-size:13px;font-weight:700;color:var(--dark);padding:16px 12px 6px;border-bottom:1px solid #f0e8e4;}
+.eb-cat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px 12px;width:100%;box-sizing:border-box;grid-column:1/-1;}
 .ccard{background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px var(--shadow-soft);cursor:pointer;transition:transform .15s;display:flex;flex-direction:column;}
 .ccard:active{transform:scale(.96);}
 .cthumb{aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:var(--rose-pale);}
@@ -240,6 +250,13 @@ textarea.dta:focus{border-color:var(--rose);}
 .entry-date{font-size:11px;color:var(--light);letter-spacing:1px;text-transform:uppercase;}
 .entry-txt{font-size:13px;color:var(--mid);line-height:1.6;}
 .entry-wtag{display:inline-block;background:var(--rose-pale);color:var(--rose-deep);font-size:10px;padding:3px 10px;border-radius:20px;margin-top:7px;}
+.entry-actions{display:flex;gap:8px;margin-top:10px;}
+.entry-btn{flex:1;padding:6px;border-radius:10px;border:1.5px solid var(--rose-pale);background:white;font-size:11px;font-weight:500;color:var(--mid);cursor:pointer;}
+.entry-btn-delete{color:#e74c3c;border-color:#fad7d7;}
+.entry-edit-form{margin-top:10px;display:none;}
+.entry-edit-form textarea{width:100%;border:1.5px solid var(--rose);border-radius:12px;padding:10px;font-size:13px;color:var(--dark);background:white;outline:none;resize:none;height:80px;box-sizing:border-box;}
+.entry-edit-btns{display:flex;gap:8px;margin-top:8px;}
+.diary-refresh{background:none;border:1.5px solid var(--rose-pale);color:var(--rose);border-radius:50px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;}
 
 /* ══════════════════════ PERFIL ══════════════════════ */
 #perfil .scroll{overflow-y:auto;flex:1;}
@@ -286,6 +303,19 @@ textarea.dta:focus{border-color:var(--rose);}
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--dark);color:white;padding:10px 20px;border-radius:50px;font-size:13px;opacity:0;transition:all .3s;z-index:999;pointer-events:none;white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
+/* ── LOADING SCREEN ── */
+#loading-screen{position:fixed;inset:0;background:#FBF7F4;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10000;transition:opacity .4s ease;}
+#loading-screen.hide{opacity:0;pointer-events:none;}
+.loading-emoji{font-size:64px;animation:pulse-load 1.6s ease-in-out infinite;}
+.loading-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-style:italic;color:var(--dark);margin-top:20px;letter-spacing:.5px;}
+.loading-sub{font-size:13px;color:var(--mid);margin-top:8px;}
+.loading-dots{display:flex;gap:8px;margin-top:24px;}
+.loading-dots span{width:8px;height:8px;border-radius:50%;background:var(--rose);opacity:.3;animation:dot-bounce 1.4s ease-in-out infinite;}
+.loading-dots span:nth-child(2){animation-delay:.2s;}
+.loading-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes pulse-load{0%,100%{transform:scale(1);}50%{transform:scale(1.12);}}
+@keyframes dot-bounce{0%,80%,100%{opacity:.3;transform:translateY(0);}40%{opacity:1;transform:translateY(-6px);}}
+
 /* ── OTA UPDATE MODAL ── */
 #ota-modal{position:fixed;inset:0;background:rgba(58,40,32,.6);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px;}
 #ota-modal.active{display:flex;}
@@ -330,9 +360,6 @@ textarea.dta:focus{border-color:var(--rose);}
     <div style="text-align:center;margin-top:8px;">
       <button onclick="toggleCampoUrl()" style="background:none;border:none;color:var(--light);font-size:11px;cursor:pointer;padding:4px 8px;">⚙️ Configurar servidor</button>
     </div>
-    <hr style="border:0;border-top:1px solid var(--rose-pale);margin:20px 0;">
-    <button class="btn-rose" style="background:var(--dark);margin-top:0;" onclick="window.location.href='admin.html'">Acesso Administrador 🔐</button>
-
 <!-- Modal de login admin -->
 
   </div>
@@ -367,7 +394,7 @@ textarea.dta:focus{border-color:var(--rose);}
         <p id="h-size">Carregando...</p>
       </div>
     </div>
-    <div class="sec-title">O que deseja hoje????</div>
+    <div class="sec-title">O que deseja hoje? </div>
     <div class="qgrid">
       <div class="qcard" onclick="navTo('conteudo')"><div class="qi">🎬</div><div class="qt">Videoaulas</div><div class="qs" id="h-nvid">— aulas</div></div>
       <div class="qcard" onclick="navTo('conteudo')"><div class="qi">📖</div><div class="qt">E-books</div><div class="qs" id="h-nebook">— materiais</div></div>
@@ -376,6 +403,7 @@ textarea.dta:focus{border-color:var(--rose);}
     </div>
     <div class="tip-box">
       <div class="tip-tag" id="h-tip-tag">💡 Dica da Nalin</div>
+      <div id="h-tip-titulo" style="font-weight:700;color:var(--dark);font-size:14px;margin-bottom:4px;display:none;"></div>
       <div class="tip-txt" id="h-tip">Carregando...</div>
     </div>
     <div class="consult-box">
@@ -409,18 +437,8 @@ textarea.dta:focus{border-color:var(--rose);}
       <div class="tab" onclick="switchTab(3,this)">📋 Outros</div>
     </div>
   </div>
-  <!-- Layout de dois painéis — aba de vídeos -->
+  <!-- Layout de dois painéis — aba de vídeos (main ANTES do sidebar no DOM para Android WebView) -->
   <div class="curso-layout" id="curso-layout" style="display:none;">
-    <div class="curso-sidebar">
-      <div class="sidebar-progress">
-        <div class="sidebar-progress-title">Seu progresso</div>
-        <div class="sidebar-progress-bar"><div class="sidebar-progress-fill" id="sidebar-progress-fill" style="width:0%"></div></div>
-        <div class="sidebar-progress-txt" id="sidebar-progress-txt">0 de 0 vídeos</div>
-      </div>
-      <div class="curso-sidebar-inner" id="curso-sidebar-inner">
-        <div style="padding:24px 14px;text-align:center;color:var(--lite);font-size:12px;">Carregando...</div>
-      </div>
-    </div>
     <div class="curso-main">
       <div class="player-area" id="player-area">
         <div class="player-placeholder">
@@ -432,6 +450,22 @@ textarea.dta:focus{border-color:var(--rose);}
         <div class="player-titulo" id="player-titulo"></div>
         <div class="player-meta" id="player-meta"></div>
         <button class="player-check-btn" id="player-check-btn" onclick="marcarAtualAssistido()">✓ Marcar como assistido</button>
+        <button class="player-fullscreen-btn" onclick="telaCheia()">⛶ Tela cheia</button>
+      </div>
+      <div class="player-anotacao-area" id="player-anotacao-area" style="display:none;">
+        <div class="player-anotacao-label">✏️ Minha anotação</div>
+        <textarea class="player-anotacao-txt" id="player-anotacao-txt" placeholder="Escreva sua anotação sobre este vídeo..."></textarea>
+        <button class="player-anotacao-salvar" id="player-anotacao-salvar" onclick="salvarAnotacaoVideo()">Salvar anotação</button>
+      </div>
+    </div>
+    <div class="curso-sidebar">
+      <div class="sidebar-progress">
+        <div class="sidebar-progress-title">Seu progresso</div>
+        <div class="sidebar-progress-bar"><div class="sidebar-progress-fill" id="sidebar-progress-fill" style="width:0%"></div></div>
+        <div class="sidebar-progress-txt" id="sidebar-progress-txt">0 de 0 vídeos</div>
+      </div>
+      <div class="curso-sidebar-inner" id="curso-sidebar-inner">
+        <div style="padding:24px 14px;text-align:center;color:var(--lite);font-size:12px;">Carregando...</div>
       </div>
     </div>
   </div>
@@ -518,7 +552,10 @@ textarea.dta:focus{border-color:var(--rose);}
     </div>
     <div class="sec-title" style="padding-top:0; display:flex; justify-content:space-between; align-items:center;">
       <span>Memórias anteriores</span>
-      <button onclick="exportDiaryPDF()" style="background:var(--rose-pale); color:var(--rose); border:1px solid var(--rose); border-radius:50px; padding:5px 15px; font-size:12px; cursor:pointer; font-weight:600;">📥 Baixar PDF</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="diary-refresh" onclick="renderDiario()">↻ Atualizar</button>
+        <button onclick="exportDiaryPDF()" style="background:var(--rose-pale); color:var(--rose); border:1px solid var(--rose); border-radius:50px; padding:5px 15px; font-size:12px; cursor:pointer; font-weight:600;">📥 Baixar PDF</button>
+      </div>
     </div>
     <div class="entries-list" id="entries-list"></div>
     <div style="height:80px;"></div>
@@ -723,6 +760,17 @@ textarea.dta:focus{border-color:var(--rose);}
 <div class="toast" id="toast"></div>
 
 <script>
+// Notifica o CapacitorUpdater IMEDIATAMENTE — deve ser a 1ª coisa que roda.
+// Se não for chamado dentro do appReadyTimeout (30s), o plugin faz rollback.
+(function(){
+  try {
+    if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()){
+      var p = window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorUpdater;
+      if(p && p.notifyAppReady) p.notifyAppReady();
+    }
+  } catch(_) {}
+})();
+
 // ════ CONFIGURAÇÃO DINÂMICA DA API ════
 // URL_BASE: IP local do servidor (ex: http://192.168.1.15:5000) — configurado uma vez
 // API_URL: URL ativa usada nas requisições (pode ser a url_publica do tunnel)
@@ -905,12 +953,12 @@ const weeklyInfo={
 const tips={1:'Cuide bem de você! Tomar ácido fólico agora é essencial. 💊',4:'Beba muita água, mamãe. O corpo está trabalhando dobrado. 💧',8:'O enjoo é real, mas vai passar. Coma biscoito antes de levantar da cama. 🍪',12:'Você chegou ao fim do 1º trimestre! O risco diminui muito agora. 🎉',16:'Hora de pensar no plano de parto! Converse comigo quando quiser. 📋',20:'Na metade do caminho! Que tal registrar o ultrassom do bebê? 📸',24:'Seu bebê já ouve você! Cante, converse e leia histórias para ele. 🎵',28:'Reta final, mamãe! Prepare a bolsa da maternidade. 👜',32:'Faça os movimentos fetais diários: conte 10 movimentos por período. 🤰',36:'O bebê pode nascer a qualquer semana agora. Mantenha o saco pronto! ⏰',40:'É hoje? É amanhã? Cada contração é um passo mais perto. 💪'};
 let dicasCache = null;
 function getTip(w){
-  if (!dicasCache || dicasCache.length === 0) {
-    const ks=Object.keys(tips).map(Number).sort((a,b)=>a-b);let b=ks[0];for(const k of ks){if(k<=w)b=k;}return tips[b];
+  if (dicasCache && dicasCache.length > 0) {
+    const dica = dicasCache.find(d => d.semana == w);
+    if (dica) return { titulo: dica.titulo || '', dica: dica.dica };
   }
-  const dica = dicasCache.find(d => d.semana == w);
-  if (dica) return dica.dica;
-  const ks=Object.keys(tips).map(Number).sort((a,b)=>a-b);let b=ks[0];for(const k of ks){if(k<=w)b=k;}return tips[b];
+  const ks=Object.keys(tips).map(Number).sort((a,b)=>a-b);let b=ks[0];for(const k of ks){if(k<=w)b=k;}
+  return { titulo: '', dica: tips[b] };
 }
 
 async function loadDicas(){
@@ -918,7 +966,8 @@ async function loadDicas(){
 }
 
 // ════ STATE ════
-let currentUser=null, currentMood='😊', currentTab=0, editingAgendaIndex=null, cntTimer=null, cntStartTime=null;
+let currentUser=null, currentMood='😊', currentTab=0, editingAgendaId=null, cntTimer=null, cntStartTime=null;
+let _matData=null, _ppData=null;
 
 // ════ API FETCH HELPERS ════
 async function apiFetch(endpoint, options = {}) {
@@ -1039,7 +1088,13 @@ async function renderHome(){
   document.getElementById('h-emoji').textContent=baby.e;
   document.getElementById('h-size').textContent=baby.s.charAt(0).toUpperCase()+baby.s.slice(1);
   document.getElementById('h-tip-tag').textContent=`💡 Dica da Nalin — Semana ${u.semanas}`;
-  document.getElementById('h-tip').textContent=getTip(u.semanas);
+  const tipObj = getTip(u.semanas);
+  const tituloEl = document.getElementById('h-tip-titulo');
+  if(tituloEl){
+    tituloEl.textContent = tipObj.titulo || '';
+    tituloEl.style.display = tipObj.titulo ? 'block' : 'none';
+  }
+  document.getElementById('h-tip').textContent = tipObj.dica || tipObj;
   
   // Buscar dados atualizados da API para os contadores
   const apiCont = await apiFetch('/api/conteudos') || [];
@@ -1048,34 +1103,35 @@ async function renderHome(){
   document.getElementById('h-nvid').textContent=apiCont.filter(c=>c.categoria==='video'&&c.ativo).length+' aulas';
   document.getElementById('h-nebook').textContent=apiEbooks.length+' materiais';
 
-  // Exibir o próximo compromisso da agenda
-  const agendaKey = `nn_agenda_${u.id}`;
-  const compromissos = (DB.get(agendaKey) || []).filter(c => new Date(c.data + 'T' + c.hora) >= new Date());
-  compromissos.sort((a, b) => new Date(a.data + 'T' + a.hora) - new Date(b.data + 'T' + b.hora));
-  
-  const nextComp = compromissos[0];
-  if (nextComp) {
-    const dataObj = new Date(nextComp.data + 'T00:00:00');
-    const dataFormatada = dataObj.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
-    document.querySelector('.consult-box').style.display = 'flex';
-    document.querySelector('.consult-name').textContent = `${nextComp.tipo} · ${dataFormatada}`;
-    document.querySelector('.consult-time').textContent = `${nextComp.descricao || ''} · ${nextComp.hora}`;
-  } else {
-    document.querySelector('.consult-box').style.display = 'none';
-  }
+  // Exibir o próximo compromisso da agenda (via servidor)
+  try {
+    const compromissos = (await apiFetch(`/api/agenda?user_id=${u.id}`) || [])
+      .filter(c => new Date(c.data + 'T' + (c.hora || '00:00')) >= new Date())
+      .sort((a, b) => new Date(a.data + 'T' + (a.hora||'00:00')) - new Date(b.data + 'T' + (b.hora||'00:00')));
+    const nextComp = compromissos[0];
+    if (nextComp) {
+      const dataObj = new Date(nextComp.data + 'T00:00:00');
+      const dataFormatada = dataObj.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
+      document.querySelector('.consult-box').style.display = 'flex';
+      document.querySelector('.consult-name').textContent = `${nextComp.tipo} · ${dataFormatada}`;
+      document.querySelector('.consult-time').textContent = `${nextComp.descricao || ''} · ${nextComp.hora}`;
+    } else {
+      document.querySelector('.consult-box').style.display = 'none';
+    }
+  } catch(_) { document.querySelector('.consult-box').style.display = 'none'; }
 }
 
 // ════ CONTEÚDO ════
 const catMap={0:'video',1:'ebook',2:'meditacao',3:'outro'};
-function getYTId(url) {
-  if (!url) return null;
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-  const match = url.match(regExp);
-  return (match && match[2].length === 11) ? match[2] : null;
+
+// ── Cloudflare Stream helpers ──
+function getCFThumb(videoId) {
+  if (!videoId || videoId === '#') return null;
+  return `https://videodelivery.net/${videoId}/thumbnails/thumbnail.jpg?width=240&height=135&fit=crop`;
 }
-function getYTEmbed(url) {
-  const id = getYTId(url);
-  return id ? `https://www.youtube.com/embed/${id}?autoplay=1&rel=0` : null;
+function getCFEmbed(videoId) {
+  if (!videoId || videoId === '#') return null;
+  return `https://iframe.videodelivery.net/${videoId}`;
 }
 
 // ── Variáveis do mini curso ──
@@ -1096,7 +1152,7 @@ async function renderConteudo(idx){
   } else {
     // Outras abas — grade normal
     layout.style.display = 'none';
-    scroll.style.display = 'flex';
+    scroll.style.display = 'block';
     await renderGrade(idx);
   }
 }
@@ -1120,7 +1176,8 @@ async function renderMiniCurso() {
 
   // Atualizar barra de progresso no sidebar
   const total = videos.length;
-  const assistidos = Object.values(_progressoCache).filter(v => v).length;
+  const activeIds = new Set(videos.map(v => v.id));
+  const assistidos = Object.keys(_progressoCache).filter(id => activeIds.has(Number(id)) && _progressoCache[id]).length;
   const pct = total > 0 ? Math.round((assistidos / total) * 100) : 0;
   const fill = document.getElementById('sidebar-progress-fill');
   const txt = document.getElementById('sidebar-progress-txt');
@@ -1195,17 +1252,19 @@ async function renderSidebar(secoes, videos) {
 }
 
 function renderSbVideoItem(v) {
-  const ytId = getYTId(v.url);
-  const thumb = ytId
-    ? `<img src="https://img.youtube.com/vi/${ytId}/default.jpg" alt="">`
-    : (v.capa ? `<img src="${v.capa}" alt="">` : '🎬');
+  const thumbSrc = v.capa ? (API_URL + v.capa) : getCFThumb(v.url);
+  const thumb = thumbSrc
+    ? `<img src="${thumbSrc}" alt="" loading="lazy">`
+    : '🎬';
   const assistido = _progressoCache[v.id];
   const activeClass = _videoAtualId === v.id ? ' active' : '';
   const assistidoClass = assistido ? ' assistido-item' : '';
   const tituloEsc = (v.titulo||'').replace(/'/g, "\\'");
   const durEsc = (v.duracao||'').replace(/'/g, "\\'");
+  const vidEsc = (v.url||'').replace(/'/g, "\\'");
+  const capaEsc = (v.capa ? (API_URL + v.capa) : (v.url ? getCFThumb(v.url) : '')).replace(/'/g, "\\'");
   return `
-  <div class="sb-video-item${activeClass}${assistidoClass}" id="sb-item-${v.id}" onclick="selecionarVideo(${v.id},'${v.url}','${tituloEsc}','${durEsc}')">
+  <div class="sb-video-item${activeClass}${assistidoClass}" id="sb-item-${v.id}" onclick="selecionarVideo(${v.id},'${vidEsc}','${tituloEsc}','${durEsc}','${capaEsc}')">
     <div class="sb-vid-thumb">${thumb}</div>
     <div class="sb-vid-info">
       <div class="sb-vid-title">${v.titulo||'Sem título'}</div>
@@ -1224,7 +1283,7 @@ function toggleSbSecao(bodyId, arrowId) {
   if (arrow) arrow.classList.toggle('open', !isOpen);
 }
 
-function selecionarVideo(conteudoId, url, titulo, duracao) {
+async function selecionarVideo(conteudoId, url, titulo, duracao, capa) {
   // Remover active anterior
   document.querySelectorAll('.sb-video-item.active').forEach(el => el.classList.remove('active'));
   const item = document.getElementById(`sb-item-${conteudoId}`);
@@ -1236,24 +1295,27 @@ function selecionarVideo(conteudoId, url, titulo, duracao) {
   const playerTitulo = document.getElementById('player-titulo');
   const playerMeta = document.getElementById('player-meta');
   const playerBtn = document.getElementById('player-check-btn');
+  const anotacaoArea = document.getElementById('player-anotacao-area');
+  const anotacaoTxt = document.getElementById('player-anotacao-txt');
+  const anotacaoBtn = document.getElementById('player-anotacao-salvar');
   if (!playerArea) return;
 
-  // Montar player — abre no YouTube/link externo (sem iframe para evitar erro 153)
-  const ytId2 = getYTId(url);
-  const ytThumb2 = ytId2 ? `https://img.youtube.com/vi/${ytId2}/hqdefault.jpg` : null;
-  const openUrl2 = ytId2 ? `https://www.youtube.com/watch?v=${ytId2}` : url;
+  // Montar player — <video> com HLS do Cloudflare Stream (reproduz dentro do app)
   if (url && url !== '#') {
-    const thumbStyle = ytThumb2 ? `background-image:url('${ytThumb2}');background-size:cover;background-position:center;` : 'background:linear-gradient(135deg,#3a2820,#7a5a50);';
+    const hlsUrl = `https://videodelivery.net/${url}/manifest/video.m3u8`;
+    const posterAttr = capa ? `poster="${capa}"` : '';
     playerArea.innerHTML = `
-      <div class="player-placeholder" style="cursor:pointer;${thumbStyle}" onclick="window.open('${openUrl2}','_blank')">
-        <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:12px;background:rgba(0,0,0,0.35);padding:24px 20px;border-radius:12px;">
-          <div style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 16px rgba(0,0,0,.3);">&#9654;</div>
-          <div style="font-size:14px;font-weight:600;color:white;text-shadow:0 1px 4px rgba(0,0,0,.6);">Toque para assistir</div>
-          <div style="font-size:11px;color:rgba(255,255,255,.85);text-shadow:0 1px 3px rgba(0,0,0,.5);">${ytId2 ? 'Abre no YouTube' : 'Abre o v&iacute;deo'}</div>
-        </div>
-      </div>`;
+      <video id="cf-video-player"
+        controls playsinline webkit-playsinline
+        ${posterAttr}
+        style="width:100%;aspect-ratio:16/9;display:block;background:#000;"
+        onended="marcarAtualAssistido()"
+        onerror="onVideoError(this,'${url}')">
+        <source src="${hlsUrl}" type="application/x-mpegURL">
+      </video>
+      <button class="player-fs-overlay" onclick="telaCheia()" title="Tela cheia">&#x26F6; Tela cheia</button>`;
   } else {
-    playerArea.innerHTML = `<div class="player-placeholder"><div class="pp-icon">&#9888;&#65039;</div><p>URL do v&iacute;deo n&atilde;o dispon&iacute;vel</p></div>`;
+    playerArea.innerHTML = `<div class="player-placeholder"><div class="pp-icon">&#9888;&#65039;</div><p>V&iacute;deo n&atilde;o dispon&iacute;vel</p></div>`;
   }
 
   // Info do vídeo
@@ -1270,8 +1332,40 @@ function selecionarVideo(conteudoId, url, titulo, duracao) {
     playerBtn.disabled = !!jaAssistido;
   }
 
-  // Marcar automaticamente após 3 segundos
-  setTimeout(() => marcarAtualAssistido(), 3000);
+  // Área de anotação
+  if (anotacaoArea && anotacaoTxt && currentUser) {
+    anotacaoArea.style.display = 'block';
+    anotacaoTxt.value = '';
+    if (anotacaoBtn) { anotacaoBtn.textContent = 'Salvar anotação'; anotacaoBtn.disabled = false; }
+    const nota = await apiFetch(`/api/comentarios?user_id=${currentUser.id}&conteudo_id=${conteudoId}`);
+    if (nota && nota.comentario) anotacaoTxt.value = nota.comentario;
+  }
+}
+
+function telaCheia() {
+  const video = document.getElementById('cf-video-player');
+  if (!video) return;
+  if (video.requestFullscreen) video.requestFullscreen();
+  else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen();
+  else if (video.mozRequestFullScreen) video.mozRequestFullScreen();
+  else if (video.msRequestFullscreen) video.msRequestFullscreen();
+}
+
+async function salvarAnotacaoVideo() {
+  if (!_videoAtualId || !currentUser) return;
+  const txt = document.getElementById('player-anotacao-txt');
+  const btn = document.getElementById('player-anotacao-salvar');
+  if (!txt) return;
+  if (btn) btn.disabled = true;
+  const res = await apiFetch('/api/comentarios', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: currentUser.id, conteudo_id: _videoAtualId, comentario: txt.value.trim() })
+  });
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = res ? '✓ Salvo!' : 'Salvar anotação';
+    if (res) setTimeout(() => { btn.textContent = 'Salvar anotação'; }, 2000);
+  }
 }
 
 async function marcarAtualAssistido() {
@@ -1298,7 +1392,8 @@ async function marcarAtualAssistido() {
     const allVideos = await apiFetch('/api/conteudos') || [];
     const videos = allVideos.filter(v => v.categoria === 'video' && v.ativo);
     const total = videos.length;
-    const assistidos = Object.values(_progressoCache).filter(v => v).length;
+    const activeIds = new Set(videos.map(v => v.id));
+    const assistidos = Object.keys(_progressoCache).filter(id => activeIds.has(Number(id)) && _progressoCache[id]).length;
     const pct = total > 0 ? Math.round((assistidos / total) * 100) : 0;
     const fill = document.getElementById('sidebar-progress-fill');
     const txt = document.getElementById('sidebar-progress-txt');
@@ -1313,8 +1408,8 @@ async function renderGrade(idx) {
   const apiEbooks = await apiFetch('/api/ebooks') || [];
   const mappedEbooks = apiEbooks.map(e => ({
     id: 'eb'+e.id, titulo: e.titulo, categoria: 'ebook',
-    subcategoria: e.descricao || 'Material exclusivo',
-    url: API_URL + e.url_pdf, capa: e.url_capa ? API_URL + e.url_capa : null,
+    subcategoria: e.categoria || 'Geral',
+    url: API_URL + e.url_pdf, capa: e.url_capa || null,
     cor: '#c9907a,#a96b55', emoji: '📖', ativo: 1
   }));
   const allCont = [...apiCont, ...mappedEbooks];
@@ -1327,14 +1422,17 @@ async function renderGrade(idx) {
     list.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="ei">📭</div><p>Nenhum conteúdo ainda.<br>A Nalin está preparando algo especial!</p></div>`;
     return;
   }
-  conteudos.forEach(c => {
+  function _renderCcard(c) {
     const isEbook = c.categoria === 'ebook';
     const meta = isEbook ? (c.paginas ? `<span>📄 ${c.paginas}</span>` : `<span>📄 PDF</span>`) : (c.duracao ? `<span>⏱ ${c.duracao}</span>` : '');
-    const ytId = getYTId(c.url);
     let thumbImg = '';
-    if (ytId) thumbImg = `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="Capa">`;
-    else if (c.capa) thumbImg = `<img src="${c.capa}" alt="Capa">`;
-    list.innerHTML += `
+    if (c.capa) {
+      const capaUrl = c.capa.startsWith('http') ? c.capa : (API_URL + c.capa);
+      thumbImg = `<img src="${capaUrl}" alt="Capa" loading="lazy">`;
+    } else if (c.categoria === 'video' && c.url && c.url !== '#') {
+      thumbImg = `<img src="${getCFThumb(c.url)}" alt="Capa" loading="lazy">`;
+    }
+    return `
     <div class="ccard" onclick="openConteudo('${c.url}')" title="${c.titulo}">
       <div class="cthumb" style="background:linear-gradient(135deg,${c.cor||'#e8b4a0,#c9907a'})">
         ${thumbImg}
@@ -1342,12 +1440,22 @@ async function renderGrade(idx) {
         ${!isEbook ? '<div class="play-btn">▶</div>' : ''}
       </div>
       <div class="cinfo">
-        <div class="ctag">${c.subcategoria||''}</div>
+        <div class="ctag">${isEbook ? '' : (c.subcategoria||'')}</div>
         <div class="ctitle">${c.titulo}</div>
         <div class="cmeta">${meta}</div>
       </div>
     </div>`;
-  });
+  }
+
+  if (cat === 'ebook') {
+    const grupos = {};
+    conteudos.forEach(c => { const g = c.subcategoria || 'Geral'; if (!grupos[g]) grupos[g] = []; grupos[g].push(c); });
+    Object.entries(grupos).forEach(([nome, items]) => {
+      list.innerHTML += `<div class="eb-cat-hdr">${nome}</div><div class="eb-cat-grid">${items.map(_renderCcard).join('')}</div>`;
+    });
+  } else {
+    conteudos.forEach(c => { list.innerHTML += _renderCcard(c); });
+  }
 }
 
 function switchTab(idx,el){
@@ -1355,6 +1463,42 @@ function switchTab(idx,el){
   el.classList.add('active');
   renderConteudo(idx);
 }
+function _abrirUrl(url){
+  if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser){
+    window.Capacitor.Plugins.Browser.open({ url });
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
+function abrirVideoExterno(embedUrl){
+  _abrirUrl(embedUrl);
+}
+
+function onVideoError(videoEl, videoId){
+  // Fallback: se o HLS não carregar (ex: stream privado), abre no browser externo
+  const playerArea = document.getElementById('player-area');
+  if(!playerArea) return;
+  const cfEmbed = getCFEmbed(videoId);
+  const cfThumb = getCFThumb(videoId);
+  const thumbStyle = cfThumb
+    ? `background-image:url('${cfThumb}');background-size:cover;background-position:center;`
+    : 'background:linear-gradient(135deg,#3a2820,#7a5a50);';
+  playerArea.innerHTML = `
+    <div class="player-placeholder" style="cursor:pointer;${thumbStyle}" onclick="abrirVideoExterno('${cfEmbed}')">
+      <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:12px;background:rgba(0,0,0,0.4);padding:24px 20px;border-radius:12px;">
+        <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.95);display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 4px 16px rgba(0,0,0,.4);">&#9654;</div>
+        <div style="font-size:14px;font-weight:600;color:white;text-shadow:0 1px 4px rgba(0,0,0,.7);">Toque para assistir</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.8);">Abre no navegador</div>
+      </div>
+    </div>`;
+}
+
+function abrirAdmin(){
+  if(!API_URL){ showToast('Configure a URL do servidor primeiro.'); return; }
+  _abrirUrl(API_URL.replace(/\/$/, '') + '/admin');
+}
+
 function openConteudo(url){
   if(!url||url==='#'){showToast('Arquivo não disponível ainda.');return;}
   // Se for PDF e estiver no Android/APK, usa Google Docs Viewer
@@ -1407,30 +1551,114 @@ function selMood(el,emoji,label){
   el.classList.add('sel');
   currentMood=emoji;
 }
-function saveEntry(){
+async function saveEntry(){
   const txt=document.getElementById('diary-txt').value.trim();
   if(!txt){showToast('Escreva algo primeiro! 💕');return;}
-  const key=`nn_diary_${currentUser.id}`;
-  const entries=DB.get(key)||[];
-  entries.unshift({id:Date.now(),txt,mood:currentMood,semanas:currentUser.semanas,data:new Date().toLocaleDateString('pt-BR',{day:'numeric',month:'long'}),dia:new Date().toLocaleDateString('pt-BR',{weekday:'long'})});
-  DB.set(key,entries);
-  document.getElementById('diary-txt').value='';
-  renderDiario();
-  showToast('Memória salva! ✨');
+  if(!currentUser?.id||!API_URL){showToast('Sem conexão com o servidor.');return;}
+  try{
+    const res=await fetch(`${API_URL}/api/diario`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        user_id:currentUser.id, txt, mood:currentMood,
+        semanas:currentUser.semanas||0,
+        data:new Date().toLocaleDateString('pt-BR',{day:'numeric',month:'long'}),
+        dia:new Date().toLocaleDateString('pt-BR',{weekday:'long'})
+      })
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    document.getElementById('diary-txt').value='';
+    document.querySelectorAll('.moodbtn').forEach(b=>b.classList.remove('sel'));
+    document.querySelector('.moodbtn')?.classList.add('sel');
+    currentMood='😊';
+    showToast('Memória salva! ✨');
+    renderDiario();
+  }catch(e){
+    showToast('Erro ao salvar memória. Verifique a conexão.');
+  }
 }
-function renderDiario(){
-  const key=`nn_diary_${currentUser?.id}`;
-  const entries=DB.get(key)||[];
-  document.getElementById('p-entradas').textContent=entries.length;
-  const list=document.getElementById('entries-list');list.innerHTML='';
-  if(!entries.length){list.innerHTML='<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Nenhuma memória ainda.<br>Escreva seu primeiro registro! 🌸</div>';return;}
-  entries.forEach(e=>{
-    list.innerHTML+=`<div class="entry">
-      <div class="entry-hdr"><div class="entry-date">${e.data} · ${e.dia}</div><span style="font-size:20px">${e.mood}</span></div>
-      <div class="entry-txt">${e.txt}</div>
-      <div class="entry-wtag">Semana ${e.semanas}</div>
-    </div>`;
-  });
+async function renderDiario(){
+  const list=document.getElementById('entries-list');
+  if(!list) return;
+  if(!currentUser?.id||!API_URL){
+    list.innerHTML='<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Faça login para ver suas memórias.</div>';
+    return;
+  }
+  list.innerHTML='<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Carregando... 🌸</div>';
+  try{
+    const res=await fetch(`${API_URL}/api/diario?user_id=${currentUser.id}`,{cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const entries=await res.json();
+    const count=document.getElementById('p-entradas');
+    if(count) count.textContent=entries.length;
+    if(!entries.length){
+      list.innerHTML='<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Nenhuma memória ainda.<br>Escreva seu primeiro registro! 🌸</div>';
+      return;
+    }
+    list.innerHTML='';
+    entries.forEach(e=>{
+      const div=document.createElement('div');
+      div.className='entry'; div.id='entry-'+e.id;
+      div.innerHTML=`
+        <div class="entry-hdr"><div class="entry-date">${e.data} · ${e.dia}</div><span style="font-size:20px">${e.mood||''}</span></div>
+        <div class="entry-txt" id="etxt-${e.id}"></div>
+        <div class="entry-wtag">Semana ${e.semanas}</div>
+        <div class="entry-actions">
+          <button class="entry-btn" onclick="startEditEntry(${e.id})">✏️ Editar</button>
+          <button class="entry-btn entry-btn-delete" onclick="deleteEntry(${e.id})">🗑️ Excluir</button>
+        </div>
+        <div class="entry-edit-form" id="eedit-${e.id}">
+          <textarea id="eedit-txt-${e.id}" rows="3"></textarea>
+          <div class="entry-edit-btns">
+            <button class="entry-btn" onclick="cancelEditEntry(${e.id})">Cancelar</button>
+            <button class="dsave" style="flex:2;padding:8px;" onclick="saveEditEntry(${e.id})">Salvar</button>
+          </div>
+        </div>`;
+      // Usa textContent para evitar XSS
+      div.querySelector('#etxt-'+e.id).textContent=e.txt;
+      list.appendChild(div);
+    });
+  }catch(e){
+    list.innerHTML='<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Erro ao carregar memórias.<br><button class="diary-refresh" style="margin-top:8px;" onclick="renderDiario()">↻ Tentar novamente</button></div>';
+  }
+}
+function startEditEntry(id){
+  document.getElementById('eedit-'+id).style.display='block';
+  const txtEl=document.getElementById('etxt-'+id);
+  document.getElementById('eedit-txt-'+id).value=txtEl.textContent;
+}
+function cancelEditEntry(id){
+  document.getElementById('eedit-'+id).style.display='none';
+}
+async function saveEditEntry(id){
+  const newTxt=document.getElementById('eedit-txt-'+id).value.trim();
+  if(!newTxt){showToast('Texto não pode ser vazio.');return;}
+  try{
+    const res=await fetch(`${API_URL}/api/diario/${id}`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({user_id:currentUser.id, txt:newTxt})
+    });
+    if(!res.ok) throw new Error();
+    document.getElementById('etxt-'+id).textContent=newTxt;
+    document.getElementById('eedit-'+id).style.display='none';
+    showToast('Memória atualizada! ✨');
+  }catch(e){
+    showToast('Erro ao atualizar. Tente novamente.');
+  }
+}
+async function deleteEntry(id){
+  if(!confirm('Excluir esta memória?')) return;
+  try{
+    const res=await fetch(`${API_URL}/api/diario/${id}?user_id=${currentUser.id}`,{method:'DELETE'});
+    if(!res.ok) throw new Error();
+    document.getElementById('entry-'+id)?.remove();
+    showToast('Memória excluída.');
+    const count=document.getElementById('p-entradas');
+    if(count) count.textContent=Math.max(0,parseInt(count.textContent||'0')-1);
+  }catch(e){
+    showToast('Erro ao excluir. Tente novamente.');
+  }
 }
 
 // ════ PDF DOWNLOAD — funciona no navegador e no APK Android ════
@@ -1461,28 +1689,18 @@ async function _downloadPDF(doc, filename) {
       const pdfBase64 = doc.output('datauristring').split(',')[1];
       _passo('base64 ok, len=' + pdfBase64.length);
 
-      // Carrega Filesystem
-      _passo('importando @capacitor/filesystem');
-      let Filesystem, Directory;
-      try {
-        const fsMod = await import('@capacitor/filesystem');
-        Filesystem = fsMod.Filesystem; Directory = fsMod.Directory;
-        _passo('Filesystem importado: ' + (Filesystem ? 'ok' : 'NULL'));
-      } catch (e) {
-        throw new Error('Filesystem indisponível: ' + (e.message || e));
-      }
-      if (!Filesystem || !Directory) throw new Error('Filesystem ou Directory não retornados pelo módulo');
+      // Carrega Filesystem via bridge do Capacitor (sem bundler dynamic import não funciona)
+      _passo('acessando Filesystem via bridge');
+      const Filesystem = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem;
+      // Directory é um enum do pacote; sem bundler usamos os valores string diretamente
+      const Directory = { Cache: 'CACHE', Documents: 'DOCUMENTS', Data: 'DATA', External: 'EXTERNAL' };
+      _passo('Filesystem: ' + (Filesystem ? 'ok' : 'NULL'));
+      if (!Filesystem) throw new Error('Filesystem indisponível: plugin não encontrado no bridge do Capacitor');
 
-      // Carrega Share
-      _passo('importando @capacitor/share');
-      let Share = null;
-      try {
-        const shareMod = await import('@capacitor/share');
-        Share = shareMod.Share;
-        _passo('Share importado: ' + (Share ? 'ok' : 'NULL'));
-      } catch (e) {
-        _passo('Share import FALHOU: ' + (e.message || e));
-      }
+      // Carrega Share via bridge
+      _passo('acessando Share via bridge');
+      const Share = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
+      _passo('Share: ' + (Share ? 'ok' : 'NULL'));
 
       // Escreve no Cache
       _passo('Escrevendo arquivo em Directory.Cache: ' + safeName);
@@ -1619,8 +1837,11 @@ async function exportDiaryPDF() {
 async function exportPlanoPartoPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  const ppKey = `nn_pp_${currentUser.id}`;
-  const pp = DB.get(ppKey) || {};
+  // Se o cache não estiver carregado, busca do servidor
+  if(!_ppData && currentUser?.id && API_URL){
+    try{ _ppData = await apiFetch(`/api/plano-parto?user_id=${currentUser.id}`) || {}; }catch(e){}
+  }
+  const pp = _ppData || {};
 
   if (!pp.nome) {
     showToast('Preencha o nome antes de exportar!');
@@ -1713,8 +1934,15 @@ async function exportPlanoPartoPDF() {
 async function exportMaternidadePDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  const matKey = `nn_mat_${currentUser.id}`;
-  const matData = DB.get(matKey) || {};
+  // Se o cache não estiver carregado, busca do servidor
+  if(!_matData && currentUser?.id && API_URL){
+    try{
+      const r = await apiFetch(`/api/maternidade?user_id=${currentUser.id}`) || {};
+      if(!r.checklists) r.checklists = JSON.parse(JSON.stringify(defaultMatChecklist));
+      _matData = r;
+    }catch(e){}
+  }
+  const matData = _matData || {};
 
   showToast('Gerando Maternidade em PDF... ⌛');
 
@@ -1767,7 +1995,7 @@ async function exportMaternidadePDF() {
     doc.setTextColor(60, 60, 60);
     doc.setFontSize(10);
 
-    const items = matData[cat.chave] || [];
+    const items = (matData.checklists && matData.checklists[cat.chave]) || [];
     if (items.length === 0) {
       doc.text('Nenhum item adicionado', margin, y);
       y += 6;
@@ -1789,89 +2017,82 @@ async function exportMaternidadePDF() {
 }
 
 // ════ AGENDA ════
-function renderAgenda(){
-  if(!currentUser)return;
-  const key=`nn_agenda_${currentUser.id}`;
-  const compromissos=(DB.get(key)||[]).sort((a,b)=>new Date(a.data+' '+a.hora)-new Date(b.data+' '+b.hora));
-  const list=document.getElementById('agenda-list');list.innerHTML='';
-  if(!compromissos.length){list.innerHTML='<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Nenhum compromisso agendado.<br>Clique em "+ Adicionar Compromisso" para criar um! 📅</div>';return;}
-  compromissos.forEach((c,i)=>{
-    const dataObj=new Date(c.data + 'T00:00:00');
-    const dataFormatada=dataObj.toLocaleDateString('pt-BR',{day:'numeric',month:'short'});
-    list.innerHTML+=`<div style="background:var(--rose-pale);border-radius:12px;padding:16px;margin-bottom:12px;border-left:4px solid var(--rose);">
-      <div style="display:flex;justify-content:space-between;align-items:start;">
-        <div onclick="editAgenda(${i})" style="flex:1;cursor:pointer;">
-          <div style="font-weight:600;color:var(--dark);font-size:15px;">${c.tipo} • ${c.hora}</div>
+async function renderAgenda(){
+  if(!currentUser?.id||!API_URL)return;
+  const list=document.getElementById('agenda-list');
+  list.innerHTML='<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Carregando... 📅</div>';
+  try{
+    const compromissos=await apiFetch(`/api/agenda?user_id=${currentUser.id}`) || [];
+    list.innerHTML='';
+    if(!compromissos.length){list.innerHTML='<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Nenhum compromisso agendado.<br>Clique em "+ Adicionar Compromisso" para criar um! 📅</div>';return;}
+    compromissos.forEach(c=>{
+      const dataObj=new Date(c.data+'T00:00:00');
+      const dataFormatada=dataObj.toLocaleDateString('pt-BR',{day:'numeric',month:'short'});
+      const div=document.createElement('div');
+      div.style.cssText='background:var(--rose-pale);border-radius:12px;padding:16px;margin-bottom:12px;border-left:4px solid var(--rose);';
+      div.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:start;">
+        <div onclick="editAgenda(${c.id},'${c.tipo}','${c.data}','${c.hora}')" style="flex:1;cursor:pointer;">
+          <div style="font-weight:600;color:var(--dark);font-size:15px;"></div>
           <div style="color:var(--mid);font-size:13px;margin-top:4px;">${dataFormatada}</div>
-          <div style="color:var(--dark);font-size:13px;margin-top:6px;">${c.descricao}</div>
+          <div style="color:var(--dark);font-size:13px;margin-top:6px;"></div>
         </div>
-        <button style="background:var(--err);color:white;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:12px;" onclick="deleteAgenda(${i})">✕</button>
-      </div>
-    </div>`;
-  });
+        <button style="background:var(--err);color:white;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:12px;" onclick="deleteAgenda(${c.id})">✕</button>
+      </div>`;
+      div.querySelector('div > div > div:first-child').textContent=`${c.tipo} • ${c.hora}`;
+      div.querySelector('div > div > div:last-child').textContent=c.descricao;
+      list.appendChild(div);
+    });
+  }catch(e){
+    list.innerHTML='<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Erro ao carregar agenda.</div>';
+  }
 }
 
-function editAgenda(i){
-  const key=`nn_agenda_${currentUser.id}`;
-  const compromissos=(DB.get(key)||[]).sort((a,b)=>new Date(a.data+' '+a.hora)-new Date(b.data+' '+b.hora));
-  const c = compromissos[i];
-  if(!c) return;
-  
-  editingAgendaIndex = i;
-  document.getElementById('ag-tipo').value = c.tipo;
-  document.getElementById('ag-data').value = c.data;
-  document.getElementById('ag-hora').value = c.hora;
-  document.getElementById('ag-desc').value = c.descricao;
-  
+function editAgenda(id,tipo,data,hora){
+  editingAgendaId = id;
+  document.getElementById('ag-tipo').value = tipo;
+  document.getElementById('ag-data').value = data;
+  document.getElementById('ag-hora').value = hora;
+  // busca a descrição do item na lista renderizada
+  const descEl = document.querySelector(`[onclick*="editAgenda(${id},"] div:last-child`);
+  document.getElementById('ag-desc').value = descEl ? descEl.textContent : '';
   document.querySelector('#modal-agenda h3').textContent = 'Editar Compromisso';
   document.getElementById('btn-save-agenda').textContent = 'Atualizar Compromisso';
   openModal('modal-agenda');
 }
 
-function saveAgenda(){
+async function saveAgenda(){
   const tipo=document.getElementById('ag-tipo').value;
   const data=document.getElementById('ag-data').value;
   const hora=document.getElementById('ag-hora').value;
   const descricao=document.getElementById('ag-desc').value;
-  
   if(!tipo||!data||!hora){alert('Preencha todos os campos!');return;}
-  
-  const key=`nn_agenda_${currentUser.id}`;
-  let compromissos=DB.get(key)||[];
-  
-  if(editingAgendaIndex !== null) {
-    let sortedCompromissos = [...compromissos].sort((a,b)=>new Date(a.data+' '+a.hora)-new Date(b.data+' '+b.hora));
-    const oldItem = sortedCompromissos[editingAgendaIndex];
-    const originalIdx = compromissos.findIndex(c => c.tipo === oldItem.tipo && c.data === oldItem.data && c.hora === oldItem.hora);
-    if(originalIdx !== -1) {
-      compromissos[originalIdx] = {tipo,data,hora,descricao};
+  if(!currentUser?.id||!API_URL){showToast('Sem conexão com o servidor.');return;}
+  try{
+    if(editingAgendaId !== null){
+      await fetch(`${API_URL}/api/agenda/${editingAgendaId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:currentUser.id,tipo,data,hora,descricao})});
+      editingAgendaId=null;
+      showToast('Compromisso atualizado! 📅');
+    } else {
+      await fetch(`${API_URL}/api/agenda`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:currentUser.id,tipo,data,hora,descricao})});
+      showToast('Compromisso adicionado! 📅');
     }
-    editingAgendaIndex = null;
-    showToast('Compromisso atualizado! 📅');
-  } else {
-    compromissos.push({tipo,data,hora,descricao});
-    showToast('Compromisso adicionado! 📅');
-  }
-  
-  DB.set(key,compromissos);
-  closeModal('modal-agenda');
-  renderAgenda();
-  renderHome();
-  document.getElementById('ag-tipo').value='';
-  document.getElementById('ag-data').value='';
-  document.getElementById('ag-hora').value='';
-  document.getElementById('ag-desc').value='';
+    closeModal('modal-agenda');
+    renderAgenda();
+    renderHome();
+    ['ag-tipo','ag-data','ag-hora','ag-desc'].forEach(id=>document.getElementById(id).value='');
+    document.querySelector('#modal-agenda h3').textContent='Novo Compromisso';
+    document.getElementById('btn-save-agenda').textContent='Salvar Compromisso';
+  }catch(e){ showToast('Erro ao salvar compromisso.'); }
 }
 
-function deleteAgenda(i){
+async function deleteAgenda(id){
   if(!confirm('Deletar este compromisso?'))return;
-  const key=`nn_agenda_${currentUser.id}`;
-  const compromissos=DB.get(key)||[];
-  compromissos.splice(i,1);
-  DB.set(key,compromissos);
-  renderAgenda();
-  renderHome();
-  showToast('Compromisso deletado!');
+  try{
+    await fetch(`${API_URL}/api/agenda/${id}?user_id=${currentUser.id}`,{method:'DELETE'});
+    renderAgenda();
+    renderHome();
+    showToast('Compromisso excluído! 📅');
+  }catch(e){ showToast('Erro ao excluir compromisso.'); }
 }
 
 // ════ PERFIL ════
@@ -1898,8 +2119,9 @@ function renderPerfil(){
     document.getElementById('p-dias').textContent=diff;
     document.getElementById('p-due').textContent='Parto previsto: '+dpp.toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
   }
-  const key=`nn_diary_${u.id}`;
-  document.getElementById('p-entradas').textContent=(DB.get(key)||[]).length;
+  apiFetch(`/api/diario?user_id=${u.id}`).then(entries=>{
+    document.getElementById('p-entradas').textContent=(entries||[]).length;
+  }).catch(()=>{});
 }
 
 // ════ PLANEJAMENTO ════
@@ -1915,10 +2137,10 @@ function switchPPTab(n, el) {
   });
   if (el) { el.style.background = 'var(--rose)'; el.style.color = 'white'; }
 }
-function savePlanoParto(){
+async function savePlanoParto(){
+  if(!currentUser?.id||!API_URL){showToast('Sem conexão com o servidor.');return;}
   const rels = [];
   document.querySelectorAll('input[name="pp-rel"]:checked').forEach(cb => rels.push(cb.value));
-  
   const pp = {
     nome: document.getElementById('pp-nome').value,
     acomp: document.getElementById('pp-acomp').value,
@@ -1928,52 +2150,57 @@ function savePlanoParto(){
     cesarea: document.getElementById('pp-cesarea').value,
     recem_nascido: document.getElementById('pp-recem-nascido').value
   };
-
-  const key=`nn_pp_${currentUser.id}`;
-  DB.set(key, pp);
-  showToast('Plano de parto salvo! 📋');
-  setTimeout(() => closeModal('modal-plano-parto'), 400);
+  try {
+    await fetch(`${API_URL}/api/plano-parto`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:currentUser.id,...pp})});
+    _ppData = pp;
+    showToast('Plano de parto salvo! 📋');
+    setTimeout(() => closeModal('modal-plano-parto'), 400);
+  } catch(e){ showToast('Erro ao salvar plano de parto.'); }
 }
 
-function addEnxovalItem(){
+async function addEnxovalItem(){
   const item=document.getElementById('enx-item').value.trim();
   if(!item){alert('Digite um item!');return;}
-  const key=`nn_enx_${currentUser.id}`;
-  const items=DB.get(key)||[];
-  items.push({id:Date.now(),nome:item,comprado:false});
-  DB.set(key,items);
-  document.getElementById('enx-item').value='';
-  renderEnxovalList();
+  if(!currentUser?.id||!API_URL){showToast('Sem conexão com o servidor.');return;}
+  try{
+    await fetch(`${API_URL}/api/enxoval`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:currentUser.id,item,quantidade:1,comprado:false})});
+    document.getElementById('enx-item').value='';
+    renderEnxovalList();
+  }catch(e){showToast('Erro ao adicionar item.');}
 }
 
-function renderEnxovalList(){
-  const key=`nn_enx_${currentUser.id}`;
-  const items=DB.get(key)||[];
-  const list=document.getElementById('enx-list');list.innerHTML='';
-  if(!items.length){list.innerHTML='<div style="text-align:center;color:var(--light);font-size:13px;padding:20px;">Nenhum item adicionado ainda.</div>';return;}
-  items.forEach((item,i)=>{
-    list.innerHTML+=`<div style="display:flex;align-items:center;padding:8px;border-bottom:1px solid var(--rose-pale);">
-      <input type="checkbox" ${item.comprado?'checked':''} onchange="toggleEnxovalItem(${i})" style="width:18px;height:18px;cursor:pointer;">
-      <span style="margin-left:10px;flex:1;${item.comprado?'text-decoration:line-through;color:var(--light);':''}">  ${item.nome}</span>
-      <button style="background:var(--err);color:white;border:none;border-radius:4px;width:24px;height:24px;cursor:pointer;font-size:11px;" onclick="deleteEnxovalItem(${i})">✕</button>
-    </div>`;
-  });
+async function renderEnxovalList(){
+  const list=document.getElementById('enx-list');
+  if(!list)return;
+  if(!currentUser?.id||!API_URL){list.innerHTML='<div style="text-align:center;color:var(--light);font-size:13px;padding:20px;">Sem conexão.</div>';return;}
+  try{
+    const items=await apiFetch(`/api/enxoval?user_id=${currentUser.id}`) || [];
+    list.innerHTML='';
+    if(!items.length){list.innerHTML='<div style="text-align:center;color:var(--light);font-size:13px;padding:20px;">Nenhum item adicionado ainda.</div>';return;}
+    items.forEach(item=>{
+      list.innerHTML+=`<div style="display:flex;align-items:center;padding:8px;border-bottom:1px solid var(--rose-pale);">
+        <input type="checkbox" ${item.comprado?'checked':''} onchange="toggleEnxovalItem(${item.id},this.checked)" style="width:18px;height:18px;cursor:pointer;">
+        <span style="margin-left:10px;flex:1;${item.comprado?'text-decoration:line-through;color:var(--light);':''}">${item.item}</span>
+        <button style="background:var(--err);color:white;border:none;border-radius:4px;width:24px;height:24px;cursor:pointer;font-size:11px;" onclick="deleteEnxovalItem(${item.id})">✕</button>
+      </div>`;
+    });
+  }catch(e){list.innerHTML='<div style="text-align:center;color:var(--light);font-size:13px;padding:20px;">Erro ao carregar lista.</div>';}
 }
 
-function toggleEnxovalItem(i){
-  const key=`nn_enx_${currentUser.id}`;
-  const items=DB.get(key)||[];
-  items[i].comprado=!items[i].comprado;
-  DB.set(key,items);
-  renderEnxovalList();
+async function toggleEnxovalItem(id, comprado){
+  if(!API_URL)return;
+  try{
+    await fetch(`${API_URL}/api/enxoval/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:currentUser.id,comprado:comprado?1:0})});
+    renderEnxovalList();
+  }catch(e){showToast('Erro ao atualizar item.');}
 }
 
-function deleteEnxovalItem(i){
-  const key=`nn_enx_${currentUser.id}`;
-  const items=DB.get(key)||[];
-  items.splice(i,1);
-  DB.set(key,items);
-  renderEnxovalList();
+async function deleteEnxovalItem(id){
+  if(!API_URL)return;
+  try{
+    await fetch(`${API_URL}/api/enxoval/${id}?user_id=${currentUser.id}`,{method:'DELETE'});
+    renderEnxovalList();
+  }catch(e){showToast('Erro ao excluir item.');}
 }
 
 const defaultMatChecklist = {
@@ -2031,18 +2258,20 @@ const defaultMatChecklist = {
   ]
 };
 
-function saveMaternidade(){
-  const mat = DB.get(`nn_mat_${currentUser.id}`) || { checklists: JSON.parse(JSON.stringify(defaultMatChecklist)) };
-  mat.nome = document.getElementById('mat-nome').value;
-  mat.cidade = document.getElementById('mat-cidade').value;
-  const key=`nn_mat_${currentUser.id}`;
-  DB.set(key, mat);
-  showToast('Maternidade salva! 🏥');
-  setTimeout(() => closeModal('modal-maternidade'), 400);
+async function saveMaternidade(){
+  if(!currentUser?.id||!API_URL){showToast('Sem conexão com o servidor.');return;}
+  if(!_matData) _matData = { checklists: JSON.parse(JSON.stringify(defaultMatChecklist)) };
+  _matData.nome = document.getElementById('mat-nome').value;
+  _matData.cidade = document.getElementById('mat-cidade').value;
+  try{
+    await fetch(`${API_URL}/api/maternidade`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:currentUser.id,..._matData})});
+    showToast('Maternidade salva! 🏥');
+    setTimeout(() => closeModal('modal-maternidade'), 400);
+  }catch(e){showToast('Erro ao salvar maternidade.');}
 }
 
 function renderMatChecklist() {
-  const mat = DB.get(`nn_mat_${currentUser.id}`) || { checklists: JSON.parse(JSON.stringify(defaultMatChecklist)) };
+  const mat = _matData || { checklists: JSON.parse(JSON.stringify(defaultMatChecklist)) };
   const container = document.getElementById('mat-checklists');
   container.innerHTML = '';
   
@@ -2067,17 +2296,24 @@ function renderMatChecklist() {
   }
 }
 
+async function _saveMatData(){
+  if(!currentUser?.id||!API_URL||!_matData)return;
+  try{
+    await fetch(`${API_URL}/api/maternidade`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:currentUser.id,..._matData})});
+  }catch(e){}
+}
+
 function toggleMatItem(cat, i) {
-  const mat = DB.get(`nn_mat_${currentUser.id}`);
-  mat.checklists[cat][i].c = !mat.checklists[cat][i].c;
-  DB.set(`nn_mat_${currentUser.id}`, mat);
+  if(!_matData||!_matData.checklists)return;
+  _matData.checklists[cat][i].c = !_matData.checklists[cat][i].c;
+  _saveMatData();
   renderMatChecklist();
 }
 
 function deleteMatItem(cat, i) {
-  const mat = DB.get(`nn_mat_${currentUser.id}`);
-  mat.checklists[cat].splice(i, 1);
-  DB.set(`nn_mat_${currentUser.id}`, mat);
+  if(!_matData||!_matData.checklists)return;
+  _matData.checklists[cat].splice(i, 1);
+  _saveMatData();
   renderMatChecklist();
 }
 
@@ -2085,40 +2321,45 @@ function addMatExtraItem() {
   const cat = document.getElementById('mat-add-cat').value;
   const name = document.getElementById('mat-add-item').value.trim();
   if (!name) return;
-  
-  const mat = DB.get(`nn_mat_${currentUser.id}`) || { checklists: JSON.parse(JSON.stringify(defaultMatChecklist)) };
-  mat.checklists[cat].push({ n: name, c: false });
-  DB.set(`nn_mat_${currentUser.id}`, mat);
-  
+  if(!_matData) _matData = { checklists: JSON.parse(JSON.stringify(defaultMatChecklist)) };
+  _matData.checklists[cat].push({ n: name, c: false });
+  _saveMatData();
   document.getElementById('mat-add-item').value = '';
   renderMatChecklist();
 }
 
-function loadPlanejamento(){
-  const ppKey=`nn_pp_${currentUser.id}`;
-  const pp=DB.get(ppKey)||{};
-  document.getElementById('pp-nome').value=pp.nome||'';
-  document.getElementById('pp-acomp').value=pp.acomp||'';
-  document.querySelectorAll('input[name="pp-rel"]').forEach(cb => {
-    cb.checked = pp.relacoes ? pp.relacoes.includes(cb.value) : false;
-  });
-  document.getElementById('pp-durante').value=pp.durante||'';
-  document.getElementById('pp-inducao').value=pp.inducao||'';
-  document.getElementById('pp-cesarea').value=pp.cesarea||'';
-  document.getElementById('pp-recem-nascido').value=pp.recem_nascido||'';
-  
-  const enxKey=`nn_enx_${currentUser.id}`;
+async function loadPlanejamento(){
+  if(!currentUser?.id||!API_URL)return;
+
+  // Carregar Plano de Parto
+  try{
+    const ppResp = await apiFetch(`/api/plano-parto?user_id=${currentUser.id}`);
+    const pp = ppResp || {};
+    _ppData = pp;
+    document.getElementById('pp-nome').value=pp.nome||'';
+    document.getElementById('pp-acomp').value=pp.acomp||'';
+    document.querySelectorAll('input[name="pp-rel"]').forEach(cb => {
+      cb.checked = pp.relacoes ? pp.relacoes.includes(cb.value) : false;
+    });
+    document.getElementById('pp-durante').value=pp.durante||'';
+    document.getElementById('pp-inducao').value=pp.inducao||'';
+    document.getElementById('pp-cesarea').value=pp.cesarea||'';
+    document.getElementById('pp-recem-nascido').value=pp.recem_nascido||'';
+  }catch(e){}
+
+  // Carregar Enxoval
   renderEnxovalList();
-  
-  const matKey=`nn_mat_${currentUser.id}`;
-  let mat=DB.get(matKey);
-  if (!mat || !mat.checklists) {
-    mat = { nome: mat?.nome || '', cidade: mat?.cidade || '', checklists: JSON.parse(JSON.stringify(defaultMatChecklist)) };
-    DB.set(matKey, mat);
-  }
-  document.getElementById('mat-nome').value=mat.nome||'';
-  document.getElementById('mat-cidade').value=mat.cidade||'';
-  renderMatChecklist();
+
+  // Carregar Maternidade
+  try{
+    const matResp = await apiFetch(`/api/maternidade?user_id=${currentUser.id}`);
+    let mat = matResp || {};
+    if(!mat.checklists) mat.checklists = JSON.parse(JSON.stringify(defaultMatChecklist));
+    _matData = mat;
+    document.getElementById('mat-nome').value=mat.nome||'';
+    document.getElementById('mat-cidade').value=mat.cidade||'';
+    renderMatChecklist();
+  }catch(e){}
 }
 
 // ════ MODALS ════
@@ -2130,7 +2371,7 @@ function openModal(id){
     document.getElementById('cnt-timer').textContent = '00:00';
     renderContractions();
   }
-  if(id === 'modal-agenda' && editingAgendaIndex === null) {
+  if(id === 'modal-agenda' && editingAgendaId === null) {
     document.querySelector('#modal-agenda h3').textContent = 'Adicionar Compromisso';
     document.getElementById('btn-save-agenda').textContent = 'Salvar Compromisso';
     document.getElementById('ag-tipo').value='';
@@ -2141,7 +2382,7 @@ function openModal(id){
   document.getElementById(id)?.classList.add('active');
 }
 function closeModal(id){
-  if(id === 'modal-agenda') editingAgendaIndex = null;
+  if(id === 'modal-agenda') editingAgendaId = null;
   document.getElementById(id)?.classList.remove('active');
 }
 
@@ -2186,42 +2427,53 @@ function startContraction() {
   }, 1000);
 }
 
-function stopContraction() {
+async function stopContraction() {
   clearInterval(cntTimer);
   const endTime = new Date();
   const duration = Math.floor((endTime - cntStartTime) / 1000);
-  
-  const key = `nn_cnt_${currentUser.id}`;
-  const history = DB.get(key) || [];
-  
-  let interval = 0;
-  if (history.length > 0) {
-    const lastStart = new Date(history[0].start);
-    interval = Math.floor((cntStartTime - lastStart) / 60000);
+
+  // Calcula intervalo desde a última contração
+  let interval_min = 0;
+  if(currentUser?.id && API_URL){
+    try{
+      const hist = await apiFetch(`/api/contracoes?user_id=${currentUser.id}`) || [];
+      if(hist.length > 0){
+        const lastStart = new Date(hist[0].start_time);
+        interval_min = Math.round((cntStartTime - lastStart) / 60000);
+      }
+    }catch(e){}
   }
 
-  history.unshift({
-    start: cntStartTime.toISOString(),
-    end: endTime.toISOString(),
-    duration: duration,
-    interval: interval
-  });
-
-  DB.set(key, history);
-  
   document.getElementById('btn-start-cnt').style.display = 'block';
   document.getElementById('btn-stop-cnt').style.display = 'none';
   document.getElementById('cnt-timer').textContent = '00:00';
-  
+
+  if(currentUser?.id && API_URL){
+    try{
+      await fetch(`${API_URL}/api/contracoes`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        user_id:currentUser.id,
+        start_time:cntStartTime.toISOString(),
+        end_time:endTime.toISOString(),
+        duration_sec:duration,
+        interval_min
+      })});
+    }catch(e){showToast('Erro ao salvar contração.');}
+  }
+
   renderContractions();
 }
 
-function renderContractions() {
-  const key = `nn_cnt_${currentUser.id}`;
-  const history = DB.get(key) || [];
+async function renderContractions() {
   const list = document.getElementById('cnt-history');
-  list.innerHTML = '';
+  if(!list)return;
+  if(!currentUser?.id||!API_URL){
+    list.innerHTML='<div style="text-align:center; padding:20px; color:var(--light); font-size:13px;">Sem conexão com o servidor.</div>';
+    return;
+  }
+  let history = [];
+  try{ history = await apiFetch(`/api/contracoes?user_id=${currentUser.id}`) || []; }catch(e){}
 
+  list.innerHTML = '';
   if (history.length === 0) {
     list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--light); font-size:13px;">Nenhuma contração registrada.</div>';
     document.getElementById('cnt-avg-dur').textContent = '0s';
@@ -2230,38 +2482,26 @@ function renderContractions() {
     return;
   }
 
-  let totalDur = 0;
-  let totalInt = 0;
-  let intCount = 0;
-
-  history.forEach((c, i) => {
-    totalDur += c.duration;
-    if (c.interval > 0) {
-      totalInt += c.interval;
-      intCount++;
-    }
-
-    const start = new Date(c.start);
+  let totalDur = 0, totalInt = 0, intCount = 0;
+  history.forEach(c => {
+    totalDur += (c.duration_sec||0);
+    if (c.interval_min > 0) { totalInt += c.interval_min; intCount++; }
+    const start = new Date(c.start_time);
     const timeStr = start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    
     list.innerHTML += `
       <div style="background:#fff; border:1px solid var(--rose-pale); border-radius:10px; padding:12px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
         <div>
           <div style="font-weight:700; color:var(--dark); font-size:15px;">
-            Duração: ${c.duration}s ${c.interval > 0 ? ` • Intervalo: ${c.interval}min` : ''}
+            Duração: ${c.duration_sec}s${c.interval_min > 0 ? ` • Intervalo: ${c.interval_min}min` : ''}
           </div>
-          <div style="font-size:11px; color:var(--mid); margin-top:3px; font-style: italic;">
-            Registrado às ${timeStr}
-          </div>
+          <div style="font-size:11px; color:var(--mid); margin-top:3px; font-style:italic;">Registrado às ${timeStr}</div>
         </div>
-        <button onclick="deleteContraction(${i})" style="background:none; border:none; color:var(--err); font-size:16px; cursor:pointer;">✕</button>
-      </div>
-    `;
+        <button onclick="deleteContraction(${c.id})" style="background:none; border:none; color:var(--err); font-size:16px; cursor:pointer;">✕</button>
+      </div>`;
   });
 
   const avgDur = Math.round(totalDur / history.length);
   const avgInt = intCount > 0 ? Math.round(totalInt / intCount) : 0;
-
   document.getElementById('cnt-avg-dur').textContent = `${avgDur}s`;
   document.getElementById('cnt-avg-int').textContent = `${avgInt}min`;
 
@@ -2269,20 +2509,14 @@ function renderContractions() {
 }
 
 function checkRule511(history) {
-  if (history.length < 3) return;
-  
+  if (history.length < 3) { document.getElementById('cnt-alert').style.display = 'none'; return; }
   const now = new Date();
   const oneHourAgo = new Date(now - 60 * 60000);
-  
-  // Filtrar contrações da última hora
-  const lastHour = history.filter(c => new Date(c.start) > oneHourAgo);
-  
+  const lastHour = history.filter(c => new Date(c.start_time) > oneHourAgo);
   if (lastHour.length >= 3) {
-    const avgDur = lastHour.reduce((acc, c) => acc + c.duration, 0) / lastHour.length;
-    const intervals = lastHour.filter(c => c.interval > 0);
-    const avgInt = intervals.length > 0 ? intervals.reduce((acc, c) => acc + c.interval, 0) / intervals.length : 0;
-
-    // Regra 5-1-1: Intervalo ~5min, Duração ~60s (1min), por 1 hora
+    const avgDur = lastHour.reduce((acc, c) => acc + (c.duration_sec||0), 0) / lastHour.length;
+    const intervals = lastHour.filter(c => c.interval_min > 0);
+    const avgInt = intervals.length > 0 ? intervals.reduce((acc, c) => acc + c.interval_min, 0) / intervals.length : 0;
     if (avgInt <= 6 && avgInt >= 3 && avgDur >= 45) {
       document.getElementById('cnt-alert').style.display = 'block';
       return;
@@ -2291,18 +2525,21 @@ function checkRule511(history) {
   document.getElementById('cnt-alert').style.display = 'none';
 }
 
-function deleteContraction(i) {
-  const key = `nn_cnt_${currentUser.id}`;
-  const history = DB.get(key) || [];
-  history.splice(i, 1);
-  DB.set(key, history);
-  renderContractions();
+async function deleteContraction(id) {
+  if(!API_URL)return;
+  try{
+    await fetch(`${API_URL}/api/contracoes/${id}?user_id=${currentUser.id}`,{method:'DELETE'});
+    renderContractions();
+  }catch(e){showToast('Erro ao excluir contração.');}
 }
 
-function clearContractions() {
+async function clearContractions() {
   if (!confirm('Deseja limpar todo o histórico de contrações?')) return;
-  DB.set(`nn_cnt_${currentUser.id}`, []);
-  renderContractions();
+  if(!API_URL)return;
+  try{
+    await fetch(`${API_URL}/api/contracoes?user_id=${currentUser.id}`,{method:'DELETE'});
+    renderContractions();
+  }catch(e){showToast('Erro ao limpar contrações.');}
 }
 
 // ════ SINCRONIZACAO ════
@@ -2327,9 +2564,11 @@ async function syncUserData(){
 
 
 // ════ OTA — ATUALIZAÇÃO OVER THE AIR (via @capgo/capacitor-updater) ════
-const OTA_VERSION_KEY = 'ota_versao_instalada';
-const OTA_SKIP_KEY    = 'ota_skip_versao';
-const OTA_HASH_KEY    = 'ota_hash_local';
+const OTA_VERSION_KEY  = 'ota_versao_instalada';
+const OTA_SKIP_KEY     = 'ota_skip_versao';
+const OTA_HASH_KEY     = 'ota_hash_local';
+// Versão embutida neste bundle — usada para detectar reversão de OTA
+const APP_BUNDLE_VERSION = '1.4.4';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")
@@ -2343,12 +2582,11 @@ function compararVersao(a, b) {
   return false; // iguais
 }
 
-// Helper: tenta carregar o plugin CapacitorUpdater (só funciona em APK)
-async function _getUpdater() {
+// Helper: acessa o plugin CapacitorUpdater via bridge do Capacitor (funciona sem bundler)
+function _getUpdater() {
   try {
     if (!window.Capacitor || !window.Capacitor.isNativePlatform || !window.Capacitor.isNativePlatform()) return null;
-    const mod = await import('@capgo/capacitor-updater');
-    return mod.CapacitorUpdater || mod.default || null;
+    return (window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorUpdater) || null;
   } catch (e) {
     console.warn('[OTA] CapacitorUpdater indisponível:', e);
     return null;
@@ -2366,17 +2604,21 @@ async function verificarAtualizacao() {
     const dados = await res.json();
     const versaoServidor = dados.versao || '1.0.0';
     const hashServidor   = dados.hash   || '';
-    const versaoLocal    = localStorage.getItem(OTA_VERSION_KEY) || '0.0.0';
-    const hashLocal      = localStorage.getItem(OTA_HASH_KEY)    || '';
-    const skipVersao     = localStorage.getItem(OTA_SKIP_KEY)    || '';
+    let versaoLocal = localStorage.getItem(OTA_VERSION_KEY) || '0.0.0';
+    const hashLocal = localStorage.getItem(OTA_HASH_KEY)    || '';
+    const skipVersao = localStorage.getItem(OTA_SKIP_KEY)   || '';
 
-    // Primeira instalação: registra a versão atual sem mostrar modal
+    // Salva hash se não houver (primeira execução ou pós-revert), mas NÃO
+    // salva a versão do servidor como local — permite que a comparação rode.
     if (!hashLocal && hashServidor) {
       localStorage.setItem(OTA_HASH_KEY, hashServidor);
-      if (!localStorage.getItem(OTA_VERSION_KEY)) {
-        localStorage.setItem(OTA_VERSION_KEY, versaoServidor);
-      }
-      return;
+    }
+
+    // Detecta reversão de OTA: localStorage diz versão mais nova do que
+    // o código que está rodando agora → reset para a versão do bundle atual.
+    if (compararVersao(versaoLocal, APP_BUNDLE_VERSION)) {
+      versaoLocal = APP_BUNDLE_VERSION;
+      localStorage.setItem(OTA_VERSION_KEY, APP_BUNDLE_VERSION);
     }
 
     if (skipVersao && skipVersao === versaoServidor) return;
@@ -2485,7 +2727,7 @@ async function otaAtualizar() {
       if (verRes.ok) { const vd = await verRes.json(); hashNovo = vd.hash || ''; }
     } catch(_) {}
 
-    const Updater = await _getUpdater();
+    const Updater = _getUpdater();
 
     if (Updater) {
       // ─── Caminho NATIVO (APK) — usa @capgo/capacitor-updater ─────────
@@ -2555,18 +2797,12 @@ async function otaAtualizar() {
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('login').classList.contains('active'))doLogin();});
 seedData();
 
-// Notifica o CapacitorUpdater que a versão atual carregou OK
-// (sem isso, o plugin faz rollback pra versão anterior)
-(async function notifyReady(){
-  try {
-    if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
-      const mod = await import('@capgo/capacitor-updater');
-      if (mod && mod.CapacitorUpdater && mod.CapacitorUpdater.notifyAppReady) {
-        await mod.CapacitorUpdater.notifyAppReady();
-      }
-    }
-  } catch(_) { /* plugin não instalado ou modo browser */ }
-})();
+function _hideLoading(){
+  const ls = document.getElementById('loading-screen');
+  if(!ls) return;
+  ls.classList.add('hide');
+  setTimeout(() => { if(ls.parentNode) ls.parentNode.removeChild(ls); }, 450);
+}
 
 // Inicialização assíncrona: descobre URL pública e restaura sessão
 (async function init(){
@@ -2582,32 +2818,39 @@ seedData();
   // 4. Verifica atualizações OTA (após 1s — aparece na tela de login)
   setTimeout(verificarAtualizacao, 1000);
 
-  // 4. Tenta restaurar sessão salva
-  const savedSession=DB.get('nn_session');
-  if(savedSession && API_URL){
-    const res = await apiFetch(`/api/users/me?id=${savedSession}`);
-    if (res && res.status === 'success' && res.user) {
-      currentUser = res.user;
-      DB.set('nn_user_cache', currentUser);
-      goApp();
-      // Não precisa chamar syncUserData de novo — acabamos de sincronizar.
-      return;
-    }
-    if (res && res.status === 'error') {
-      // API respondeu mas o usuário não existe/está inativo → derruba sessão
-      DB.del('nn_session');
-      DB.del('nn_user_cache');
-      return;
-    }
-    // API não respondeu (sem internet): usa cache do último login bem-sucedido
+  // 5. Tenta restaurar sessão salva
+  const savedSession = DB.get('nn_session');
+  if(savedSession){
+    // Cache primeiro — restaura instantaneamente sem depender da rede
     const cached = DB.get('nn_user_cache');
     if(cached && cached.id === savedSession && cached.ativo){
       currentUser = cached;
+      _hideLoading();
       goApp();
-      // Tenta sincronizar em background (sem bloquear o init)
-      setTimeout(syncUserData, 5000);
+      // Valida em background (atualiza dados se o servidor estiver disponível)
+      if(API_URL) setTimeout(syncUserData, 2000);
+      return;
+    }
+    // Sem cache local: precisa da API para restaurar
+    if(API_URL){
+      const res = await apiFetch(`/api/users/me?id=${savedSession}`);
+      if(res && res.status === 'success' && res.user){
+        currentUser = res.user;
+        DB.set('nn_user_cache', currentUser);
+        _hideLoading();
+        goApp();
+        return;
+      }
+      if(res && res.status === 'error'){
+        // Servidor respondeu: usuário não existe ou inativo
+        DB.del('nn_session');
+        DB.del('nn_user_cache');
+      }
+      // null = sem rede → mostra login para o usuário fazer login manual
     }
   }
+  // Sem sessão salva ou sem rede sem cache: mostra tela de login
+  _hideLoading();
 })();
 // Atualiza URL pública a cada 5 minutos (caso o tunnel reinicie)
 setInterval(descobrirUrlPublica, 5 * 60 * 1000);
@@ -2615,6 +2858,14 @@ setInterval(descobrirUrlPublica, 5 * 60 * 1000);
 setInterval(() => { if (currentUser && currentUser.id) syncUserData(); }, 2 * 60 * 1000);
 setInterval(loadDicas, 60000);
 </script>
+
+<!-- ── LOADING SCREEN ── -->
+<div id="loading-screen">
+  <div class="loading-emoji">🤰</div>
+  <div class="loading-title">Doula Nalin Nazareth</div>
+  <div class="loading-sub">Carregando seu espaço...</div>
+  <div class="loading-dots"><span></span><span></span><span></span></div>
+</div>
 
 <!-- ── OTA UPDATE MODAL ── -->
 <div id="ota-modal">

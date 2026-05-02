@@ -96,7 +96,7 @@ def start_cloudflared_tunnel():
         print(f"[TUNNEL] Erro: {e}")
 
 CORS(app, resources={
-    r"/api/*": {"origins": "*", "methods": ["GET","POST","DELETE","OPTIONS"], "allow_headers": ["Content-Type","Authorization"]},
+    r"/api/*": {"origins": "*", "methods": ["GET","POST","PUT","DELETE","OPTIONS"], "allow_headers": ["Content-Type","Authorization"]},
     r"/versao_app": {"origins": "*"}, r"/server-info": {"origins": "*"},
     r"/ota/*": {"origins": "*"}, r"/uploads/*": {"origins": "*"}
 })
@@ -116,9 +116,16 @@ def handle_preflight():
     if request.method == 'OPTIONS':
         r = app.make_default_options_response()
         r.headers['Access-Control-Allow-Origin'] = '*'
-        r.headers['Access-Control-Allow-Methods'] = 'GET, POST, DELETE, OPTIONS'
+        r.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
         r.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
         return r
+
+@app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    return response
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -229,10 +236,15 @@ def ota_index():
     if request.method == 'OPTIONS': return '', 204
     return send_from_directory(WWW_DIR, 'index.html')
 
+@app.route('/admin', methods=['GET','OPTIONS'])
+@app.route('/admin.html', methods=['GET','OPTIONS'])
 @app.route('/ota/admin.html', methods=['GET','OPTIONS'])
 def ota_admin():
     if request.method == 'OPTIONS': return '', 204
-    return send_from_directory(WWW_DIR, 'admin.html')
+    resp = send_from_directory(WWW_DIR, 'admin.html')
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
+    resp.headers['Pragma'] = 'no-cache'
+    return resp
 
 @app.route('/ota/version.json', methods=['GET','OPTIONS'])
 def ota_version_json():
@@ -362,10 +374,29 @@ def save_conteudo():
     if 'id' in data and data['id']:
         db.execute('UPDATE conteudos SET titulo=?,categoria=?,subcategoria=?,emoji=?,descricao=?,duracao=?,paginas=?,url=?,cor=?,secao_id=?,ordem=? WHERE id=?',
                    (data['titulo'],data['categoria'],data['subcategoria'],data['emoji'],data['descricao'],data['duracao'],data['paginas'],data['url'],data['cor'],secao_id,ordem,data['id']))
+        db.commit(); return jsonify({"status":"success","id":int(data['id'])})
     else:
         db.execute('INSERT INTO conteudos (titulo,categoria,subcategoria,emoji,descricao,duracao,paginas,url,cor,secao_id,ordem) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
                    (data['titulo'],data['categoria'],data['subcategoria'],data['emoji'],data['descricao'],data['duracao'],data['paginas'],data['url'],data['cor'],secao_id,ordem))
-    db.commit(); return jsonify({"status":"success"})
+        db.commit()
+        new_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+        return jsonify({"status":"success","id":new_id})
+
+@app.route('/api/admin/conteudo/<int:cont_id>/capa', methods=['POST','OPTIONS'])
+@require_admin
+def upload_capa_conteudo(cont_id):
+    if request.method == 'OPTIONS': return '', 204
+    if 'capa' not in request.files: return jsonify({"status":"error","message":"Nenhuma imagem enviada."}), 400
+    capa = request.files['capa']
+    if not capa.filename: return jsonify({"status":"error","message":"Nenhum arquivo selecionado."}), 400
+    if not allowed_file(capa.filename): return jsonify({"status":"error","message":"Tipo não permitido. Use JPG, PNG ou WebP."}), 400
+    filename = f"capa_video_{cont_id}_" + secure_filename(capa.filename)
+    capa.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+    url_capa = f"/uploads/{filename}"
+    db = get_db()
+    db.execute('UPDATE conteudos SET capa=? WHERE id=?', (url_capa, cont_id))
+    db.commit()
+    return jsonify({"status":"success","url_capa":url_capa})
 
 @app.route('/api/conteudos/<int:cont_id>', methods=['DELETE'])
 @require_admin
@@ -396,8 +427,8 @@ def upload_ebook():
         titulo = request.form.get("titulo")
         if not titulo: return jsonify({"status":"error","message":"Título obrigatório."}), 400
         db = get_db()
-        db.execute("INSERT INTO ebooks (titulo,descricao,url_pdf,url_capa) VALUES (?,?,?,?)",
-                   (titulo, request.form.get("descricao",""), f"/uploads/{filename}", url_capa))
+        db.execute("INSERT INTO ebooks (titulo,descricao,categoria,url_pdf,url_capa) VALUES (?,?,?,?,?)",
+                   (titulo, request.form.get("descricao",""), request.form.get("categoria","Geral"), f"/uploads/{filename}", url_capa))
         db.commit(); return jsonify({"status":"success"})
     return jsonify({"status":"error","message":"Tipo de arquivo não permitido."}), 400
 
@@ -406,11 +437,73 @@ def list_ebooks():
     db = get_db()
     return jsonify([dict(e) for e in db.execute('SELECT * FROM ebooks ORDER BY criado_em DESC').fetchall()])
 
-@app.route('/api/ebooks/<int:ebook_id>', methods=['DELETE'])
+@app.route('/api/ebooks/<int:ebook_id>', methods=['PUT','DELETE','OPTIONS'])
 @require_admin
-def delete_ebook(ebook_id):
-    db = get_db(); db.execute('DELETE FROM ebooks WHERE id=?',(ebook_id,)); db.commit()
-    return jsonify({"status":"success"})
+def manage_ebook(ebook_id):
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    if request.method == 'DELETE':
+        db.execute('DELETE FROM ebooks WHERE id=?', (ebook_id,)); db.commit()
+        return jsonify({"status":"success"})
+    # PUT — atualiza metadados e opcionalmente a capa
+    if request.content_type and 'multipart' in request.content_type:
+        titulo = request.form.get('titulo','')
+        descricao = request.form.get('descricao','')
+        categoria = request.form.get('categoria','Geral')
+        capa = request.files.get('capa')
+        url_capa = None
+        if capa and allowed_file(capa.filename):
+            capa_filename = 'capa_eb_' + secure_filename(capa.filename)
+            capa.save(os.path.join(app.config['UPLOAD_FOLDER'], capa_filename))
+            url_capa = f'/uploads/{capa_filename}'
+        if url_capa:
+            db.execute('UPDATE ebooks SET titulo=?,descricao=?,categoria=?,url_capa=? WHERE id=?',
+                       (titulo, descricao, categoria, url_capa, ebook_id))
+        else:
+            db.execute('UPDATE ebooks SET titulo=?,descricao=?,categoria=? WHERE id=?',
+                       (titulo, descricao, categoria, ebook_id))
+    else:
+        data = request.json or {}
+        db.execute('UPDATE ebooks SET titulo=?,descricao=?,categoria=? WHERE id=?',
+                   (data.get('titulo',''), data.get('descricao',''), data.get('categoria','Geral'), ebook_id))
+    db.commit()
+    return jsonify({'status':'success'})
+
+@app.route('/api/admin/ebooks/update', methods=['POST','OPTIONS'])
+@require_admin
+def admin_update_ebook():
+    if request.method == 'OPTIONS': return '', 204
+    try:
+        db = get_db()
+        if request.content_type and 'multipart' in request.content_type:
+            ebook_id = request.form.get('id', type=int)
+            if not ebook_id: return jsonify({'status':'error','message':'ID ausente'}), 400
+            titulo = request.form.get('titulo','')
+            descricao = request.form.get('descricao','')
+            categoria = request.form.get('categoria','Geral')
+            capa = request.files.get('capa')
+            url_capa = None
+            if capa and allowed_file(capa.filename):
+                capa_filename = 'capa_eb_' + secure_filename(capa.filename)
+                capa.save(os.path.join(app.config['UPLOAD_FOLDER'], capa_filename))
+                url_capa = f'/uploads/{capa_filename}'
+            if url_capa:
+                db.execute('UPDATE ebooks SET titulo=?,descricao=?,categoria=?,url_capa=? WHERE id=?',
+                           (titulo, descricao, categoria, url_capa, ebook_id))
+            else:
+                db.execute('UPDATE ebooks SET titulo=?,descricao=?,categoria=? WHERE id=?',
+                           (titulo, descricao, categoria, ebook_id))
+        else:
+            data = request.json or {}
+            ebook_id = data.get('id')
+            if not ebook_id: return jsonify({'status':'error','message':'ID ausente'}), 400
+            db.execute('UPDATE ebooks SET titulo=?,descricao=?,categoria=? WHERE id=?',
+                       (data.get('titulo',''), data.get('descricao',''), data.get('categoria','Geral'), ebook_id))
+        db.commit()
+        return jsonify({'status':'success'})
+    except Exception as e:
+        print(f'[EBOOK UPDATE ERROR] {e}')
+        return jsonify({'status':'error','message':str(e)}), 500
 
 @app.route('/api/config', methods=['GET','OPTIONS'])
 def config():
@@ -483,26 +576,184 @@ def admin_dica_detail(dica_id):
 @app.route('/api/maternidade', methods=['GET','POST','OPTIONS'])
 def maternidade():
     if request.method == 'OPTIONS': return '', 204
-    db = get_db(); user_id = request.args.get('user_id') or (request.json.get('user_id') if request.json else None)
+    db = get_db()
     if request.method == 'GET':
-        try: mat = db.execute('SELECT * FROM maternidade WHERE user_id=?',(user_id,)).fetchone(); return jsonify(dict(mat) if mat else {})
+        user_id = request.args.get('user_id')
+        if not user_id: return jsonify({})
+        row = db.execute('SELECT dados_json FROM maternidade WHERE user_id=?',(int(user_id),)).fetchone()
+        if not row or not row['dados_json']: return jsonify({})
+        try: return jsonify(json.loads(row['dados_json']))
         except: return jsonify({})
+    data = request.json or {}
+    try: user_id = int(data.get('user_id', 0))
+    except: return jsonify({'status':'error'}), 400
+    if not user_id: return jsonify({'status':'error','message':'user_id obrigatório'}), 400
+    dados_str = json.dumps(data)
+    if db.execute('SELECT id FROM maternidade WHERE user_id=?',(user_id,)).fetchone():
+        db.execute('UPDATE maternidade SET dados_json=? WHERE user_id=?',(dados_str, user_id))
+    else:
+        db.execute('INSERT INTO maternidade (user_id,nome_maternidade,dados_json) VALUES (?,?,?)',
+                   (user_id, data.get('nome',''), dados_str))
+    db.commit(); return jsonify({'status':'success'})
+
+@app.route('/api/agenda', methods=['GET','POST','OPTIONS'])
+def agenda():
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    if request.method == 'GET':
+        user_id = request.args.get('user_id')
+        if not user_id: return jsonify([])
+        rows = db.execute('SELECT * FROM agenda WHERE user_id=? ORDER BY data_evento ASC, hora_evento ASC',(int(user_id),)).fetchall()
+        return jsonify([{'id':r['id'],'tipo':r['tipo'] or r['titulo'],'data':r['data_evento'],'hora':r['hora_evento'],'descricao':r['descricao']} for r in rows])
+    data = request.json or {}
+    try: user_id = int(data.get('user_id',0))
+    except: return jsonify({'status':'error'}), 400
+    tipo = data.get('tipo','')
+    db.execute('INSERT INTO agenda (user_id,titulo,descricao,data_evento,hora_evento,tipo) VALUES (?,?,?,?,?,?)',
+               (user_id, tipo, data.get('descricao',''), data.get('data',''), data.get('hora',''), tipo))
+    db.commit()
+    return jsonify({'status':'success','id': db.execute('SELECT last_insert_rowid()').fetchone()[0]})
+
+@app.route('/api/agenda/<int:item_id>', methods=['PUT','DELETE','OPTIONS'])
+def agenda_item(item_id):
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    if request.method == 'DELETE':
+        try: user_id = int(request.args.get('user_id',0))
+        except: return jsonify({'status':'error'}), 400
+        db.execute('DELETE FROM agenda WHERE id=? AND user_id=?',(item_id, user_id))
+        db.commit(); return jsonify({'status':'success'})
+    data = request.json or {}
+    try: user_id = int(data.get('user_id',0))
+    except: return jsonify({'status':'error'}), 400
+    tipo = data.get('tipo','')
+    db.execute('UPDATE agenda SET titulo=?,descricao=?,data_evento=?,hora_evento=?,tipo=? WHERE id=? AND user_id=?',
+               (tipo, data.get('descricao',''), data.get('data',''), data.get('hora',''), tipo, item_id, user_id))
+    db.commit(); return jsonify({'status':'success'})
+
+@app.route('/api/enxoval', methods=['GET','POST','OPTIONS'])
+def enxoval():
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    if request.method == 'GET':
+        user_id = request.args.get('user_id')
+        if not user_id: return jsonify([])
+        rows = db.execute('SELECT * FROM enxoval WHERE user_id=? ORDER BY criado_em ASC',(int(user_id),)).fetchall()
+        return jsonify([{'id':r['id'],'item':r['item'],'comprado':bool(r['comprado'])} for r in rows])
+    data = request.json or {}
+    try: user_id = int(data.get('user_id',0))
+    except: return jsonify({'status':'error'}), 400
+    db.execute('INSERT INTO enxoval (user_id,item,comprado) VALUES (?,?,0)',(user_id, data.get('item', data.get('nome',''))))
+    db.commit()
+    return jsonify({'status':'success','id': db.execute('SELECT last_insert_rowid()').fetchone()[0]})
+
+@app.route('/api/enxoval/<int:item_id>', methods=['PUT','DELETE','OPTIONS'])
+def enxoval_item(item_id):
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    if request.method == 'DELETE':
+        try: user_id = int(request.args.get('user_id',0))
+        except: return jsonify({'status':'error'}), 400
+        db.execute('DELETE FROM enxoval WHERE id=? AND user_id=?',(item_id, user_id))
+        db.commit(); return jsonify({'status':'success'})
+    data = request.json or {}
+    try: user_id = int(data.get('user_id',0))
+    except: return jsonify({'status':'error'}), 400
+    db.execute('UPDATE enxoval SET comprado=? WHERE id=? AND user_id=?',
+               (1 if data.get('comprado') else 0, item_id, user_id))
+    db.commit(); return jsonify({'status':'success'})
+
+@app.route('/api/contracoes', methods=['GET','POST','DELETE','OPTIONS'])
+def contracoes():
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    uid_raw = request.args.get('user_id') or (request.json.get('user_id') if request.json else None)
+    try: user_id = int(uid_raw or 0)
+    except: return jsonify({'status':'error'}), 400
+    if not user_id: return jsonify({'status':'error','message':'user_id obrigatório'}), 400
+    if request.method == 'GET':
+        rows = db.execute('SELECT * FROM contracoes WHERE user_id=? ORDER BY start_time DESC',(user_id,)).fetchall()
+        return jsonify([dict(r) for r in rows])
+    if request.method == 'DELETE':
+        db.execute('DELETE FROM contracoes WHERE user_id=?',(user_id,))
+        db.commit(); return jsonify({'status':'success'})
+    data = request.json or {}
+    db.execute('INSERT INTO contracoes (user_id,start_time,end_time,duration_sec,interval_min) VALUES (?,?,?,?,?)',
+               (user_id, data.get('start_time', data.get('start','')), data.get('end_time', data.get('end','')),
+                int(data.get('duration_sec', data.get('duration',0))), float(data.get('interval_min', data.get('interval',0)))))
+    db.commit()
+    return jsonify({'status':'success','id': db.execute('SELECT last_insert_rowid()').fetchone()[0]})
+
+@app.route('/api/contracoes/<int:cnt_id>', methods=['DELETE','OPTIONS'])
+def contracao_item(cnt_id):
+    if request.method == 'OPTIONS': return '', 204
+    try: user_id = int(request.args.get('user_id',0))
+    except: return jsonify({'status':'error'}), 400
+    db = get_db()
+    db.execute('DELETE FROM contracoes WHERE id=? AND user_id=?',(cnt_id, user_id))
+    db.commit(); return jsonify({'status':'success'})
+
+@app.route('/api/diario', methods=['GET','POST','OPTIONS'])
+def diario():
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    raw_id = request.args.get('user_id') or (request.json.get('user_id') if request.json else None)
+    if not raw_id: return jsonify({'status':'error','message':'user_id obrigatório'}), 400
+    try: user_id = int(raw_id)
+    except (ValueError, TypeError): return jsonify({'status':'error','message':'user_id inválido'}), 400
+    if request.method == 'GET':
+        rows = db.execute('SELECT * FROM diario WHERE user_id=? ORDER BY criado_em DESC', (user_id,)).fetchall()
+        return jsonify([dict(r) for r in rows])
     data = request.json
-    db.execute('INSERT OR REPLACE INTO maternidade (user_id,nome_maternidade,endereco,telefone,medico_nome,medico_telefone,plano_saude,numero_cartao,observacoes) VALUES (?,?,?,?,?,?,?,?,?)',
-               (data['user_id'],data.get('nome_maternidade',''),data.get('endereco',''),data.get('telefone',''),data.get('medico_nome',''),data.get('medico_telefone',''),data.get('plano_saude',''),data.get('numero_cartao',''),data.get('observacoes','')))
-    db.commit(); return jsonify({"status":"success"})
+    db.execute('INSERT INTO diario (user_id,txt,mood,semanas,data,dia) VALUES (?,?,?,?,?,?)',
+               (user_id, data.get('txt',''), data.get('mood',''), int(data.get('semanas',0)), data.get('data',''), data.get('dia','')))
+    db.commit()
+    entry_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+    return jsonify({'status':'success', 'id': entry_id})
+
+@app.route('/api/diario/<int:entry_id>', methods=['DELETE','PUT','OPTIONS'])
+def diario_entry(entry_id):
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    if request.method == 'DELETE':
+        raw_id = request.args.get('user_id')
+        if not raw_id: return jsonify({'status':'error','message':'user_id obrigatório'}), 400
+        try: user_id = int(raw_id)
+        except (ValueError, TypeError): return jsonify({'status':'error','message':'user_id inválido'}), 400
+        db.execute('DELETE FROM diario WHERE id=? AND user_id=?', (entry_id, user_id))
+        db.commit()
+        return jsonify({'status':'success'})
+    # PUT — editar texto da entrada
+    data = request.json or {}
+    try: user_id = int(data.get('user_id', 0))
+    except (ValueError, TypeError): return jsonify({'status':'error','message':'user_id inválido'}), 400
+    if not user_id: return jsonify({'status':'error','message':'user_id obrigatório'}), 400
+    db.execute('UPDATE diario SET txt=? WHERE id=? AND user_id=?', (data.get('txt',''), entry_id, user_id))
+    db.commit()
+    return jsonify({'status':'success'})
 
 @app.route('/api/plano-parto', methods=['GET','POST','OPTIONS'])
 def plano_parto():
     if request.method == 'OPTIONS': return '', 204
-    db = get_db(); user_id = request.args.get('user_id') or (request.json.get('user_id') if request.json else None)
+    db = get_db()
     if request.method == 'GET':
-        try: plano = db.execute('SELECT * FROM plano_parto WHERE user_id=?',(user_id,)).fetchone(); return jsonify(dict(plano) if plano else {})
+        user_id = request.args.get('user_id')
+        if not user_id: return jsonify({})
+        row = db.execute('SELECT dados_json FROM plano_parto WHERE user_id=?',(int(user_id),)).fetchone()
+        if not row or not row['dados_json']: return jsonify({})
+        try: return jsonify(json.loads(row['dados_json']))
         except: return jsonify({})
-    data = request.json
-    db.execute('INSERT OR REPLACE INTO plano_parto (user_id,tipo_parto,acompanhante,desejos,medos,posicoes_preferidas,musica_ambiente,iluminacao,outras_observacoes) VALUES (?,?,?,?,?,?,?,?,?)',
-               (data['user_id'],data.get('tipo_parto',''),data.get('acompanhante',''),data.get('desejos',''),data.get('medos',''),data.get('posicoes_preferidas',''),data.get('musica_ambiente',''),data.get('iluminacao',''),data.get('outras_observacoes','')))
-    db.commit(); return jsonify({"status":"success"})
+    data = request.json or {}
+    try: user_id = int(data.get('user_id',0))
+    except: return jsonify({'status':'error'}), 400
+    if not user_id: return jsonify({'status':'error','message':'user_id obrigatório'}), 400
+    dados_str = json.dumps(data)
+    if db.execute('SELECT id FROM plano_parto WHERE user_id=?',(user_id,)).fetchone():
+        db.execute('UPDATE plano_parto SET dados_json=? WHERE user_id=?',(dados_str, user_id))
+    else:
+        db.execute('INSERT INTO plano_parto (user_id,dados_json,acompanhante) VALUES (?,?,?)',
+                   (user_id, dados_str, data.get('acomp','')))
+    db.commit(); return jsonify({'status':'success'})
 
 @app.route('/api/admin/secoes', methods=['GET','POST','OPTIONS'])
 @require_admin
@@ -549,6 +800,28 @@ def secoes_publicas():
             result.append(s_dict)
         return jsonify(result)
     except: return jsonify([])
+
+@app.route('/api/comentarios', methods=['GET','POST','OPTIONS'])
+def video_comentarios():
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    if request.method == 'GET':
+        user_id = request.args.get('user_id')
+        conteudo_id = request.args.get('conteudo_id')
+        if not user_id: return jsonify([])
+        if conteudo_id:
+            row = db.execute('SELECT * FROM video_comentarios WHERE user_id=? AND conteudo_id=?',
+                             (int(user_id), int(conteudo_id))).fetchone()
+            return jsonify(dict(row) if row else {})
+        rows = db.execute('SELECT * FROM video_comentarios WHERE user_id=?', (int(user_id),)).fetchall()
+        return jsonify([dict(r) for r in rows])
+    data = request.json or {}
+    user_id = data.get('user_id'); conteudo_id = data.get('conteudo_id'); comentario = data.get('comentario','').strip()
+    if not user_id or not conteudo_id: return jsonify({'status':'error','message':'user_id e conteudo_id obrigatórios'}), 400
+    db.execute('INSERT OR REPLACE INTO video_comentarios (user_id,conteudo_id,comentario,atualizado_em) VALUES (?,?,?,CURRENT_TIMESTAMP)',
+               (int(user_id), int(conteudo_id), comentario))
+    db.commit()
+    return jsonify({'status':'success'})
 
 @app.route('/api/progresso', methods=['GET','POST','OPTIONS'])
 def video_progresso_endpoint():

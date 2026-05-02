@@ -1,6 +1,6 @@
 {
-  "versao": "1.1.3",
-  "data": "2026-04-30",
-  "notas": "testando",
-  "obrigatoria": false
+  "versao": "1.4.4",
+  "data": "2026-05-02",
+  "notas": "Player do vídeo sempre visível, correção de layout no Android, ebook salva corretamente.",
+  "obrigatoria": true
 }

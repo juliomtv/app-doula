@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-Process python *)",
+      "Bash(Stop-Process -Force)",
+      "Bash(Start-Sleep -Milliseconds 500)",
+      "Bash(Start-Process python *)",
+      "Bash(Start-Sleep -Seconds 2)",
+      "Bash(Invoke-WebRequest -Uri \"http://localhost:5000/ota/versao\" -UseBasicParsing)",
+      "Bash(Select-Object -ExpandProperty Content)"
+    ]
+  }
+}
