@@ -1,6 +1,6 @@
 {
-  "versao": "1.4.4",
+  "versao": "1.4.8",
   "data": "2026-05-02",
-  "notas": "Player do vídeo sempre visível, correção de layout no Android, ebook salva corretamente.",
+  "notas": "Correção da lista de agenda e posição do menu.",
   "obrigatoria": true
 }

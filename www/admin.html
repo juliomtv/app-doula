@@ -1350,46 +1350,45 @@ function uploadEbook() {
   if (!titulo) { document.getElementById('eb-err').textContent = 'Preencha o título.'; return; }
 
   if (editingEbookId) {
-    // Modo edição — usa PUT /api/ebooks/{id} (compatível com todas as versões do backend)
-    const token = getAdminToken();
-    let p;
-    if (selectedCapa) {
-      const fd = new FormData();
-      fd.append('titulo', titulo); fd.append('descricao', descricao); fd.append('categoria', categoria);
-      fd.append('capa', selectedCapa);
-      p = fetch(`${API_URL}/api/ebooks/${editingEbookId}`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: fd
-      }).then(r => { if (!r.ok) return r.json().then(d => { throw new Error(d.message || 'Erro HTTP ' + r.status); }); return r.json(); });
-    } else {
-      p = apiFetch(`/api/ebooks/${editingEbookId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ titulo, descricao, categoria })
-      });
-    }
-    p.then(res => {
-      if (res && res.status === 'success') {
-        showToastA('Atualizado!');
+    // Modo edição — FormData para o mesmo endpoint de criação (sem PUT, sem CORS issues)
+    console.log('[EBOOK EDIT] editingEbookId:', editingEbookId, '| tipo:', typeof editingEbookId, '| categoria:', categoria);
+    const fd = new FormData();
+    fd.append('ebook_id', String(editingEbookId));
+    fd.append('titulo', titulo);
+    fd.append('descricao', descricao);
+    fd.append('categoria', categoria || 'Geral');
+    if (selectedCapa) fd.append('capa', selectedCapa);
+    document.getElementById('eb-loading').style.display = 'block';
+    document.getElementById('eb-submit').disabled = true;
+    fetch(`${API_URL}/api/admin/upload_ebook`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${getAdminToken()}` },
+      body: fd
+    }).then(r => r.json()).then(data => {
+      document.getElementById('eb-loading').style.display = 'none';
+      document.getElementById('eb-submit').disabled = false;
+      if (data.status === 'success') {
+        showToastA('Atualizado! ✅');
         closeModal('modal-ebook');
         loadEbooks();
-      } else { 
-        console.error('[EBOOK SAVE ERROR]', res);
-        document.getElementById('eb-err').textContent = 'Erro ao salvar: ' + (res && res.message ? res.message : 'verifique o servidor.'); 
+      } else {
+        document.getElementById('eb-err').textContent = data.message || 'Erro ao salvar.';
       }
-    }).catch((err) => { 
-      console.error('[EBOOK FETCH ERROR]', err);
-      document.getElementById('eb-err').textContent = 'Erro ao salvar: ' + (err.message || 'Erro de conexão.'); 
+    }).catch(err => {
+      document.getElementById('eb-loading').style.display = 'none';
+      document.getElementById('eb-submit').disabled = false;
+      document.getElementById('eb-err').textContent = 'Erro: ' + err.message;
     });
     return;
   }
 
   // Modo criação — FormData POST
+  console.log('[EBOOK CREATE] titulo:', titulo, '| categoria:', categoria);
   if (!selectedFile) { document.getElementById('eb-err').textContent = 'Selecione o arquivo PDF.'; return; }
   const formData = new FormData();
   formData.append('titulo', titulo);
   formData.append('descricao', descricao);
-  formData.append('categoria', categoria);
+  formData.append('categoria', categoria || 'Geral');
   formData.append('file', selectedFile);
   if (selectedCapa) formData.append('capa', selectedCapa);
 

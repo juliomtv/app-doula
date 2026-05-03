@@ -258,6 +258,9 @@ textarea.dta:focus{border-color:var(--rose);}
 .entry-edit-btns{display:flex;gap:8px;margin-top:8px;}
 .diary-refresh{background:none;border:1.5px solid var(--rose-pale);color:var(--rose);border-radius:50px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;}
 
+/* ══════════════════════ AGENDA ══════════════════════ */
+#agenda .scroll{overflow-y:auto;flex:1;}
+
 /* ══════════════════════ PERFIL ══════════════════════ */
 #perfil .scroll{overflow-y:auto;flex:1;}
 .perf-hero{background:linear-gradient(160deg,var(--rose-pale),var(--cream));padding:16px 22px 28px;text-align:center;}
@@ -451,11 +454,6 @@ textarea.dta:focus{border-color:var(--rose);}
         <div class="player-meta" id="player-meta"></div>
         <button class="player-check-btn" id="player-check-btn" onclick="marcarAtualAssistido()">✓ Marcar como assistido</button>
         <button class="player-fullscreen-btn" onclick="telaCheia()">⛶ Tela cheia</button>
-      </div>
-      <div class="player-anotacao-area" id="player-anotacao-area" style="display:none;">
-        <div class="player-anotacao-label">✏️ Minha anotação</div>
-        <textarea class="player-anotacao-txt" id="player-anotacao-txt" placeholder="Escreva sua anotação sobre este vídeo..."></textarea>
-        <button class="player-anotacao-salvar" id="player-anotacao-salvar" onclick="salvarAnotacaoVideo()">Salvar anotação</button>
       </div>
     </div>
     <div class="curso-sidebar">
@@ -1105,7 +1103,8 @@ async function renderHome(){
 
   // Exibir o próximo compromisso da agenda (via servidor)
   try {
-    const compromissos = (await apiFetch(`/api/agenda?user_id=${u.id}`) || [])
+    const _rawHome=await apiFetch(`/api/agenda?user_id=${u.id}`);
+    const compromissos = (Array.isArray(_rawHome) ? _rawHome : [])
       .filter(c => new Date(c.data + 'T' + (c.hora || '00:00')) >= new Date())
       .sort((a, b) => new Date(a.data + 'T' + (a.hora||'00:00')) - new Date(b.data + 'T' + (b.hora||'00:00')));
     const nextComp = compromissos[0];
@@ -1295,9 +1294,6 @@ async function selecionarVideo(conteudoId, url, titulo, duracao, capa) {
   const playerTitulo = document.getElementById('player-titulo');
   const playerMeta = document.getElementById('player-meta');
   const playerBtn = document.getElementById('player-check-btn');
-  const anotacaoArea = document.getElementById('player-anotacao-area');
-  const anotacaoTxt = document.getElementById('player-anotacao-txt');
-  const anotacaoBtn = document.getElementById('player-anotacao-salvar');
   if (!playerArea) return;
 
   // Montar player — <video> com HLS do Cloudflare Stream (reproduz dentro do app)
@@ -1332,14 +1328,6 @@ async function selecionarVideo(conteudoId, url, titulo, duracao, capa) {
     playerBtn.disabled = !!jaAssistido;
   }
 
-  // Área de anotação
-  if (anotacaoArea && anotacaoTxt && currentUser) {
-    anotacaoArea.style.display = 'block';
-    anotacaoTxt.value = '';
-    if (anotacaoBtn) { anotacaoBtn.textContent = 'Salvar anotação'; anotacaoBtn.disabled = false; }
-    const nota = await apiFetch(`/api/comentarios?user_id=${currentUser.id}&conteudo_id=${conteudoId}`);
-    if (nota && nota.comentario) anotacaoTxt.value = nota.comentario;
-  }
 }
 
 function telaCheia() {
@@ -2022,7 +2010,10 @@ async function renderAgenda(){
   const list=document.getElementById('agenda-list');
   list.innerHTML='<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Carregando... 📅</div>';
   try{
-    const compromissos=await apiFetch(`/api/agenda?user_id=${currentUser.id}`) || [];
+    const _rawAgenda=await apiFetch(`/api/agenda?user_id=${currentUser.id}`);
+    const compromissos=Array.isArray(_rawAgenda) ? _rawAgenda : [];
+    // Pede permissão e agenda notificações sem bloquear a renderização
+    if(compromissos.length) pedirPermissaoNotificacao().then(ok=>{ if(ok) agendarNotificacoesAgenda(compromissos); });
     list.innerHTML='';
     if(!compromissos.length){list.innerHTML='<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Nenhum compromisso agendado.<br>Clique em "+ Adicionar Compromisso" para criar um! 📅</div>';return;}
     compromissos.forEach(c=>{
@@ -2038,8 +2029,8 @@ async function renderAgenda(){
         </div>
         <button style="background:var(--err);color:white;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:12px;" onclick="deleteAgenda(${c.id})">✕</button>
       </div>`;
-      div.querySelector('div > div > div:first-child').textContent=`${c.tipo} • ${c.hora}`;
-      div.querySelector('div > div > div:last-child').textContent=c.descricao;
+      div.querySelector('div > div > div > div:first-child').textContent=`${c.tipo} • ${c.hora}`;
+      div.querySelector('div > div > div > div:last-child').textContent=c.descricao||'';
       list.appendChild(div);
     });
   }catch(e){
@@ -2542,6 +2533,52 @@ async function clearContractions() {
   }catch(e){showToast('Erro ao limpar contrações.');}
 }
 
+// ════ NOTIFICAÇÕES LOCAIS ════
+function _LN() {
+  return window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.LocalNotifications
+    ? Capacitor.Plugins.LocalNotifications : null;
+}
+
+async function pedirPermissaoNotificacao() {
+  const LN = _LN(); if (!LN) return false;
+  try {
+    const { display: atual } = await LN.checkPermissions();
+    if (atual === 'granted') return true;
+    if (atual === 'denied') return false;
+    const { display } = await LN.requestPermissions();
+    return display === 'granted';
+  } catch(e) { return false; }
+}
+
+async function agendarNotificacoesAgenda(compromissos) {
+  const LN = _LN(); if (!LN) return;
+  try {
+    const pending = await LN.getPending();
+    if (pending.notifications?.length) await LN.cancel({ notifications: pending.notifications });
+    const agora = new Date();
+    const notifs = [];
+    compromissos.forEach(c => {
+      const hora = c.hora || '09:00';
+      const eventDt = new Date(`${c.data}T${hora}`);
+      const dt1d = new Date(eventDt.getTime() - 86400000);
+      if (dt1d > agora) notifs.push({
+        id: c.id * 10, title: 'Lembrete de compromisso',
+        body: `${c.tipo} amanhã às ${hora}`,
+        schedule: { at: dt1d, allowWhileIdle: true },
+        sound: null, attachments: null, actionTypeId: '', extra: null
+      });
+      const dt1h = new Date(eventDt.getTime() - 3600000);
+      if (dt1h > agora) notifs.push({
+        id: c.id * 10 + 1, title: 'Compromisso em 1 hora',
+        body: `${c.tipo} às ${hora}`,
+        schedule: { at: dt1h, allowWhileIdle: true },
+        sound: null, attachments: null, actionTypeId: '', extra: null
+      });
+    });
+    if (notifs.length) await LN.schedule({ notifications: notifs });
+  } catch(e) { console.error('[NOTIF]', e); }
+}
+
 // ════ SINCRONIZACAO ════
 async function syncUserData(){
   if(!currentUser || !currentUser.id) return;
@@ -2568,7 +2605,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.4.4';
+const APP_BUNDLE_VERSION = '1.4.8';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")

@@ -113,6 +113,9 @@ def get_db():
 
 @app.before_request
 def handle_preflight():
+    if request.method != 'OPTIONS':
+        import sys
+        print(f">> REQUEST: {request.method} {request.path}", flush=True, file=sys.stderr)
     if request.method == 'OPTIONS':
         r = app.make_default_options_response()
         r.headers['Access-Control-Allow-Origin'] = '*'
@@ -354,6 +357,16 @@ def toggle_user(user_id):
     db = get_db(); db.execute('UPDATE users SET ativo = NOT ativo WHERE id = ?',(user_id,)); db.commit()
     return jsonify({"status":"success"})
 
+@app.route('/api/users/me', methods=['GET', 'OPTIONS'])
+def users_me():
+    if request.method == 'OPTIONS': return '', 204
+    user_id = request.args.get('id', type=int)
+    if not user_id: return jsonify({'status': 'error', 'message': 'ID ausente'}), 400
+    db = get_db()
+    user = db.execute('SELECT * FROM users WHERE id=? AND ativo=1', (user_id,)).fetchone()
+    if not user: return jsonify({'status': 'error', 'message': 'Não encontrado'}), 404
+    return jsonify({'status': 'success', 'user': dict(user)})
+
 @app.route('/api/conteudos', methods=['GET'])
 def list_conteudos():
     db = get_db()
@@ -413,24 +426,53 @@ def toggle_conteudo(cont_id):
 @app.route("/api/admin/upload_ebook", methods=["POST"])
 @require_admin
 def upload_ebook():
-    if "file" not in request.files: return jsonify({"status":"error","message":"Nenhum arquivo enviado."}), 400
-    file = request.files["file"]; capa = request.files.get("capa")
-    if file.filename == "": return jsonify({"status":"error","message":"Nenhum arquivo selecionado."}), 400
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-        url_capa = None
-        if capa and allowed_file(capa.filename):
-            capa_filename = "capa_" + secure_filename(capa.filename)
-            capa.save(os.path.join(app.config["UPLOAD_FOLDER"], capa_filename))
-            url_capa = f"/uploads/{capa_filename}"
-        titulo = request.form.get("titulo")
-        if not titulo: return jsonify({"status":"error","message":"Título obrigatório."}), 400
-        db = get_db()
-        db.execute("INSERT INTO ebooks (titulo,descricao,categoria,url_pdf,url_capa) VALUES (?,?,?,?,?)",
-                   (titulo, request.form.get("descricao",""), request.form.get("categoria","Geral") or "Geral", f"/uploads/{filename}", url_capa))
-        db.commit(); return jsonify({"status":"success"})
-    return jsonify({"status":"error","message":"Tipo de arquivo não permitido."}), 400
+    import sys
+    print(f"\n[EBOOK] form_keys={list(request.form.keys())}", flush=True, file=sys.stderr)
+    print(f"[EBOOK] form_data={dict(request.form)}", flush=True, file=sys.stderr)
+    print(f"[EBOOK] files={list(request.files.keys())}", flush=True, file=sys.stderr)
+
+    titulo = (request.form.get("titulo") or "").strip()
+    if not titulo: return jsonify({"status":"error","message":"Título obrigatório."}), 400
+    descricao = request.form.get("descricao","")
+    categoria = (request.form.get("categoria") or "").strip() or "Geral"
+    capa = request.files.get("capa")
+    db = get_db()
+
+    url_capa = None
+    if capa and capa.filename and allowed_file(capa.filename):
+        capa_filename = "capa_" + secure_filename(capa.filename)
+        capa.save(os.path.join(app.config["UPLOAD_FOLDER"], capa_filename))
+        url_capa = f"/uploads/{capa_filename}"
+
+    # Se vier ebook_id no form → é EDIÇÃO
+    ebook_id_raw = request.form.get("ebook_id", "")
+    import sys
+    print(f"[EBOOK] ebook_id_raw={repr(ebook_id_raw)}", flush=True, file=sys.stderr)
+    try:
+        ebook_id = int(ebook_id_raw) if ebook_id_raw.strip() else None
+    except (ValueError, TypeError):
+        ebook_id = None
+    print(f"[EBOOK] ebook_id={ebook_id}, titulo={repr(titulo)}, categoria={repr(categoria)}", flush=True, file=sys.stderr)
+    if ebook_id:
+        if url_capa:
+            db.execute("UPDATE ebooks SET titulo=?,descricao=?,categoria=?,url_capa=? WHERE id=?",
+                       (titulo, descricao, categoria, url_capa, ebook_id))
+        else:
+            db.execute("UPDATE ebooks SET titulo=?,descricao=?,categoria=? WHERE id=?",
+                       (titulo, descricao, categoria, ebook_id))
+        db.commit()
+        return jsonify({"status":"success"})
+
+    # Sem ebook_id → é CRIAÇÃO
+    file = request.files.get("file")
+    if not file or not file.filename: return jsonify({"status":"error","message":"Nenhum arquivo enviado."}), 400
+    if not allowed_file(file.filename): return jsonify({"status":"error","message":"Tipo de arquivo não permitido."}), 400
+    filename = secure_filename(file.filename)
+    file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+    db.execute("INSERT INTO ebooks (titulo,descricao,categoria,url_pdf,url_capa) VALUES (?,?,?,?,?)",
+               (titulo, descricao, categoria, f"/uploads/{filename}", url_capa))
+    db.commit()
+    return jsonify({"status":"success"})
 
 @app.route('/api/ebooks', methods=['GET'])
 def list_ebooks():
@@ -603,7 +645,11 @@ def agenda():
     if request.method == 'GET':
         user_id = request.args.get('user_id')
         if not user_id: return jsonify([])
-        rows = db.execute('SELECT * FROM agenda WHERE user_id=? ORDER BY data_evento ASC, hora_evento ASC',(int(user_id),)).fetchall()
+        uid = int(user_id)
+        today = datetime.now().strftime('%Y-%m-%d')
+        db.execute('DELETE FROM agenda WHERE user_id=? AND data_evento < ?', (uid, today))
+        db.commit()
+        rows = db.execute('SELECT * FROM agenda WHERE user_id=? ORDER BY data_evento ASC, hora_evento ASC', (uid,)).fetchall()
         return jsonify([{'id':r['id'],'tipo':r['tipo'] or r['titulo'],'data':r['data_evento'],'hora':r['hora_evento'],'descricao':r['descricao']} for r in rows])
     data = request.json or {}
     try: user_id = int(data.get('user_id',0))
