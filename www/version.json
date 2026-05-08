@@ -1,6 +1,6 @@
 {
-  "versao": "1.4.8",
-  "data": "2026-05-02",
-  "notas": "Correção da lista de agenda e posição do menu.",
+  "versao": "1.5.4",
+  "data": "2026-05-05",
+  "notas": "Troca de senha no primeiro login. Botão esqueceu a senha. Cálculo automático de semanas pela DPP.",
   "obrigatoria": true
 }

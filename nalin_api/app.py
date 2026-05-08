@@ -14,6 +14,45 @@ import jwt
 from datetime import datetime, timezone, timedelta
 from functools import wraps
 
+# ── FIREBASE ADMIN ────────────────────────────────────────────────────────────
+try:
+    import firebase_admin
+    from firebase_admin import credentials as fb_credentials, messaging as fb_messaging
+    _SA_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'firebase-service-account.json')
+    if os.path.exists(_SA_PATH):
+        firebase_admin.initialize_app(fb_credentials.Certificate(_SA_PATH))
+        FCM_OK = True
+        print('[FCM] Firebase inicializado com sucesso.')
+    else:
+        FCM_OK = False
+        print('[FCM] firebase-service-account.json não encontrado.')
+except Exception as _e:
+    FCM_OK = False
+    print(f'[FCM] Erro ao inicializar Firebase: {_e}')
+
+def fcm_send(tokens, titulo, mensagem):
+    if not FCM_OK or not tokens: return
+    tokens = [t for t in tokens if t]
+    if not tokens: return
+    try:
+        if len(tokens) == 1:
+            fb_messaging.send(fb_messaging.Message(
+                notification=fb_messaging.Notification(title=titulo, body=mensagem),
+                token=tokens[0],
+                android=fb_messaging.AndroidConfig(priority='high',
+                    notification=fb_messaging.AndroidNotification(channel_id='doula_notif', sound='default'))
+            ))
+        else:
+            fb_messaging.send_each_for_multicast(fb_messaging.MulticastMessage(
+                notification=fb_messaging.Notification(title=titulo, body=mensagem),
+                tokens=tokens,
+                android=fb_messaging.AndroidConfig(priority='high',
+                    notification=fb_messaging.AndroidNotification(channel_id='doula_notif', sound='default'))
+            ))
+        print(f'[FCM] Enviado para {len(tokens)} dispositivo(s).')
+    except Exception as e:
+        print(f'[FCM] Erro ao enviar: {e}')
+
 app = Flask(__name__)
 
 # ── SEGURANÇA ────────────────────────────────────────────────────────────────
@@ -77,21 +116,21 @@ def get_local_ip():
 
 ip_local = get_local_ip()
 base_url = f"http://{ip_local}:5000"
-tunnel_url = None
+TUNNEL_FIXO = 'https://doulanalinnazareth.com'
+tunnel_url = TUNNEL_FIXO
 
 def start_cloudflared_tunnel():
-    global tunnel_url
     try:
         check = subprocess.run(['cloudflared', '--version'], capture_output=True, text=True)
-        if check.returncode != 0: return
-        proc = subprocess.Popen(['cloudflared', 'tunnel', '--url', 'http://localhost:5000'],
-                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
-        for line in proc.stdout:
-            match = re.search(r'https://[a-zA-Z0-9\-]+\.trycloudflare\.com', line)
-            if match:
-                tunnel_url = match.group(0)
-                print(f"\n{'='*60}\n 🌍 URL PÚBLICA: {tunnel_url}\n{'='*60}\n")
-                break
+        if check.returncode != 0:
+            print('[TUNNEL] cloudflared não encontrado.')
+            return
+        print(f"\n{'='*60}\n 🌍 URL PÚBLICA: {TUNNEL_FIXO}\n{'='*60}\n")
+        subprocess.Popen(
+            ['cloudflared', 'tunnel', '--config',
+             os.path.expanduser('~/.cloudflared/config.yml'), 'run', 'nalin-doula'],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
     except Exception as e:
         print(f"[TUNNEL] Erro: {e}")
 
@@ -234,6 +273,11 @@ def ota_bundle_zip():
         download_name='bundle.zip'
     )
 
+@app.route('/', methods=['GET'])
+@app.route('/index.html', methods=['GET'])
+def serve_index():
+    return send_from_directory(WWW_DIR, 'index.html')
+
 @app.route('/ota/index.html', methods=['GET','OPTIONS'])
 def ota_index():
     if request.method == 'OPTIONS': return '', 204
@@ -258,6 +302,31 @@ def ota_version_json():
 def versao_app():
     if request.method == 'OPTIONS': return '', 204
     return jsonify({"versao_cliente":"1.1","versao_admin":"1.1"})
+
+# ── PWA ──────────────────────────────────────────────────────────────────────
+@app.route('/', methods=['GET'])
+@app.route('/app', methods=['GET'])
+@app.route('/app.html', methods=['GET'])
+def pwa_index():
+    resp = send_from_directory(WWW_DIR, 'index.html')
+    resp.headers['Cache-Control'] = 'no-store'
+    return resp
+
+@app.route('/manifest.json', methods=['GET'])
+def pwa_manifest():
+    return send_from_directory(WWW_DIR, 'manifest.json', mimetype='application/manifest+json')
+
+@app.route('/sw.js', methods=['GET'])
+def pwa_sw():
+    resp = send_from_directory(WWW_DIR, 'sw.js', mimetype='application/javascript')
+    resp.headers['Service-Worker-Allowed'] = '/'
+    resp.headers['Cache-Control'] = 'no-store'
+    return resp
+
+@app.route('/icons/<path:filename>', methods=['GET'])
+def pwa_icons(filename):
+    icons_dir = os.path.join(WWW_DIR, 'icons')
+    return send_from_directory(icons_dir, filename)
 
 @app.route('/api/pdf/temp', methods=['POST','OPTIONS'])
 def pdf_temp_upload():
@@ -348,14 +417,137 @@ def save_user():
         if data.get('senha'): data['senha'] = hash_password(data['senha'])
         values = [data.get(f) for f in fields]
         cursor = db.execute(f"INSERT INTO users ({','.join(fields)}) VALUES ({','.join(['?']*len(fields))})", tuple(values))
+        # Marca senha como provisória para forçar troca no primeiro login
+        db.execute('UPDATE users SET senha_provisoria=1 WHERE id=?', (cursor.lastrowid,))
         db.execute('INSERT INTO logs_atividade (user_id,acao) VALUES (?,?)',(cursor.lastrowid,'Nova doulanda cadastrada'))
     db.commit(); return jsonify({"status":"success"})
+
+@app.route('/api/users/change-password', methods=['POST', 'OPTIONS'])
+def user_change_password():
+    if request.method == 'OPTIONS': return '', 204
+    data = request.json or {}
+    user_id = data.get('user_id')
+    nova_senha = data.get('nova_senha', '').strip()
+    if not user_id or not nova_senha:
+        return jsonify({"status":"error","message":"Dados incompletos."}), 400
+    if len(nova_senha) < 6:
+        return jsonify({"status":"error","message":"A senha deve ter pelo menos 6 caracteres."}), 400
+    db = get_db()
+    db.execute('UPDATE users SET senha=?, senha_provisoria=0 WHERE id=?', (hash_password(nova_senha), user_id))
+    db.commit()
+    return jsonify({"status":"success"})
+
+@app.route('/api/admin/users/<int:user_id>/reset-senha', methods=['POST', 'OPTIONS'])
+@require_admin
+def admin_reset_senha(user_id):
+    if request.method == 'OPTIONS': return '', 204
+    data = request.json or {}
+    nova_senha = data.get('nova_senha', '').strip()
+    if not nova_senha:
+        return jsonify({"status":"error","message":"Informe a nova senha."}), 400
+    db = get_db()
+    db.execute('UPDATE users SET senha=?, senha_provisoria=1 WHERE id=?', (hash_password(nova_senha), user_id))
+    db.commit()
+    return jsonify({"status":"success"})
+
+@app.route('/api/users/<int:user_id>', methods=['DELETE', 'OPTIONS'])
+@require_admin
+def delete_user(user_id):
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    db.execute('DELETE FROM users WHERE id=?', (user_id,))
+    db.commit()
+    return jsonify({"status":"success"})
 
 @app.route('/api/users/<int:user_id>/toggle', methods=['POST'])
 @require_admin
 def toggle_user(user_id):
     db = get_db(); db.execute('UPDATE users SET ativo = NOT ativo WHERE id = ?',(user_id,)); db.commit()
     return jsonify({"status":"success"})
+
+@app.route('/api/admin/users/<int:user_id>/acesso', methods=['POST', 'OPTIONS'])
+@require_admin
+def toggle_acesso(user_id):
+    if request.method == 'OPTIONS': return '', 204
+    data = request.json or {}
+    campo = data.get('campo')
+    if campo not in ('acesso_videos', 'acesso_ebooks'):
+        return jsonify({'status': 'error', 'message': 'Campo inválido'}), 400
+    valor = 1 if data.get('valor') else 0
+    db = get_db()
+    db.execute(f'UPDATE users SET {campo}=? WHERE id=?', (valor, user_id))
+    db.commit()
+    return jsonify({'status': 'success'})
+
+# ── FCM TOKEN ────────────────────────────────────────────────────────────────
+@app.route('/api/users/fcm_token', methods=['POST', 'OPTIONS'])
+def save_fcm_token():
+    if request.method == 'OPTIONS': return '', 204
+    data = request.json or {}
+    user_id = data.get('user_id')
+    token = (data.get('token') or '').strip()
+    if not user_id or not token: return jsonify({'status': 'error'}), 400
+    get_db().execute('UPDATE users SET fcm_token=? WHERE id=?', (token, user_id))
+    get_db().commit()
+    return jsonify({'status': 'success'})
+
+# ── NOTIFICAÇÕES ──────────────────────────────────────────────────────────────
+@app.route('/api/notificacoes', methods=['GET', 'OPTIONS'])
+def get_notificacoes():
+    if request.method == 'OPTIONS': return '', 204
+    user_id = request.args.get('user_id', type=int)
+    if not user_id: return jsonify([])
+    db = get_db()
+    rows = db.execute(
+        'SELECT * FROM notificacoes WHERE user_id=? ORDER BY criado_em DESC LIMIT 50', (user_id,)
+    ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/notificacoes/lidas', methods=['POST', 'OPTIONS'])
+def marcar_lidas():
+    if request.method == 'OPTIONS': return '', 204
+    data = request.json or {}
+    user_id = data.get('user_id')
+    if not user_id: return jsonify({'status': 'error'}), 400
+    get_db().execute('UPDATE notificacoes SET lida=1 WHERE user_id=?', (user_id,))
+    get_db().commit()
+    return jsonify({'status': 'success'})
+
+@app.route('/api/admin/notificacoes', methods=['POST', 'OPTIONS'])
+@require_admin
+def admin_send_notificacao():
+    if request.method == 'OPTIONS': return '', 204
+    data = request.json or {}
+    titulo  = (data.get('titulo') or '').strip()
+    mensagem = (data.get('mensagem') or '').strip()
+    user_id  = data.get('user_id')  # None = todas
+    if not titulo or not mensagem:
+        return jsonify({'status': 'error', 'message': 'Título e mensagem obrigatórios'}), 400
+    db = get_db()
+    if user_id:
+        user = db.execute('SELECT id, fcm_token FROM users WHERE id=? AND ativo=1', (user_id,)).fetchone()
+        if not user: return jsonify({'status': 'error', 'message': 'Usuária não encontrada'}), 404
+        db.execute('INSERT INTO notificacoes (user_id,titulo,mensagem) VALUES (?,?,?)', (user_id, titulo, mensagem))
+        db.commit()
+        fcm_send([user['fcm_token']], titulo, mensagem)
+    else:
+        users = db.execute('SELECT id, fcm_token FROM users WHERE ativo=1').fetchall()
+        for u in users:
+            db.execute('INSERT INTO notificacoes (user_id,titulo,mensagem) VALUES (?,?,?)', (u['id'], titulo, mensagem))
+        db.commit()
+        fcm_send([u['fcm_token'] for u in users], titulo, mensagem)
+    return jsonify({'status': 'success', 'enviado_para': user_id or 'todas'})
+
+@app.route('/api/admin/notificacoes', methods=['GET', 'OPTIONS'])
+@require_admin
+def admin_list_notificacoes():
+    if request.method == 'OPTIONS': return '', 204
+    rows = get_db().execute(
+        '''SELECT n.*, u.nome as user_nome FROM notificacoes n
+           LEFT JOIN users u ON n.user_id = u.id
+           ORDER BY n.criado_em DESC LIMIT 100'''
+    ).fetchall()
+    return jsonify([dict(r) for r in rows])
 
 @app.route('/api/users/me', methods=['GET', 'OPTIONS'])
 def users_me():
@@ -908,7 +1100,38 @@ def admin_progresso_usuario(user_id):
         return jsonify({'total_videos':total,'assistidos':assistidos,'percentual_geral':round((assistidos/total*100) if total>0 else 0),'detalhes':[dict(r) for r in rows]})
     except: return jsonify({'total_videos':0,'assistidos':0,'percentual_geral':0,'detalhes':[]})
 
+def _gerar_icones_pwa():
+    """Gera ícones PNG simples para o PWA usando apenas stdlib."""
+    import struct, zlib, math
+    def _png(path, size):
+        if os.path.exists(path): return
+        cx = cy = (size - 1) / 2
+        r_circ = size * 0.40
+        rows = bytearray()
+        for y in range(size):
+            rows.append(0)  # filtro PNG
+            for x in range(size):
+                if math.hypot(x - cx, y - cy) < r_circ:
+                    rows += b'\xfb\xf7\xf4'  # cream #FBF7F4
+                else:
+                    rows += b'\xc9\x90\x7a'  # rose  #C9907A
+        def chunk(t, d):
+            c = t + d
+            return struct.pack('>I', len(d)) + c + struct.pack('>I', zlib.crc32(c) & 0xFFFFFFFF)
+        png = (b'\x89PNG\r\n\x1a\n'
+               + chunk(b'IHDR', struct.pack('>IIBBBBB', size, size, 8, 2, 0, 0, 0))
+               + chunk(b'IDAT', zlib.compress(bytes(rows), 6))
+               + chunk(b'IEND', b''))
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'wb') as f: f.write(png)
+        print(f'[PWA] Ícone gerado: {path}')
+    icons = os.path.join(WWW_DIR, 'icons')
+    _png(os.path.join(icons, 'icon-192.png'), 192)
+    _png(os.path.join(icons, 'icon-512.png'), 512)
+    _png(os.path.join(icons, 'icon-180.png'), 180)
+
 if __name__ == '__main__':
+    _gerar_icones_pwa()
     init_db()
     try:
         from migrate_db import migrate

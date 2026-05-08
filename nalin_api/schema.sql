@@ -40,6 +40,8 @@ CREATE TABLE IF NOT EXISTS users (
     questao_religiosa_cultural TEXT,
     expectativas_desejos_parto TEXT,
     ativo INTEGER DEFAULT 1,
+    acesso_videos INTEGER DEFAULT 1,
+    acesso_ebooks INTEGER DEFAULT 1,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -47,6 +47,7 @@ def migrate():
         ('questao_religiosa_cultural', 'TEXT'),
         ('expectativas_desejos_parto', 'TEXT'),
     ]
+    required_user_columns.append(('senha_provisoria', 'INTEGER DEFAULT 0'))
     cursor.execute("PRAGMA table_info(users)")
     current_user_cols = [row[1] for row in cursor.fetchall()]
     for col_name, col_type in required_user_columns:

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "15399529488",
+    "project_id": "app-doula-nalin",
+    "storage_bucket": "app-doula-nalin.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:15399529488:android:71ff9330821995687c6e95",
+        "android_client_info": {
+          "package_name": "com.appdoula.nalin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAUniKa8nhStLBrB4IxNejc6YJo8jQPEWY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

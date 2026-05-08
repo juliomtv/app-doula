@@ -4,3 +4,8 @@ dist/
 android/app/build/
 android/.gradle/
 android/local.properties
+nalin_api/*firebase*.json
+nalin_api/*adminsdk*.json
+uploads/
+*.apk
+nalin_api/__pycache__/

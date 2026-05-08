@@ -4,8 +4,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Doula Nalin Nazareth</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#C9907A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Nalin Doula">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -43,6 +49,13 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif;}
 .login-err{color:#c0392b;font-size:13px;text-align:center;margin-top:12px;min-height:18px;}
 .login-note{font-size:12px;color:var(--light);text-align:center;margin-top:16px;}
 
+/* ══════════════════════ MODAL TROCA SENHA ══════════════════════ */
+#modal-troca-senha{display:none;position:fixed;inset:0;background:rgba(58,40,32,.5);z-index:5000;align-items:center;justify-content:center;padding:24px;}
+#modal-troca-senha.open{display:flex;}
+.troca-card{background:white;border-radius:24px;padding:32px 24px;width:100%;max-width:360px;box-shadow:0 12px 48px rgba(169,107,85,.25);}
+.troca-card h3{font-family:'Cormorant Garamond',serif;font-size:22px;font-style:italic;color:var(--dark);margin-bottom:6px;}
+.troca-card p{font-size:13px;color:var(--mid);margin-bottom:20px;line-height:1.5;}
+
 /* ══════════════════════ BOTTOM NAV ══════════════════════ */
 .bnav{background:rgba(253,250,248,.97);backdrop-filter:blur(20px);border-top:1px solid rgba(201,144,122,.1);display:flex;padding:8px 0 24px;position:sticky;bottom:0;z-index:100;flex-shrink:0;}
 .nitem{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 0;}
@@ -59,7 +72,9 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif;}
 .greet-sub{font-size:13px;color:var(--light);}
 .greet-name{font-family:'Cormorant Garamond',serif;font-size:24px;font-style:italic;color:var(--dark);}
 .notif{width:40px;height:40px;border-radius:50%;background:white;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px var(--shadow-soft);font-size:18px;position:relative;}
-.ndot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--rose);border:2px solid white;}
+.notif-item{padding:14px 0;border-bottom:1px solid #f5ede9;}
+.notif-item:last-child{border-bottom:none;}
+.notif-item.nao-lida{background:linear-gradient(90deg,rgba(201,144,122,.08),transparent);border-radius:8px;padding:14px 10px;margin:-2px -4px;}
 
 /* Pregnancy card */
 .preg-card{background:white;border-radius:22px;padding:18px;box-shadow:0 4px 20px var(--shadow-soft);position:relative;overflow:hidden;}
@@ -352,16 +367,11 @@ textarea.dta:focus{border-color:var(--rose);}
       <label>Senha</label>
       <input type="password" id="l-senha" placeholder="••••••••" value="">
     </div>
-    <div class="field" id="campo-url-servidor" style="display:none;">
-      <label>URL Base do Servidor (IP local)</label>
-      <input type="text" id="l-api-url" placeholder="http://192.168.1.15:5000" value="" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
-      <small style="font-size:11px;color:var(--light);margin-top:4px;display:block;line-height:1.5;">IP local do computador onde o servidor roda.<br>Configure uma única vez. Ex: <strong>http://192.168.1.15:5000</strong></small>
-    </div>
     <button class="btn-rose" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="l-err"></div>
     <div class="login-note">Não tem conta? Peça à sua doula para criar seu acesso 🌺</div>
-    <div style="text-align:center;margin-top:8px;">
-      <button onclick="toggleCampoUrl()" style="background:none;border:none;color:var(--light);font-size:11px;cursor:pointer;padding:4px 8px;">⚙️ Configurar servidor</button>
+    <div style="text-align:center;margin-top:10px;">
+      <button onclick="showEsqueceuSenha()" style="background:none;border:none;color:var(--light);font-size:12px;cursor:pointer;text-decoration:underline;">Esqueceu a senha?</button>
     </div>
 <!-- Modal de login admin -->
 
@@ -378,7 +388,7 @@ textarea.dta:focus{border-color:var(--rose);}
           <div class="greet-sub">Olá, mamãe 🌸</div>
           <div class="greet-name" id="h-nome">Carregando...</div>
         </div>
-        <button class="notif">🔔<div class="ndot"></div></button>
+        <button class="notif" id="btn-notif" onclick="abrirNotificacoes()">🔔<span id="notif-badge" style="display:none;position:absolute;top:5px;right:5px;background:var(--rose);color:white;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;line-height:16px;text-align:center;border:2px solid white;"></span></button>
       </div>
       <div class="preg-card">
         <div class="pc-label">Semana da gestação</div>
@@ -606,6 +616,15 @@ textarea.dta:focus{border-color:var(--rose);}
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-notificacoes">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-hdr"><h3>Notificações</h3><button class="modal-close" onclick="closeModal('modal-notificacoes')">✕</button></div>
+    <div class="modal-body" style="max-height:70vh;overflow-y:auto;padding:16px 20px;" id="notif-list">
+      <div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Carregando...</div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-agenda">
   <div class="modal" style="max-width:500px;">
     <div class="modal-hdr"><h3>Adicionar Compromisso</h3><button class="modal-close" onclick="closeModal('modal-agenda')">✕</button></div>
@@ -696,18 +715,16 @@ textarea.dta:focus{border-color:var(--rose);}
         <!-- Categorias serão inseridas aqui via JS -->
       </div>
 
-      <div style="margin-top:20px; padding:12px; background:var(--rose-pale); border-radius:10px;">
-        <label style="font-size:13px; font-weight:600; color:var(--dark); display:block; margin-bottom:8px;">Adicionar item extra</label>
-        <div style="display:flex; gap:8px;">
-          <select id="mat-add-cat" style="padding:8px; border:1px solid var(--rose-pale); border-radius:8px; font-size:13px;">
-            <option value="bebe">Mala do Bebê</option>
-            <option value="mamae">Mala da Mamãe</option>
-            <option value="lista">Lista Maternidade</option>
-            <option value="sala">Sala de Parto</option>
-          </select>
-          <input type="text" id="mat-add-item" placeholder="Novo item..." style="flex:1; padding:8px; border:1px solid var(--rose-pale); border-radius:8px;">
-          <button onclick="addMatExtraItem()" style="background:var(--rose); color:white; border:none; border-radius:8px; padding:0 15px; cursor:pointer;">+</button>
-        </div>
+      <div style="margin-top:20px; padding:14px; background:var(--rose-pale); border-radius:10px;">
+        <label style="font-size:13px; font-weight:600; color:var(--dark); display:block; margin-bottom:10px;">Adicionar item extra</label>
+        <select id="mat-add-cat" style="width:100%; padding:9px; border:1px solid rgba(201,144,122,.3); border-radius:8px; font-size:13px; margin-bottom:8px; background:white;">
+          <option value="bebe">Mala do Bebê</option>
+          <option value="mamae">Mala da Mamãe</option>
+          <option value="lista">Lista Maternidade</option>
+          <option value="sala">Sala de Parto</option>
+        </select>
+        <input type="text" id="mat-add-item" placeholder="Nome do item..." onkeydown="if(event.key==='Enter')addMatExtraItem()" style="width:100%; padding:9px; border:1px solid rgba(201,144,122,.3); border-radius:8px; font-size:13px; margin-bottom:10px; box-sizing:border-box;">
+        <button onclick="addMatExtraItem()" style="width:100%; background:var(--rose); color:white; border:none; border-radius:8px; padding:11px; font-size:14px; font-weight:600; cursor:pointer;">+ Adicionar à lista</button>
       </div>
       <div id="mat-msg" style="font-size:13px;min-height:16px;color:var(--ok);margin-top:10px;text-align:center;"></div>
     </div>
@@ -757,6 +774,20 @@ textarea.dta:focus{border-color:var(--rose);}
 
 <div class="toast" id="toast"></div>
 
+<!-- Script separado: notifyAppReady + safety timer independente do main script -->
+<script>(function(){
+  // 1. notifyAppReady — precisa rodar antes de qualquer coisa
+  try {
+    var p = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorUpdater;
+    if(p && p.notifyAppReady) p.notifyAppReady();
+  } catch(_){}
+  // 2. Safety timer independente: esconde loading screen após 4s mesmo se main script travar
+  setTimeout(function(){
+    var ls = document.getElementById('loading-screen');
+    if(ls){ ls.style.display='none'; }
+  }, 4000);
+})();</script>
+
 <script>
 // Notifica o CapacitorUpdater IMEDIATAMENTE — deve ser a 1ª coisa que roda.
 // Se não for chamado dentro do appReadyTimeout (30s), o plugin faz rollback.
@@ -769,11 +800,16 @@ textarea.dta:focus{border-color:var(--rose);}
   } catch(_) {}
 })();
 
-// ════ CONFIGURAÇÃO DINÂMICA DA API ════
-// URL_BASE: IP local do servidor (ex: http://192.168.1.15:5000) — configurado uma vez
-// API_URL: URL ativa usada nas requisições (pode ser a url_publica do tunnel)
-let URL_BASE = localStorage.getItem('url_base') || '';
-let API_URL  = localStorage.getItem('api_url')  || URL_BASE;
+// ════ CONFIGURAÇÃO DA API ════
+const SERVIDOR_FIXO = 'https://doulanalinnazareth.com';
+let URL_BASE = SERVIDOR_FIXO;
+let API_URL  = SERVIDOR_FIXO;
+localStorage.setItem('url_base', SERVIDOR_FIXO);
+localStorage.setItem('api_url',  SERVIDOR_FIXO);
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
 
 const DB = {
   get:(k)=>{ try{return JSON.parse(localStorage.getItem(k));}catch{return null;}},
@@ -781,98 +817,6 @@ const DB = {
   del:(k)=>localStorage.removeItem(k)
 };
 
-function normalizeUrl(url) {
-  if(!url) return '';
-  url = url.trim();
-  if(!url.startsWith('http')) url = 'http://' + url;
-  return url.replace(/\/$/, '');
-}
-
-function setUrlBase(url) {
-  url = normalizeUrl(url);
-  if(!url) return;
-  URL_BASE = url;
-  localStorage.setItem('url_base', url);
-  // Ao definir a base, usa ela como API_URL até descobrir a pública
-  if(!API_URL) {
-    API_URL = url;
-    localStorage.setItem('api_url', url);
-  }
-  console.log('[API] URL Base definida:', URL_BASE);
-}
-
-function setApiUrl(url) {
-  url = normalizeUrl(url);
-  if(!url) return;
-  API_URL = url;
-  localStorage.setItem('api_url', url);
-  console.log('[API] URL ativa atualizada:', API_URL);
-}
-function toggleCampoUrl() {
-  const campo = document.getElementById('campo-url-servidor');
-  if(!campo) return;
-  campo.style.display = campo.style.display === 'none' ? 'block' : 'none';
-}
-
-/**
- * Descobre a URL do servidor automaticamente, sem interação do usuário.
- *
- * Estratégia em 3 camadas:
- * 1. Se URL_BASE está salva localmente → busca /server-info nela para obter url_publica do tunnel
- * 2. Se não há URL_BASE local → tenta buscar url_base_servidor salva pelo admin via /api/url-servidor
- *    (usando IPs comuns de rede local como ponto de partida)
- * 3. Fallback: usa URL_BASE diretamente se tunnel não estiver ativo
- */
-const CANDIDATE_IPS = ['192.168.1.1','192.168.0.1','192.168.1.100','192.168.1.15','192.168.0.100'];
-
-async function buscarUrlBaseDoAdmin() {
-  // Tenta encontrar o servidor em IPs comuns de rede local
-  for (const ip of CANDIDATE_IPS) {
-    try {
-      const res = await fetch(`http://${ip}:5000/api/url-servidor`, {
-        signal: AbortSignal.timeout(3000)
-      });
-      if(!res.ok) continue;
-      const info = await res.json();
-      if(info && info.url_base_servidor) {
-        console.log('[API] URL base encontrada via scan de rede:', info.url_base_servidor);
-        setUrlBase(info.url_base_servidor);
-        return info;
-      }
-    } catch(e) { /* continua tentando */ }
-  }
-  return null;
-}
-
-async function descobrirUrlPublica() {
-  // Se não temos URL_BASE, tenta buscar do admin
-  if(!URL_BASE) {
-    console.log('[API] Sem URL base local. Tentando buscar do servidor admin...');
-    const adminInfo = await buscarUrlBaseDoAdmin();
-    if(!adminInfo) {
-      console.warn('[API] Não foi possível encontrar o servidor automaticamente.');
-      return;
-    }
-  }
-  // Agora temos URL_BASE — busca a URL pública do tunnel
-  try {
-    const res = await fetch(`${URL_BASE}/server-info`, {
-      signal: AbortSignal.timeout(8000)
-    });
-    if(!res.ok) { setApiUrl(URL_BASE); return; }
-    const info = await res.json();
-    if(info && info.url_publica) {
-      setApiUrl(info.url_publica);
-      console.log('[API] URL pública do tunnel obtida:', info.url_publica);
-    } else {
-      setApiUrl(URL_BASE);
-      console.log('[API] Tunnel inativo, usando URL base:', URL_BASE);
-    }
-  } catch(e) {
-    console.warn('[API] Erro ao buscar URL pública:', e.message);
-    if(URL_BASE && !API_URL) setApiUrl(URL_BASE);
-  }
-}
 
 // ════ SEED DATA ════
 function seedData(){
@@ -900,6 +844,14 @@ function seedData(){
 const babyMap={1:{e:'🌱',s:'menor que um grão de arroz'},4:{e:'🫐',s:'tamanho de uma semente'},6:{e:'🫐',s:'tamanho de uma ervilha'},8:{e:'🫘',s:'tamanho de um feijão'},10:{e:'🍓',s:'tamanho de um morango'},12:{e:'🍋',s:'tamanho de um limão'},14:{e:'🍋',s:'tamanho de um limão siciliano'},16:{e:'🥑',s:'tamanho de um abacate'},18:{e:'🥭',s:'tamanho de uma manga'},20:{e:'🍌',s:'tamanho de uma banana'},22:{e:'🌽',s:'espiga pequena de milho'},24:{e:'🌽',s:'espiga de milho'},26:{e:'🥦',s:'tamanho de um brócolis'},28:{e:'🥬',s:'tamanho de uma alface'},30:{e:'🥥',s:'tamanho de um coco'},32:{e:'🎃',s:'abóbora pequena'},34:{e:'🍈',s:'tamanho de um melão'},36:{e:'🥗',s:'quase pronto!'},38:{e:'🍉',s:'melancia pequena'},40:{e:'👶',s:'pronto para o mundo!'}};
 function getBaby(w){const ks=Object.keys(babyMap).map(Number).sort((a,b)=>a-b);let b=ks[0];for(const k of ks){if(k<=w)b=k;}return babyMap[b]||{e:'🌱',s:'crescendo com amor'};}
 function getTri(w){if(w<=13)return{n:1,l:'1º Trimestre'};if(w<=26)return{n:2,l:'2º Trimestre'};return{n:3,l:'3º Trimestre'};}
+function getSemanas(u){
+  if(u&&u.dpp){
+    const dpp=new Date(u.dpp+'T12:00:00');
+    const calc=Math.round(40-((dpp-new Date())/(7*24*60*60*1000)));
+    return Math.max(0,Math.min(42,calc));
+  }
+  return u?(u.semanas||0):0;
+}
 
 const weeklyInfo={
   // 1º TRIMESTRE (semanas 1–13)
@@ -977,8 +929,9 @@ async function apiFetch(endpoint, options = {}) {
       headers: { 'Content-Type': 'application/json', ...options.headers },
       signal: AbortSignal.timeout(15000)
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
+    const data = await res.json().catch(() => null);
+    if (!res.ok) return data || { status: 'error', message: `Erro HTTP ${res.status}` };
+    return data;
   } catch (e) {
     console.error('[API] Erro:', e, 'URL:', API_URL);
     return {
@@ -992,23 +945,7 @@ async function apiFetch(endpoint, options = {}) {
 async function doLogin(){
   const email=document.getElementById('l-email').value.trim().toLowerCase();
   const senha=document.getElementById('l-senha').value;
-  const campoUrl=document.getElementById('l-api-url');
-  const customUrl=campoUrl ? campoUrl.value.trim() : '';
   const errEl=document.getElementById('l-err');
-
-  // Se o usuário digitou uma URL base manualmente, salva e tenta descobrir a pública
-  if(customUrl){
-    setUrlBase(customUrl);
-    errEl.textContent='🔄 Conectando ao servidor...';
-    errEl.style.color='var(--mid)';
-    await descobrirUrlPublica();
-  }
-
-  if(!API_URL){
-    errEl.textContent='⚠️ Configure a URL do servidor. Toque em ⚙️ Configurar servidor.';
-    errEl.style.color='#c0392b';
-    return;
-  }
 
   errEl.textContent='🔄 Entrando...';
   errEl.style.color='var(--mid)';
@@ -1020,19 +957,48 @@ async function doLogin(){
   if(res && res.status === 'success'){
     currentUser = res.user;
     DB.set('nn_session', currentUser.id);
-    // Salva também os dados do usuário real para fallback offline futuro
     DB.set('nn_user_cache', currentUser);
     errEl.textContent='';
     goApp();
+    // Se senha provisória, pede troca antes de usar o app
+    if(currentUser.senha_provisoria) setTimeout(mostrarModalTrocaSenha, 600);
   } else {
     // Nada de fallback com seed local: só mostra a mensagem de erro real.
-    const msg = (res && res.status === 'error') ? res.message
-              : !API_URL ? 'Configure a URL do servidor.'
-              : 'E-mail ou senha incorretos. Verifique sua conexão.';
+    const msg = (res && res.status === 'error') ? res.message : 'E-mail ou senha incorretos. Verifique sua conexão.';
     errEl.textContent = msg;
     errEl.style.color = '#c0392b';
   }
 }
+function showEsqueceuSenha() {
+  showToast('Entre em contato com sua doula para redefinir sua senha. 💕');
+}
+
+function mostrarModalTrocaSenha() {
+  document.getElementById('modal-troca-senha').classList.add('open');
+}
+
+async function salvarNovaSenha() {
+  const nova = document.getElementById('troca-nova').value;
+  const conf = document.getElementById('troca-conf').value;
+  const errEl = document.getElementById('troca-err');
+  errEl.textContent = '';
+  if (!nova || nova.length < 6) { errEl.textContent = 'A senha deve ter pelo menos 6 caracteres.'; return; }
+  if (nova !== conf) { errEl.textContent = 'As senhas não coincidem.'; return; }
+  errEl.textContent = '🔄 Salvando...';
+  const res = await apiFetch('/api/users/change-password', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: currentUser.id, nova_senha: nova })
+  });
+  if (res && res.status === 'success') {
+    currentUser.senha_provisoria = 0;
+    DB.set('nn_user_cache', currentUser);
+    document.getElementById('modal-troca-senha').classList.remove('open');
+    showToast('Senha criada com sucesso! 🌸');
+  } else {
+    errEl.textContent = (res && res.message) || 'Erro ao salvar. Tente novamente.';
+  }
+}
+
 function doLogout(){
   DB.del('nn_session');
   DB.del('nn_user_cache');
@@ -1065,28 +1031,34 @@ function navTo(id){
 // ════ APP INIT ════
 function goApp(){
   navTo('home');
+  // Registra push e carrega badge após entrar no app
+  setTimeout(() => {
+    registrarPushNotifications();
+    carregarBadgeNotificacoes();
+  }, 1500);
 }
 
 // ════ HOME ════
 async function renderHome(){
   if(!currentUser)return;
   const u=currentUser;
-  document.getElementById('h-nome').textContent=u.nome;
-  document.getElementById('h-sem').textContent=u.semanas;
+  const semanas=getSemanas(u);
+  document.getElementById('h-nome').textContent=(u.nome||'').split(' ')[0];
+  document.getElementById('h-sem').textContent=semanas;
   document.getElementById('h-bebe').textContent=`Bebê ${u.bebe} 💕`;
-  const pct=Math.round((u.semanas/40)*100);
+  const pct=Math.round((semanas/40)*100);
   document.getElementById('h-pct').textContent=pct+'%';
   document.getElementById('h-bar').style.width=pct+'%';
-  const tri=getTri(u.semanas);
-  const rem=40-u.semanas;
+  const tri=getTri(semanas);
+  const rem=40-semanas;
   document.getElementById('h-tri').textContent=`${tri.l} · ${rem} sem. restantes 🌟`;
   const td=document.getElementById('h-tdots');td.innerHTML='';
   for(let i=1;i<=3;i++){const d=document.createElement('div');d.className='tdot'+(i<=tri.n?' f':'');td.appendChild(d);}
-  const baby=getBaby(u.semanas);
+  const baby=getBaby(semanas);
   document.getElementById('h-emoji').textContent=baby.e;
   document.getElementById('h-size').textContent=baby.s.charAt(0).toUpperCase()+baby.s.slice(1);
-  document.getElementById('h-tip-tag').textContent=`💡 Dica da Nalin — Semana ${u.semanas}`;
-  const tipObj = getTip(u.semanas);
+  document.getElementById('h-tip-tag').textContent=`💡 Dica da Nalin — Semana ${semanas}`;
+  const tipObj = getTip(semanas);
   const tituloEl = document.getElementById('h-tip-titulo');
   if(tituloEl){
     tituloEl.textContent = tipObj.titulo || '';
@@ -1137,6 +1109,20 @@ function getCFEmbed(videoId) {
 let _videoAtualId = null;
 let _progressoCache = {};
 
+function _bloqueioAcesso(msg){
+  const layout=document.getElementById('curso-layout');
+  const scroll=document.getElementById('cont-scroll');
+  if(layout) layout.style.display='none';
+  if(scroll){
+    scroll.style.display='block';
+    scroll.innerHTML=`<div style="text-align:center;padding:60px 24px;color:var(--mid);">
+      <div style="font-size:48px;margin-bottom:16px;">🔒</div>
+      <div style="font-size:17px;font-weight:600;color:var(--dark);margin-bottom:8px;">Conteúdo bloqueado</div>
+      <div style="font-size:14px;">${msg}</div>
+    </div>`;
+  }
+}
+
 async function renderConteudo(idx){
   currentTab = idx;
   const layout = document.getElementById('curso-layout');
@@ -1144,12 +1130,22 @@ async function renderConteudo(idx){
   if (!layout || !scroll) return;
 
   if (idx === 0) {
-    // Aba de vídeos — layout de dois painéis
+    if(currentUser && currentUser.acesso_videos === 0){
+      _bloqueioAcesso('Você ainda não tem acesso aos vídeos.');
+      return;
+    }
     layout.style.display = 'flex';
     scroll.style.display = 'none';
     await renderMiniCurso();
+  } else if (idx === 1) {
+    if(currentUser && currentUser.acesso_ebooks === 0){
+      _bloqueioAcesso('Você ainda não tem acesso aos e-books.');
+      return;
+    }
+    layout.style.display = 'none';
+    scroll.style.display = 'block';
+    await renderGrade(idx);
   } else {
-    // Outras abas — grade normal
     layout.style.display = 'none';
     scroll.style.display = 'block';
     await renderGrade(idx);
@@ -1549,7 +1545,7 @@ async function saveEntry(){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         user_id:currentUser.id, txt, mood:currentMood,
-        semanas:currentUser.semanas||0,
+        semanas:getSemanas(currentUser),
         data:new Date().toLocaleDateString('pt-BR',{day:'numeric',month:'long'}),
         dia:new Date().toLocaleDateString('pt-BR',{weekday:'long'})
       })
@@ -2090,9 +2086,10 @@ async function deleteAgenda(id){
 function renderPerfil(){
   if(!currentUser)return;
   const u=currentUser;
+  const semanas=getSemanas(u);
   document.getElementById('p-nome').textContent=u.nome;
-  document.getElementById('p-sem').textContent=u.semanas;
-  
+  document.getElementById('p-sem').textContent=semanas;
+
   // Carregar foto de perfil
   const savedAvatar = DB.get(`nn_avatar_${u.id}`);
   const avatarDiv = document.getElementById('p-avatar');
@@ -2102,8 +2099,8 @@ function renderPerfil(){
     avatarDiv.innerHTML = '🤰';
   }
 
-  const tri=getTri(u.semanas);
-  document.getElementById('p-tri').textContent=`${tri.l} · Semana ${u.semanas}`;
+  const tri=getTri(semanas);
+  document.getElementById('p-tri').textContent=`${tri.l} · Semana ${semanas}`;
   if(u.dpp){
     const dpp=new Date(u.dpp),now=new Date();
     const diff=Math.max(0,Math.round((dpp-now)/(86400000)));
@@ -2311,12 +2308,15 @@ function deleteMatItem(cat, i) {
 function addMatExtraItem() {
   const cat = document.getElementById('mat-add-cat').value;
   const name = document.getElementById('mat-add-item').value.trim();
-  if (!name) return;
+  if (!name) { document.getElementById('mat-add-item').focus(); return; }
   if(!_matData) _matData = { checklists: JSON.parse(JSON.stringify(defaultMatChecklist)) };
   _matData.checklists[cat].push({ n: name, c: false });
   _saveMatData();
   document.getElementById('mat-add-item').value = '';
   renderMatChecklist();
+  const msg = document.getElementById('mat-msg');
+  msg.textContent = 'Item adicionado!';
+  setTimeout(() => { msg.textContent = ''; }, 2000);
 }
 
 async function loadPlanejamento(){
@@ -2533,6 +2533,99 @@ async function clearContractions() {
   }catch(e){showToast('Erro ao limpar contrações.');}
 }
 
+// ════ PUSH NOTIFICATIONS (Firebase FCM) ════
+function _PN() {
+  return window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.PushNotifications
+    ? Capacitor.Plugins.PushNotifications : null;
+}
+
+async function registrarPushNotifications() {
+  const PN = _PN();
+  if (!PN || !currentUser?.id || !API_URL) return;
+  try {
+    // Cria canal Android
+    await PN.createChannel({ id: 'doula_notif', name: 'Notificações da Doula', importance: 5, sound: 'default', vibration: true, visibility: 1 });
+    // Verifica/pede permissão
+    let { receive } = await PN.checkPermissions();
+    if (receive === 'prompt') {
+      const res = await PN.requestPermissions();
+      receive = res.receive;
+    }
+    if (receive !== 'granted') return;
+    // Registra e escuta o token
+    await PN.register();
+    await PN.addListener('registration', async ({ value: token }) => {
+      if (!token) return;
+      try {
+        await fetch(`${API_URL}/api/users/fcm_token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: currentUser.id, token })
+        });
+      } catch(_) {}
+    });
+    // Notificação recebida com app ABERTO — mostra toast e atualiza badge
+    await PN.addListener('pushNotificationReceived', notif => {
+      showToast(notif.title || 'Nova notificação');
+      carregarBadgeNotificacoes();
+    });
+    // Usuária tocou na notificação — abre o modal
+    await PN.addListener('pushNotificationActionPerformed', () => {
+      abrirNotificacoes();
+    });
+  } catch(e) { console.error('[PUSH]', e); }
+}
+
+async function carregarBadgeNotificacoes() {
+  if (!currentUser?.id || !API_URL) return;
+  try {
+    const lista = await apiFetch(`/api/notificacoes?user_id=${currentUser.id}`);
+    if (!Array.isArray(lista)) return;
+    const naoLidas = lista.filter(n => !n.lida).length;
+    const badge = document.getElementById('notif-badge');
+    if (!badge) return;
+    if (naoLidas > 0) {
+      badge.textContent = naoLidas > 9 ? '9+' : naoLidas;
+      badge.style.display = 'block';
+    } else {
+      badge.style.display = 'none';
+    }
+  } catch(_) {}
+}
+
+async function abrirNotificacoes() {
+  openModal('modal-notificacoes');
+  const list = document.getElementById('notif-list');
+  if (!currentUser?.id || !API_URL) {
+    list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--light);">Sem conexão.</div>';
+    return;
+  }
+  try {
+    const notifs = await apiFetch(`/api/notificacoes?user_id=${currentUser.id}`);
+    if (!Array.isArray(notifs) || !notifs.length) {
+      list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Nenhuma notificação ainda. 🔔</div>';
+    } else {
+      list.innerHTML = notifs.map(n => {
+        const dt = new Date(n.criado_em).toLocaleDateString('pt-BR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+        return `<div class="notif-item ${n.lida ? '' : 'nao-lida'}">
+          <div style="font-weight:600;color:var(--dark);font-size:14px;">${n.titulo}</div>
+          <div style="color:var(--mid);font-size:13px;margin-top:4px;">${n.mensagem}</div>
+          <div style="color:var(--light);font-size:11px;margin-top:6px;">${dt}</div>
+        </div>`;
+      }).join('');
+      // Marca todas como lidas
+      await fetch(`${API_URL}/api/notificacoes/lidas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUser.id })
+      });
+      document.getElementById('notif-badge').style.display = 'none';
+    }
+  } catch(_) {
+    list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--light);">Erro ao carregar.</div>';
+  }
+}
+
 // ════ NOTIFICAÇÕES LOCAIS ════
 function _LN() {
   return window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.LocalNotifications
@@ -2567,11 +2660,11 @@ async function agendarNotificacoesAgenda(compromissos) {
         schedule: { at: dt1d, allowWhileIdle: true },
         sound: null, attachments: null, actionTypeId: '', extra: null
       });
-      const dt1h = new Date(eventDt.getTime() - 3600000);
-      if (dt1h > agora) notifs.push({
-        id: c.id * 10 + 1, title: 'Compromisso em 1 hora',
+      const dt2h = new Date(eventDt.getTime() - 7200000);
+      if (dt2h > agora) notifs.push({
+        id: c.id * 10 + 1, title: 'Compromisso em 2 horas',
         body: `${c.tipo} às ${hora}`,
-        schedule: { at: dt1h, allowWhileIdle: true },
+        schedule: { at: dt2h, allowWhileIdle: true },
         sound: null, attachments: null, actionTypeId: '', extra: null
       });
     });
@@ -2605,7 +2698,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.4.8';
+const APP_BUNDLE_VERSION = '1.5.4';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")
@@ -2633,6 +2726,12 @@ function _getUpdater() {
 async function verificarAtualizacao() {
   if (!API_URL) return;
   try {
+    // Inicializa versão local com a versão do bundle atual se nunca foi definida.
+    // Evita que instalações novas peçam atualização imediatamente.
+    if (!localStorage.getItem(OTA_VERSION_KEY)) {
+      localStorage.setItem(OTA_VERSION_KEY, APP_BUNDLE_VERSION);
+    }
+
     const res = await fetch(`${API_URL}/ota/versao?_=${Date.now()}`, {
       signal: AbortSignal.timeout(8000),
       cache: 'no-store'
@@ -2640,30 +2739,25 @@ async function verificarAtualizacao() {
     if (!res.ok) return;
     const dados = await res.json();
     const versaoServidor = dados.versao || '1.0.0';
-    const hashServidor   = dados.hash   || '';
-    let versaoLocal = localStorage.getItem(OTA_VERSION_KEY) || '0.0.0';
-    const hashLocal = localStorage.getItem(OTA_HASH_KEY)    || '';
-    const skipVersao = localStorage.getItem(OTA_SKIP_KEY)   || '';
+    let versaoLocal = localStorage.getItem(OTA_VERSION_KEY) || APP_BUNDLE_VERSION;
+    const skipVersao = localStorage.getItem(OTA_SKIP_KEY) || '';
 
-    // Salva hash se não houver (primeira execução ou pós-revert), mas NÃO
-    // salva a versão do servidor como local — permite que a comparação rode.
-    if (!hashLocal && hashServidor) {
-      localStorage.setItem(OTA_HASH_KEY, hashServidor);
-    }
-
-    // Detecta reversão de OTA: localStorage diz versão mais nova do que
-    // o código que está rodando agora → reset para a versão do bundle atual.
+    // Detecta reversão de OTA: localStorage tem versão mais nova que o bundle rodando.
     if (compararVersao(versaoLocal, APP_BUNDLE_VERSION)) {
+      const versaoAplicada = versaoLocal;
       versaoLocal = APP_BUNDLE_VERSION;
       localStorage.setItem(OTA_VERSION_KEY, APP_BUNDLE_VERSION);
+      const lastApply = parseInt(localStorage.getItem('ota_last_apply') || '0');
+      if (Date.now() - lastApply < 15 * 60 * 1000) return;
+      // Cooldown passou mas Capgo continua revertendo: pula esta versão.
+      // O prompt só volta quando o servidor publicar uma versão AINDA mais nova.
+      localStorage.setItem(OTA_SKIP_KEY, versaoAplicada);
+      return;
     }
 
     if (skipVersao && skipVersao === versaoServidor) return;
 
-    const hashMudou  = hashServidor && hashLocal && hashServidor !== hashLocal;
-    const versaoNova = compararVersao(versaoServidor, versaoLocal);
-
-    if (hashMudou || versaoNova) {
+    if (compararVersao(versaoServidor, versaoLocal)) {
       mostrarModalOTA(versaoServidor, versaoLocal, dados.notas || 'Melhorias e correções de bugs.', dados.obrigatoria || false);
     }
   } catch (e) { /* silencioso */ }
@@ -2797,9 +2891,10 @@ async function otaAtualizar() {
       if (fill) fill.style.width = '90%';
       if (txt)  txt.textContent  = 'Aplicando atualização...';
 
-      // Salva versão e hash ANTES do set (que destrói o contexto JS)
+      // Salva versão e timestamp ANTES do set (que destrói o contexto JS)
       localStorage.setItem(OTA_VERSION_KEY, versaoNova);
       localStorage.setItem(OTA_HASH_KEY,    hashNovo);
+      localStorage.setItem('ota_last_apply', String(Date.now()));
       localStorage.removeItem(OTA_SKIP_KEY);
 
       if (fill) fill.style.width = '100%';
@@ -2808,7 +2903,8 @@ async function otaAtualizar() {
       //    set() destrói o contexto JS e recarrega o WebView automaticamente.
       //    NÃO chamar window.location.reload() aqui — o próprio set() já reinicia.
       await Updater.set({ id: bundle.id });
-      // Nada após este ponto vai executar — o app reinicia.
+      // set() normalmente reinicia sozinho, mas como fallback forçamos reload
+      setTimeout(() => window.location.reload(), 1000);
     } else {
       // ─── Caminho WEB (browser de desenvolvimento) ───────────────────
       // Sem plugin nativo, apenas registra que viu a versão e recarrega.
@@ -2816,6 +2912,7 @@ async function otaAtualizar() {
       if (fill) fill.style.width = '100%';
       localStorage.setItem(OTA_VERSION_KEY, versaoNova);
       localStorage.setItem(OTA_HASH_KEY,    hashNovo);
+      localStorage.setItem('ota_last_apply', String(Date.now()));
       localStorage.removeItem(OTA_SKIP_KEY);
       setTimeout(() => window.location.reload(), 1200);
     }
@@ -2841,60 +2938,74 @@ function _hideLoading(){
   setTimeout(() => { if(ls.parentNode) ls.parentNode.removeChild(ls); }, 450);
 }
 
-// Inicialização assíncrona: descobre URL pública e restaura sessão
+// Segurança: se init() travar por qualquer motivo, esconde loading após 6s
+const _safetyTimer = setTimeout(() => _hideLoading(), 6000);
+
+// Inicialização assíncrona: restaura sessão
 (async function init(){
-  // 1. Tenta atualizar a URL pública do tunnel silenciosamente
-  await descobrirUrlPublica();
+  try {
+    await new Promise(r => setTimeout(r, 0));
+    loadDicas();
+    setTimeout(verificarAtualizacao, 1000);
 
-  // 2. Preenche o campo de URL base (oculto) com o valor salvo
-  const campoUrl = document.getElementById('l-api-url');
-  if(campoUrl && URL_BASE) campoUrl.value = URL_BASE;
-
-  // 3. Carrega dicas
-  loadDicas();
-  // 4. Verifica atualizações OTA (após 1s — aparece na tela de login)
-  setTimeout(verificarAtualizacao, 1000);
-
-  // 5. Tenta restaurar sessão salva
-  const savedSession = DB.get('nn_session');
-  if(savedSession){
-    // Cache primeiro — restaura instantaneamente sem depender da rede
-    const cached = DB.get('nn_user_cache');
-    if(cached && cached.id === savedSession && cached.ativo){
-      currentUser = cached;
-      _hideLoading();
-      goApp();
-      // Valida em background (atualiza dados se o servidor estiver disponível)
-      if(API_URL) setTimeout(syncUserData, 2000);
-      return;
-    }
-    // Sem cache local: precisa da API para restaurar
-    if(API_URL){
-      const res = await apiFetch(`/api/users/me?id=${savedSession}`);
-      if(res && res.status === 'success' && res.user){
-        currentUser = res.user;
-        DB.set('nn_user_cache', currentUser);
+    const savedSession = DB.get('nn_session');
+    if(savedSession){
+      const cached = DB.get('nn_user_cache');
+      if(cached && cached.id === savedSession && cached.ativo){
+        currentUser = cached;
+        clearTimeout(_safetyTimer);
         _hideLoading();
         goApp();
+        if(currentUser.senha_provisoria) setTimeout(mostrarModalTrocaSenha, 600);
+        if(API_URL) setTimeout(syncUserData, 2000);
         return;
       }
-      if(res && res.status === 'error'){
-        // Servidor respondeu: usuário não existe ou inativo
-        DB.del('nn_session');
-        DB.del('nn_user_cache');
+      if(API_URL){
+        const res = await apiFetch(`/api/users/me?id=${savedSession}`);
+        if(res && res.status === 'success' && res.user){
+          currentUser = res.user;
+          DB.set('nn_user_cache', currentUser);
+          clearTimeout(_safetyTimer);
+          _hideLoading();
+          goApp();
+          if(currentUser.senha_provisoria) setTimeout(mostrarModalTrocaSenha, 600);
+          return;
+        }
+        if(res && res.status === 'error'){
+          DB.del('nn_session');
+          DB.del('nn_user_cache');
+        }
       }
-      // null = sem rede → mostra login para o usuário fazer login manual
     }
+    clearTimeout(_safetyTimer);
+    _hideLoading();
+  } catch(e) {
+    clearTimeout(_safetyTimer);
+    _hideLoading();
   }
-  // Sem sessão salva ou sem rede sem cache: mostra tela de login
-  _hideLoading();
 })();
-// Atualiza URL pública a cada 5 minutos (caso o tunnel reinicie)
-setInterval(descobrirUrlPublica, 5 * 60 * 1000);
 // Sincroniza dados do usuário a cada 2 minutos (só se houver usuário logado)
 setInterval(() => { if (currentUser && currentUser.id) syncUserData(); }, 2 * 60 * 1000);
 setInterval(loadDicas, 60000);
 </script>
+
+<!-- ── MODAL TROCA DE SENHA ── -->
+<div id="modal-troca-senha">
+  <div class="troca-card">
+    <h3>Crie sua senha</h3>
+    <p>Por segurança, defina uma senha pessoal para sua conta.</p>
+    <div class="field">
+      <label>Nova senha</label>
+      <input type="password" id="troca-nova" placeholder="Mínimo 6 caracteres">
+    </div>
+    <div class="field" style="margin-top:14px;">
+      <label>Confirmar senha</label>
+      <input type="password" id="troca-conf" placeholder="Repita a senha">
+    </div>
+    <div class="login-err" id="troca-err" style="margin-top:10px;"></div>
+    <button class="btn-rose" onclick="salvarNovaSenha()">Salvar minha senha</button>
+  </div>
+</div>
 
 <!-- ── LOADING SCREEN ── -->
 <div id="loading-screen">
