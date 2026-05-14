@@ -1,6 +1,6 @@
 {
-  "versao": "1.5.7",
+  "versao": "1.5.8",
   "data": "2026-05-14",
-  "notas": "PIX e cartao de credito via ASAAS com modal de escolha",
+  "notas": "Corrige billing type: usa BOLETO para PIX e boleto via ASAAS",
   "obrigatoria": false
 }

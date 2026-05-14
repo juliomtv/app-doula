@@ -2773,7 +2773,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.5.7';
+const APP_BUNDLE_VERSION = '1.5.8';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")
@@ -3070,8 +3070,8 @@ setInterval(loadDicas, 60000);
     <div style="font-size:40px;margin-bottom:8px;">💳</div>
     <h3 style="font-family:'Cormorant Garamond',serif;font-size:24px;font-style:italic;color:var(--dark);margin:0 0 6px;">Como deseja pagar?</h3>
     <p style="font-size:13px;color:var(--mid);margin:0 0 24px;">R$ 19,90/mês · Cancele quando quiser</p>
-    <button onclick="confirmarPagamento('PIX')" style="width:100%;padding:15px;background:var(--rose);border:none;border-radius:14px;color:white;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:10px;">
-      <span style="font-size:22px;">⚡</span> PIX
+    <button onclick="confirmarPagamento('BOLETO')" style="width:100%;padding:15px;background:var(--rose);border:none;border-radius:14px;color:white;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:10px;">
+      <span style="font-size:22px;">⚡</span> PIX / Boleto
     </button>
     <button onclick="confirmarPagamento('CREDIT_CARD')" style="width:100%;padding:15px;background:white;border:2px solid var(--rose);border-radius:14px;color:var(--rose);font-size:16px;font-weight:700;cursor:pointer;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:10px;">
       <span style="font-size:22px;">💳</span> Cartão de Crédito

@@ -1186,9 +1186,9 @@ def iniciar_pagamento():
         return jsonify({"status":"error","message":"Módulo de pagamento não configurado."}), 503
     data = request.json or {}
     user_id = data.get('user_id')
-    billing_type = data.get('billing_type', 'PIX').upper()
-    if billing_type not in ('PIX', 'CREDIT_CARD'):
-        billing_type = 'PIX'
+    billing_type = data.get('billing_type', 'BOLETO').upper()
+    if billing_type not in ('BOLETO', 'CREDIT_CARD'):
+        billing_type = 'BOLETO'
     if not user_id:
         return jsonify({"status":"error","message":"user_id obrigatório."}), 400
     db = get_db()
