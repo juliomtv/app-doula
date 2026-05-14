@@ -520,8 +520,22 @@ def save_fcm_token():
     user_id = data.get('user_id')
     token = (data.get('token') or '').strip()
     if not user_id or not token: return jsonify({'status': 'error'}), 400
-    get_db().execute('UPDATE users SET fcm_token=? WHERE id=?', (token, user_id))
-    get_db().commit()
+    db = get_db()
+    db.execute('UPDATE users SET fcm_token=?, plataforma=? WHERE id=?', (token, 'android', user_id))
+    db.commit()
+    return jsonify({'status': 'success'})
+
+@app.route('/api/users/plataforma', methods=['POST', 'OPTIONS'])
+def save_plataforma():
+    if request.method == 'OPTIONS': return '', 204
+    data = request.json or {}
+    user_id = data.get('user_id')
+    plataforma = data.get('plataforma', 'pwa')
+    if not user_id or plataforma not in ('android', 'pwa'): return jsonify({'status': 'error'}), 400
+    db = get_db()
+    # Só atualiza para pwa se ainda não for android (não sobrescreve token FCM registrado)
+    db.execute("UPDATE users SET plataforma=? WHERE id=? AND (plataforma IS NULL OR plataforma='pwa')", (plataforma, user_id))
+    db.commit()
     return jsonify({'status': 'success'})
 
 # ── NOTIFICAÇÕES ──────────────────────────────────────────────────────────────

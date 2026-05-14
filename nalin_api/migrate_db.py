@@ -52,6 +52,7 @@ def migrate():
     required_user_columns.append(('asaas_customer_id', 'TEXT'))
     required_user_columns.append(('asaas_subscription_id', 'TEXT'))
     required_user_columns.append(('assinatura_status', "TEXT DEFAULT 'inativa'"))
+    required_user_columns.append(('plataforma', "TEXT DEFAULT 'pwa'"))
     cursor.execute("PRAGMA table_info(users)")
     current_user_cols = [row[1] for row in cursor.fetchall()]
     for col_name, col_type in required_user_columns:

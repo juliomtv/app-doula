@@ -1121,11 +1121,17 @@ function goApp(){
   navTo('home');
   apiFetch('/api/config').then(cfg => {
     if (!cfg) return;
-    if (cfg.plano_valor) {
-      _planoValor = String(cfg.plano_valor).replace('.', ',');
-    }
+    if (cfg.plano_valor) _planoValor = String(cfg.plano_valor).replace('.', ',');
     if (cfg.plano_nome) _planoNome = cfg.plano_nome;
   }).catch(() => {});
+  // Reportar plataforma ao servidor
+  if (currentUser?.id && API_URL) {
+    const isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+    apiFetch('/api/users/plataforma', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: currentUser.id, plataforma: isNative ? 'android' : 'pwa' })
+    }).catch(() => {});
+  }
   setTimeout(() => {
     registrarPushNotifications();
     carregarBadgeNotificacoes();
@@ -2844,7 +2850,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.5.21';
+const APP_BUNDLE_VERSION = '1.5.22';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")

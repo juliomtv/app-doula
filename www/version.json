@@ -1,6 +1,6 @@
 {
-  "versao": "1.5.21",
+  "versao": "1.5.22",
   "data": "2026-05-14",
-  "notas": "Admin pode alterar o valor do plano premium",
+  "notas": "Mapeamento de plataforma Android/PWA nas doulandas",
   "obrigatoria": false
 }

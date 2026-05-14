@@ -305,6 +305,7 @@ tr:hover td{background:rgba(247,237,232,.5);}
 
     <div class="page" id="p-notificacoes">
       <div class="page-hdr"><h1>Notificações Push</h1><p>Envie notificações para as doulandas no celular</p></div>
+      <div id="notif-plataforma-resumo" style="font-size:13px;color:var(--mid);background:var(--warm);border:1px solid var(--rose-p);border-radius:10px;padding:10px 16px;margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
         <!-- Formulário de envio -->
         <div class="table-card">
@@ -722,7 +723,7 @@ async function renderDoulandas(){
   if(q)users=users.filter(u=>u.nome.toLowerCase().includes(q)||u.email.toLowerCase().includes(q));
   document.getElementById('doulandas-tbody').innerHTML=users.map(u=>`
     <tr>
-      <td><div class="td-name">${u.nome} <span style="font-size:10px;padding:2px 6px;border-radius:8px;font-weight:600;background:${u.tipo==='publico'?'#e3f2fd':'#fce4ec'};color:${u.tipo==='publico'?'#1565c0':'#880e4f'}">${u.tipo==='publico'?'Pública':'Doulanda'}</span></div><div style="font-size:11px;color:var(--lite);">${u.email}</div></td>
+      <td><div class="td-name">${u.nome} <span style="font-size:10px;padding:2px 6px;border-radius:8px;font-weight:600;background:${u.tipo==='publico'?'#e3f2fd':'#fce4ec'};color:${u.tipo==='publico'?'#1565c0':'#880e4f'}">${u.tipo==='publico'?'Pública':'Doulanda'}</span> <span title="${u.plataforma==='android'?'Android (recebe push)':'PWA — iOS ou navegador (não recebe push no celular)'}" style="font-size:13px;cursor:default;">${u.plataforma==='android'?'📱':'🌐'}</span></div><div style="font-size:11px;color:var(--lite);">${u.email}</div></td>
       <td>${(()=>{const {semanas,dias}=getSemanasDias(u);return dias>0?`${semanas}s + ${dias}d`:`${semanas} sem`;})()}</td>
       <td>${u.bebe||'—'}</td>
       <td>${u.dpp?new Date(u.dpp).toLocaleDateString('pt-BR'):'—'}</td>
@@ -985,7 +986,18 @@ async function renderNotificacoes(){
   const sel = document.getElementById('notif-dest');
   if(sel){
     sel.innerHTML = '<option value="todas">📢 Todas as doulandas</option>' +
-      users.map(u=>`<option value="${u.id}">${u.nome}</option>`).join('');
+      users.map(u=>`<option value="${u.id}">${u.plataforma==='android'?'📱':'🌐'} ${u.nome}</option>`).join('');
+  }
+
+  // Resumo de plataformas
+  const android = users.filter(u => u.plataforma === 'android').length;
+  const pwa = users.filter(u => u.plataforma !== 'android').length;
+  const resumoEl = document.getElementById('notif-plataforma-resumo');
+  if(resumoEl){
+    resumoEl.innerHTML = `
+      <span style="margin-right:12px;">📱 <strong>${android}</strong> Android (recebe push)</span>
+      <span>🌐 <strong>${pwa}</strong> PWA/iOS (vê só no app)</span>
+    `;
   }
   const lista = await apiFetch('/api/admin/notificacoes') || [];
   const el = document.getElementById('notif-lista');
