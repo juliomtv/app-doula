@@ -1044,17 +1044,15 @@ async function _onVisibilidadeChange(){
 
 async function _confirmarAcessoLiberado(){
   _pararPollingPagamento();
-  // Recarrega dados atualizados do usuário
   const me = await apiFetch(`/api/users/me?id=${currentUser.id}`);
   if(me && me.status === 'success' && me.user){
     currentUser = me.user;
-    DB.set('nn_user_cache', currentUser);
-  } else {
-    currentUser.assinatura_status = 'ativa';
-    currentUser.acesso_videos = 1;
-    currentUser.acesso_ebooks = 1;
-    DB.set('nn_user_cache', currentUser);
   }
+  // Always force-unlock: polling confirmed ativa status, trust that over any stale server response
+  currentUser.assinatura_status = 'ativa';
+  currentUser.acesso_videos = 1;
+  currentUser.acesso_ebooks = 1;
+  DB.set('nn_user_cache', currentUser);
   showToast('Acesso Premium liberado! Seja bem-vinda 🌸');
   setTimeout(() => renderConteudo(currentTab), 600);
 }
@@ -1528,8 +1526,15 @@ async function renderGrade(idx) {
   const allCont = [...apiCont, ...mappedEbooks];
   DB.set('nn_conteudos', allCont);
   const conteudos = allCont.filter(c => c.categoria === cat && c.ativo);
-  const list = document.getElementById('cont-list');
-  if (!list) return;
+  // _bloqueioAcesso replaces scroll.innerHTML and destroys #cont-list — restore it if missing
+  let list = document.getElementById('cont-list');
+  if (!list) {
+    const scroll = document.getElementById('cont-scroll');
+    if (!scroll) return;
+    scroll.innerHTML = '<div class="cont-grid" id="cont-list"></div>';
+    list = document.getElementById('cont-list');
+    if (!list) return;
+  }
   list.innerHTML = '';
   if (!conteudos.length) {
     list.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="ei">📭</div><p>Nenhum conteúdo ainda.<br>A Nalin está preparando algo especial!</p></div>`;
@@ -2832,7 +2837,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.5.19';
+const APP_BUNDLE_VERSION = '1.5.20';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")

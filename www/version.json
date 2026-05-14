@@ -1,6 +1,6 @@
 {
-  "versao": "1.5.19",
+  "versao": "1.5.20",
   "data": "2026-05-14",
-  "notas": "Aumenta margem do player desktop para controles ficarem visiveis",
+  "notas": "Libera acesso a todos os conteúdos automaticamente após o pagamento",
   "obrigatoria": false
 }
