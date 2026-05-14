@@ -2766,7 +2766,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.5.11';
+const APP_BUNDLE_VERSION = '1.5.14';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")
@@ -2793,6 +2793,8 @@ function _getUpdater() {
 
 async function verificarAtualizacao() {
   if (!API_URL) return;
+  // OTA só se aplica ao app nativo — no browser o service worker gerencia atualizações
+  if (!window.Capacitor || !window.Capacitor.isNativePlatform || !window.Capacitor.isNativePlatform()) return;
   try {
     // Inicializa versão local com a versão do bundle atual se nunca foi definida.
     // Evita que instalações novas peçam atualização imediatamente.
