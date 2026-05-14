@@ -977,17 +977,32 @@ async function doLogin(){
 }
 function iniciarAssinatura(){
   if(!currentUser) return;
+  document.getElementById('pag-step1').style.display='';
+  document.getElementById('pag-step2').style.display='none';
+  document.getElementById('pag-cpf').value='';
   document.getElementById('modal-pagamento').style.display='flex';
 }
 function fecharModalPagamento(){
   document.getElementById('modal-pagamento').style.display='none';
 }
-async function confirmarPagamento(billing_type){
+function selecionarFormaPagamento(tipo){
+  if(tipo==='BOLETO'){
+    document.getElementById('pag-step1').style.display='none';
+    document.getElementById('pag-step2').style.display='';
+    document.getElementById('pag-cpf').focus();
+  }
+}
+async function confirmarPagamento(billing_type, cpf){
+  const cpf_limpo = (cpf||'').replace(/\D/g,'');
+  if(billing_type==='BOLETO' && cpf_limpo.length < 11){
+    showToast('Informe um CPF válido (11 dígitos).');
+    return;
+  }
   fecharModalPagamento();
   showToast('Gerando link de pagamento...');
   const res = await apiFetch('/api/pagamento/iniciar', {
     method: 'POST',
-    body: JSON.stringify({user_id: currentUser.id, billing_type})
+    body: JSON.stringify({user_id: currentUser.id, billing_type, cpf: cpf_limpo})
   });
   if(res && res.status === 'success'){
     if(res.invoice_url){
@@ -2773,7 +2788,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.5.8';
+const APP_BUNDLE_VERSION = '1.5.9';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")
@@ -3067,16 +3082,30 @@ setInterval(loadDicas, 60000);
 <!-- ── MODAL PAGAMENTO ── -->
 <div id="modal-pagamento" style="display:none;position:fixed;inset:0;background:rgba(58,40,32,.6);z-index:5000;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)fecharModalPagamento()">
   <div style="background:white;border-radius:24px;padding:32px 28px;width:100%;max-width:360px;box-shadow:0 12px 48px rgba(169,107,85,.3);text-align:center;">
-    <div style="font-size:40px;margin-bottom:8px;">💳</div>
-    <h3 style="font-family:'Cormorant Garamond',serif;font-size:24px;font-style:italic;color:var(--dark);margin:0 0 6px;">Como deseja pagar?</h3>
-    <p style="font-size:13px;color:var(--mid);margin:0 0 24px;">R$ 19,90/mês · Cancele quando quiser</p>
-    <button onclick="confirmarPagamento('BOLETO')" style="width:100%;padding:15px;background:var(--rose);border:none;border-radius:14px;color:white;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:10px;">
-      <span style="font-size:22px;">⚡</span> PIX / Boleto
-    </button>
-    <button onclick="confirmarPagamento('CREDIT_CARD')" style="width:100%;padding:15px;background:white;border:2px solid var(--rose);border-radius:14px;color:var(--rose);font-size:16px;font-weight:700;cursor:pointer;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:10px;">
-      <span style="font-size:22px;">💳</span> Cartão de Crédito
-    </button>
-    <button onclick="fecharModalPagamento()" style="background:none;border:none;color:var(--mid);font-size:14px;cursor:pointer;text-decoration:underline;">Cancelar</button>
+    <div id="pag-step1">
+      <div style="font-size:40px;margin-bottom:8px;">💳</div>
+      <h3 style="font-family:'Cormorant Garamond',serif;font-size:24px;font-style:italic;color:var(--dark);margin:0 0 6px;">Como deseja pagar?</h3>
+      <p style="font-size:13px;color:var(--mid);margin:0 0 24px;">R$ 19,90/mês · Cancele quando quiser</p>
+      <button onclick="selecionarFormaPagamento('BOLETO')" style="width:100%;padding:15px;background:var(--rose);border:none;border-radius:14px;color:white;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:10px;">
+        <span style="font-size:22px;">⚡</span> PIX / Boleto
+      </button>
+      <button onclick="confirmarPagamento('CREDIT_CARD','')" style="width:100%;padding:15px;background:white;border:2px solid var(--rose);border-radius:14px;color:var(--rose);font-size:16px;font-weight:700;cursor:pointer;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:10px;">
+        <span style="font-size:22px;">💳</span> Cartão de Crédito
+      </button>
+      <button onclick="fecharModalPagamento()" style="background:none;border:none;color:var(--mid);font-size:14px;cursor:pointer;text-decoration:underline;">Cancelar</button>
+    </div>
+    <div id="pag-step2" style="display:none;">
+      <div style="font-size:40px;margin-bottom:8px;">⚡</div>
+      <h3 style="font-family:'Cormorant Garamond',serif;font-size:22px;font-style:italic;color:var(--dark);margin:0 0 6px;">PIX / Boleto</h3>
+      <p style="font-size:13px;color:var(--mid);margin:0 0 16px;">Informe seu CPF para gerar o pagamento</p>
+      <input id="pag-cpf" type="text" placeholder="000.000.000-00" maxlength="14" inputmode="numeric"
+        oninput="this.value=this.value.replace(/\D/g,'').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2')"
+        style="width:100%;padding:12px 14px;border:1.5px solid #e0c8c0;border-radius:12px;font-size:16px;margin-bottom:16px;box-sizing:border-box;text-align:center;letter-spacing:2px;">
+      <button onclick="confirmarPagamento('BOLETO', document.getElementById('pag-cpf').value)" style="width:100%;padding:15px;background:var(--rose);border:none;border-radius:14px;color:white;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:12px;">
+        Gerar link de pagamento
+      </button>
+      <button onclick="document.getElementById('pag-step1').style.display='';document.getElementById('pag-step2').style.display='none';" style="background:none;border:none;color:var(--mid);font-size:14px;cursor:pointer;text-decoration:underline;">Voltar</button>
+    </div>
   </div>
 </div>
 

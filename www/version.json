@@ -1,6 +1,6 @@
 {
-  "versao": "1.5.8",
+  "versao": "1.5.9",
   "data": "2026-05-14",
-  "notas": "Corrige billing type: usa BOLETO para PIX e boleto via ASAAS",
+  "notas": "Modal pagamento com CPF obrigatorio para PIX/Boleto",
   "obrigatoria": false
 }

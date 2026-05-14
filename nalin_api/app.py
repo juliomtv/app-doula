@@ -1189,6 +1189,9 @@ def iniciar_pagamento():
     billing_type = data.get('billing_type', 'BOLETO').upper()
     if billing_type not in ('BOLETO', 'CREDIT_CARD'):
         billing_type = 'BOLETO'
+    cpf_fornecido = data.get('cpf', '').replace('.','').replace('-','').replace(' ','')
+    if billing_type == 'BOLETO' and len(cpf_fornecido) < 11:
+        return jsonify({"status":"error","message":"CPF obrigatório para pagamento via PIX/Boleto."}), 400
     if not user_id:
         return jsonify({"status":"error","message":"user_id obrigatório."}), 400
     db = get_db()
@@ -1201,9 +1204,17 @@ def iniciar_pagamento():
         if not customer_id:
             cliente = _asaas.buscar_cliente_por_email(user['email'])
             if not cliente:
-                cliente = _asaas.criar_cliente(user['nome'], user['email'], user.get('cpf'))
+                cliente = _asaas.criar_cliente(user['nome'], user['email'], cpf_fornecido or user.get('cpf'))
             customer_id = cliente['id']
             db.execute('UPDATE users SET asaas_customer_id=? WHERE id=?', (customer_id, user_id))
+            db.commit()
+        # Atualiza CPF no ASAAS e no banco se foi fornecido
+        if cpf_fornecido:
+            try:
+                _asaas.atualizar_cpf_cliente(customer_id, cpf_fornecido)
+            except Exception:
+                pass
+            db.execute('UPDATE users SET cpf=? WHERE id=?', (cpf_fornecido, user_id))
             db.commit()
         assinatura = _asaas.criar_assinatura(customer_id, PLANO_VALOR, PLANO_NOME, billing_type)
         sub_id = assinatura.get('id')
