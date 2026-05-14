@@ -1,6 +1,6 @@
 {
-  "versao": "1.5.16",
+  "versao": "1.5.17",
   "data": "2026-05-14",
-  "notas": "Polling automatico de pagamento - acesso liberado sem recarregar pagina",
+  "notas": "Desktop: limita altura do player para controles nao ficarem atras da nav",
   "obrigatoria": false
 }
