@@ -1,6 +1,6 @@
 {
-  "versao": "1.5.10",
+  "versao": "1.5.11",
   "data": "2026-05-14",
-  "notas": "Corrige cliente removido no ASAAS: recria cliente automaticamente",
+  "notas": "Remove modal e boleto, assinar vai direto para cartao via ASAAS",
   "obrigatoria": false
 }
