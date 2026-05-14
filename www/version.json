@@ -1,6 +1,6 @@
 {
-  "versao": "1.5.4",
-  "data": "2026-05-05",
-  "notas": "Troca de senha no primeiro login. Botão esqueceu a senha. Cálculo automático de semanas pela DPP.",
-  "obrigatoria": true
+  "versao": "1.5.5",
+  "data": "2026-05-14",
+  "notas": "Cadastro publico, semanas+dias, modal corrigido, tornar doulanda",
+  "obrigatoria": false
 }

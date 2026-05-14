@@ -6,6 +6,7 @@ android/.gradle/
 android/local.properties
 nalin_api/*firebase*.json
 nalin_api/*adminsdk*.json
+nalin_api/config_pagamento.py
 uploads/
 *.apk
 nalin_api/__pycache__/

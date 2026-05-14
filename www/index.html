@@ -975,6 +975,21 @@ async function doLogin(){
     errEl.style.color = '#c0392b';
   }
 }
+async function iniciarAssinatura(){
+  if(!currentUser) return;
+  showToast('Iniciando pagamento... 💳');
+  const res = await apiFetch('/api/pagamento/iniciar', {
+    method: 'POST',
+    body: JSON.stringify({user_id: currentUser.id})
+  });
+  if(res && res.status === 'success'){
+    const url = res.assinatura?.invoiceUrl || res.assinatura?.bankSlipUrl;
+    if(url) _abrirUrl(url);
+    else showToast('Assinatura criada! Verifique seu e-mail para pagar. 💕');
+  } else {
+    showToast('Erro ao iniciar pagamento: ' + (res?.message || 'tente novamente.'));
+  }
+}
 function showEsqueceuSenha() {
   showToast('Entre em contato com sua doula para redefinir sua senha. 💕');
 }
@@ -1159,7 +1174,7 @@ function _bloqueioAcesso(tipo_conteudo){
           <div style="font-size:14px;color:var(--mid);margin-bottom:20px;">Assine o plano mensal e tenha acesso a todos os ${tipo_conteudo} e muito mais.</div>
           <div style="font-size:28px;font-weight:800;color:var(--rose);margin-bottom:4px;">R$ 19,90<span style="font-size:14px;font-weight:400;color:var(--mid)">/mês</span></div>
           <div style="font-size:12px;color:var(--light);margin-bottom:20px;">Cancele quando quiser</div>
-          <button class="btn-rose" onclick="showToast('Em breve! Entre em contato com a Nalin. 💕')">Quero assinar</button>
+          <button class="btn-rose" onclick="iniciarAssinatura()">Quero assinar</button>
         </div>`
       : `<div style="text-align:center;padding:60px 24px;color:var(--mid);">
           <div style="font-size:48px;margin-bottom:16px;">🔒</div>
@@ -2749,7 +2764,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.5.4';
+const APP_BUNDLE_VERSION = '1.5.5';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")
