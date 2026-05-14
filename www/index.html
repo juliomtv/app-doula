@@ -985,12 +985,61 @@ async function iniciarAssinatura(){
   if(res && res.status === 'success'){
     if(res.invoice_url){
       _abrirUrl(res.invoice_url);
+      _iniciarPollingPagamento();
     } else {
       showToast('Verifique seu e-mail para concluir o pagamento.');
     }
   } else {
     showToast('Erro: ' + (res?.message || 'tente novamente.'));
   }
+}
+
+let _pollingPagamentoTimer = null;
+
+function _iniciarPollingPagamento(){
+  _pararPollingPagamento();
+  let tentativas = 0;
+  const MAX = 72; // 6 minutos (72 × 5s)
+  _pollingPagamentoTimer = setInterval(async () => {
+    tentativas++;
+    if(tentativas > MAX){ _pararPollingPagamento(); return; }
+    try {
+      const s = await apiFetch(`/api/pagamento/status?user_id=${currentUser.id}`);
+      if(s && s.assinatura_status === 'ativa') await _confirmarAcessoLiberado();
+    } catch(_){}
+  }, 5000);
+  // Verifica imediatamente quando usuário volta para o app/aba
+  document.addEventListener('visibilitychange', _onVisibilidadeChange);
+}
+
+function _pararPollingPagamento(){
+  if(_pollingPagamentoTimer){ clearInterval(_pollingPagamentoTimer); _pollingPagamentoTimer = null; }
+  document.removeEventListener('visibilitychange', _onVisibilidadeChange);
+}
+
+async function _onVisibilidadeChange(){
+  if(document.visibilityState !== 'visible' || !currentUser) return;
+  try {
+    const s = await apiFetch(`/api/pagamento/status?user_id=${currentUser.id}`);
+    if(s && s.assinatura_status === 'ativa') await _confirmarAcessoLiberado();
+  } catch(_){}
+}
+
+async function _confirmarAcessoLiberado(){
+  _pararPollingPagamento();
+  // Recarrega dados atualizados do usuário
+  const me = await apiFetch(`/api/users/me?id=${currentUser.id}`);
+  if(me && me.status === 'success' && me.user){
+    currentUser = me.user;
+    DB.set('nn_user_cache', currentUser);
+  } else {
+    currentUser.assinatura_status = 'ativa';
+    currentUser.acesso_videos = 1;
+    currentUser.acesso_ebooks = 1;
+    DB.set('nn_user_cache', currentUser);
+  }
+  showToast('Acesso Premium liberado! Seja bem-vinda 🌸');
+  setTimeout(() => renderConteudo(currentTab), 600);
 }
 function showEsqueceuSenha() {
   showToast('Entre em contato com sua doula para redefinir sua senha. 💕');
@@ -2766,7 +2815,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.5.15';
+const APP_BUNDLE_VERSION = '1.5.16';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")

@@ -1,6 +1,6 @@
 {
-  "versao": "1.5.15",
+  "versao": "1.5.16",
   "data": "2026-05-14",
-  "notas": "Corrige loop de OTA no browser e PWA iOS",
+  "notas": "Polling automatico de pagamento - acesso liberado sem recarregar pagina",
   "obrigatoria": false
 }
