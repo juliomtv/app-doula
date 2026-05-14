@@ -369,7 +369,9 @@ textarea.dta:focus{border-color:var(--rose);}
     </div>
     <button class="btn-rose" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="l-err"></div>
-    <div class="login-note">Não tem conta? Peça à sua doula para criar seu acesso 🌺</div>
+    <div style="text-align:center;margin-top:14px;">
+      <button onclick="openModal('modal-cadastro')" style="width:100%;padding:12px;background:transparent;border:2px solid var(--rose);border-radius:14px;color:var(--rose);font-size:15px;font-weight:600;cursor:pointer;">Criar minha conta 🌸</button>
+    </div>
     <div style="text-align:center;margin-top:10px;">
       <button onclick="showEsqueceuSenha()" style="background:none;border:none;color:var(--light);font-size:12px;cursor:pointer;text-decoration:underline;">Esqueceu a senha?</button>
     </div>
@@ -1109,17 +1111,55 @@ function getCFEmbed(videoId) {
 let _videoAtualId = null;
 let _progressoCache = {};
 
-function _bloqueioAcesso(msg){
+async function doRegister(){
+  const nome  = document.getElementById('cad-nome').value.trim();
+  const email = document.getElementById('cad-email').value.trim().toLowerCase();
+  const senha = document.getElementById('cad-senha').value;
+  const senha2= document.getElementById('cad-senha2').value;
+  const bebe  = document.getElementById('cad-bebe').value.trim();
+  const dpp   = document.getElementById('cad-dpp').value;
+  const errEl = document.getElementById('cad-err');
+  const btn   = document.getElementById('cad-btn');
+  errEl.textContent = '';
+  if(!nome||!email||!senha){errEl.textContent='Preencha nome, e-mail e senha.';return;}
+  if(senha!==senha2){errEl.textContent='As senhas não coincidem.';return;}
+  if(senha.length<6){errEl.textContent='Senha deve ter pelo menos 6 caracteres.';return;}
+  btn.disabled=true; btn.textContent='Criando conta...';
+  const res = await apiFetch('/api/register',{method:'POST',body:JSON.stringify({nome,email,senha,bebe,dpp})});
+  btn.disabled=false; btn.textContent='Criar conta';
+  if(res&&res.status==='success'){
+    currentUser=res.user;
+    DB.set('nn_session',currentUser.id);
+    DB.set('nn_user_cache',currentUser);
+    closeModal('modal-cadastro');
+    showToast('Conta criada! Bem-vinda, '+nome.split(' ')[0]+'! 🌸');
+    goApp();
+  } else {
+    errEl.textContent=res?.message||'Erro ao criar conta. Tente novamente.';
+  }
+}
+
+function _bloqueioAcesso(tipo_conteudo){
   const layout=document.getElementById('curso-layout');
   const scroll=document.getElementById('cont-scroll');
   if(layout) layout.style.display='none';
   if(scroll){
     scroll.style.display='block';
-    scroll.innerHTML=`<div style="text-align:center;padding:60px 24px;color:var(--mid);">
-      <div style="font-size:48px;margin-bottom:16px;">🔒</div>
-      <div style="font-size:17px;font-weight:600;color:var(--dark);margin-bottom:8px;">Conteúdo bloqueado</div>
-      <div style="font-size:14px;">${msg}</div>
-    </div>`;
+    const isPublico = currentUser && currentUser.tipo === 'publico';
+    scroll.innerHTML = isPublico
+      ? `<div style="text-align:center;padding:48px 24px;">
+          <div style="font-size:52px;margin-bottom:16px;">🔒</div>
+          <div style="font-size:18px;font-weight:700;color:var(--dark);margin-bottom:8px;">Conteúdo exclusivo</div>
+          <div style="font-size:14px;color:var(--mid);margin-bottom:20px;">Assine o plano mensal e tenha acesso a todos os ${tipo_conteudo} e muito mais.</div>
+          <div style="font-size:28px;font-weight:800;color:var(--rose);margin-bottom:4px;">R$ 19,90<span style="font-size:14px;font-weight:400;color:var(--mid)">/mês</span></div>
+          <div style="font-size:12px;color:var(--light);margin-bottom:20px;">Cancele quando quiser</div>
+          <button class="btn-rose" onclick="showToast('Em breve! Entre em contato com a Nalin. 💕')">Quero assinar</button>
+        </div>`
+      : `<div style="text-align:center;padding:60px 24px;color:var(--mid);">
+          <div style="font-size:48px;margin-bottom:16px;">🔒</div>
+          <div style="font-size:17px;font-weight:600;color:var(--dark);margin-bottom:8px;">Conteúdo bloqueado</div>
+          <div style="font-size:14px;">Entre em contato com sua doula para liberar o acesso.</div>
+        </div>`;
   }
 }
 
@@ -1131,7 +1171,7 @@ async function renderConteudo(idx){
 
   if (idx === 0) {
     if(currentUser && currentUser.acesso_videos === 0){
-      _bloqueioAcesso('Você ainda não tem acesso aos vídeos.');
+      _bloqueioAcesso('vídeos');
       return;
     }
     layout.style.display = 'flex';
@@ -1139,7 +1179,7 @@ async function renderConteudo(idx){
     await renderMiniCurso();
   } else if (idx === 1) {
     if(currentUser && currentUser.acesso_ebooks === 0){
-      _bloqueioAcesso('Você ainda não tem acesso aos e-books.');
+      _bloqueioAcesso('e-books');
       return;
     }
     layout.style.display = 'none';
@@ -2988,6 +3028,41 @@ const _safetyTimer = setTimeout(() => _hideLoading(), 6000);
 setInterval(() => { if (currentUser && currentUser.id) syncUserData(); }, 2 * 60 * 1000);
 setInterval(loadDicas, 60000);
 </script>
+
+<!-- ── MODAL CADASTRO ── -->
+<div class="modal" id="modal-cadastro">
+  <div class="modal-box" style="max-height:90vh;overflow-y:auto;">
+    <button class="modal-close" onclick="closeModal('modal-cadastro')">×</button>
+    <h3 style="font-family:'Cormorant Garamond',serif;font-size:22px;font-style:italic;color:var(--dark);margin-bottom:4px;">Criar minha conta 🌸</h3>
+    <p style="font-size:13px;color:var(--mid);margin-bottom:16px;">Acompanhe sua gestação e acesse conteúdos gratuitos.</p>
+    <div class="field">
+      <label>Nome completo *</label>
+      <input type="text" id="cad-nome" placeholder="Seu nome completo">
+    </div>
+    <div class="field">
+      <label>E-mail *</label>
+      <input type="email" id="cad-email" placeholder="seu@email.com">
+    </div>
+    <div class="field">
+      <label>Senha * (mínimo 6 caracteres)</label>
+      <input type="password" id="cad-senha" placeholder="••••••••">
+    </div>
+    <div class="field">
+      <label>Confirmar senha *</label>
+      <input type="password" id="cad-senha2" placeholder="••••••••">
+    </div>
+    <div class="field">
+      <label>Nome do bebê (opcional)</label>
+      <input type="text" id="cad-bebe" placeholder="Ex: Sofia">
+    </div>
+    <div class="field">
+      <label>Data prevista do parto (opcional)</label>
+      <input type="date" id="cad-dpp">
+    </div>
+    <div id="cad-err" style="color:#e53935;font-size:13px;margin-bottom:8px;min-height:18px;"></div>
+    <button class="btn-rose" id="cad-btn" onclick="doRegister()">Criar conta</button>
+  </div>
+</div>
 
 <!-- ── MODAL TROCA DE SENHA ── -->
 <div id="modal-troca-senha">

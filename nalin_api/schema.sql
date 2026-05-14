@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS users (
     ativo INTEGER DEFAULT 1,
     acesso_videos INTEGER DEFAULT 1,
     acesso_ebooks INTEGER DEFAULT 1,
+    tipo TEXT DEFAULT 'doulanda',
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

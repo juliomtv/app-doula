@@ -389,6 +389,30 @@ def admin_login():
         return jsonify({"ok":True,"token":generate_token(admin['id'],admin['username'])})
     return jsonify({"ok":False,"erro":"Usuário ou senha incorretos."}), 401
 
+@app.route('/api/register', methods=['POST', 'OPTIONS'])
+def register():
+    if request.method == 'OPTIONS': return '', 204
+    data = request.json or {}
+    nome  = data.get('nome', '').strip()
+    email = data.get('email', '').strip().lower()
+    senha = data.get('senha', '').strip()
+    bebe  = data.get('bebe', '').strip()
+    dpp   = data.get('dpp', '').strip()
+    if not nome or not email or not senha:
+        return jsonify({"status":"error","message":"Nome, e-mail e senha são obrigatórios."}), 400
+    if len(senha) < 6:
+        return jsonify({"status":"error","message":"Senha deve ter pelo menos 6 caracteres."}), 400
+    db = get_db()
+    if db.execute('SELECT id FROM users WHERE email=?', (email,)).fetchone():
+        return jsonify({"status":"error","message":"E-mail já cadastrado."}), 400
+    db.execute(
+        'INSERT INTO users (nome,email,senha,bebe,dpp,tipo,acesso_videos,acesso_ebooks,senha_provisoria,ativo) VALUES (?,?,?,?,?,?,?,?,?,?)',
+        (nome, email, hash_password(senha), bebe, dpp, 'publico', 0, 0, 0, 1)
+    )
+    db.commit()
+    user = dict(db.execute('SELECT * FROM users WHERE email=?', (email,)).fetchone())
+    return jsonify({"status":"success","user":user})
+
 @app.route('/api/users', methods=['GET'])
 @require_admin
 def list_users():
