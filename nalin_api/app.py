@@ -777,7 +777,18 @@ def config():
     if request.method == 'OPTIONS': return '', 204
     db = get_db(); rows = db.execute('SELECT chave,valor FROM config_global').fetchall()
     m = {r['chave']:r['valor'] for r in rows}
-    return jsonify({'whatsapp_numero':m.get('whatsapp_numero',''),'whatsapp_mensagem':m.get('whatsapp_mensagem','Olá!'),'instagram_url':m.get('instagram_url',''),'email_contato':m.get('email_contato','')})
+    try:
+        plano_valor = float(m['plano_valor']) if 'plano_valor' in m else _PLANO_VALOR_FALLBACK
+    except (ValueError, TypeError):
+        plano_valor = _PLANO_VALOR_FALLBACK
+    return jsonify({
+        'whatsapp_numero': m.get('whatsapp_numero', ''),
+        'whatsapp_mensagem': m.get('whatsapp_mensagem', 'Olá!'),
+        'instagram_url': m.get('instagram_url', ''),
+        'email_contato': m.get('email_contato', ''),
+        'plano_valor': plano_valor,
+        'plano_nome': m.get('plano_nome') or _PLANO_NOME_FALLBACK,
+    })
 
 @app.route('/api/admin/config', methods=['GET','POST','OPTIONS'])
 @require_admin
@@ -787,9 +798,16 @@ def admin_config():
     if request.method == 'GET':
         return jsonify([dict(r) for r in db.execute('SELECT chave,valor FROM config_global').fetchall()])
     data = request.json or {}
-    for campo in ['whatsapp_numero','whatsapp_mensagem','instagram_url','email_contato']:
+    for campo in ['whatsapp_numero','whatsapp_mensagem','instagram_url','email_contato','plano_nome']:
         if campo in data:
             db.execute("INSERT OR REPLACE INTO config_global (chave,valor,atualizado_em) VALUES (?,?,CURRENT_TIMESTAMP)",(campo,data[campo]))
+    if 'plano_valor' in data:
+        try:
+            val = float(str(data['plano_valor']).replace(',','.'))
+            if val > 0:
+                db.execute("INSERT OR REPLACE INTO config_global (chave,valor,atualizado_em) VALUES (?,?,CURRENT_TIMESTAMP)",('plano_valor', str(round(val, 2))))
+        except (ValueError, TypeError):
+            pass
     db.commit(); return jsonify({"status":"success"})
 
 @app.route('/api/admin/change-password', methods=['POST','OPTIONS'])
@@ -1179,6 +1197,22 @@ except ImportError:
         _ASAAS_OK = False
         ASAAS_WEBHOOK_TOKEN = ''
 
+_PLANO_VALOR_FALLBACK = PLANO_VALOR if _ASAAS_OK else 19.90
+_PLANO_NOME_FALLBACK  = PLANO_NOME  if _ASAAS_OK else 'Acesso Premium - App Doula Nalin'
+
+def get_plano_config():
+    """Lê valor e nome do plano do banco (config_global), com fallback para config_pagamento.py."""
+    db = get_db()
+    rows = {r['chave']: r['valor'] for r in db.execute(
+        "SELECT chave,valor FROM config_global WHERE chave IN ('plano_valor','plano_nome')"
+    ).fetchall()}
+    try:
+        valor = float(rows['plano_valor']) if 'plano_valor' in rows else _PLANO_VALOR_FALLBACK
+    except (ValueError, TypeError):
+        valor = _PLANO_VALOR_FALLBACK
+    nome = rows.get('plano_nome') or _PLANO_NOME_FALLBACK
+    return valor, nome
+
 @app.route('/api/pagamento/iniciar', methods=['POST', 'OPTIONS'])
 def iniciar_pagamento():
     """Cria cliente + assinatura no ASAAS e retorna o link de pagamento."""
@@ -1225,7 +1259,8 @@ def iniciar_pagamento():
                 pass
             db.execute('UPDATE users SET cpf=? WHERE id=?', (cpf_fornecido, user_id))
             db.commit()
-        assinatura = _asaas.criar_assinatura(customer_id, PLANO_VALOR, PLANO_NOME, billing_type)
+        plano_valor, plano_nome = get_plano_config()
+        assinatura = _asaas.criar_assinatura(customer_id, plano_valor, plano_nome, billing_type)
         sub_id = assinatura.get('id')
         db.execute('UPDATE users SET asaas_subscription_id=?, assinatura_status=? WHERE id=?',
                    (sub_id, 'pendente', user_id))

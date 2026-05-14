@@ -363,6 +363,27 @@ tr:hover td{background:rgba(247,237,232,.5);}
           </div>
         </div>
       </div>
+      <!-- Card Plano Premium -->
+      <div class="table-card" style="margin-top:20px;">
+        <div class="tc-hdr"><h3>💰 Plano Premium</h3></div>
+        <div style="padding:20px;display:flex;flex-direction:column;gap:12px;">
+          <div style="display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:end;">
+            <div class="mfield">
+              <label>Valor mensal (R$)</label>
+              <input type="number" id="cfg-plano-valor" placeholder="19.90" min="0.01" step="0.01" style="width:100%;">
+            </div>
+            <div class="mfield">
+              <label>Nome do plano</label>
+              <input type="text" id="cfg-plano-nome" placeholder="Acesso Premium - App Doula Nalin" style="width:100%;">
+            </div>
+          </div>
+          <div style="font-size:12px;color:#7a4a2a;background:#fff8f0;border:1px solid #f5c6a0;padding:10px 12px;border-radius:8px;">
+            ⚠️ Alterar o valor afeta apenas <strong>novas assinaturas</strong>. Clientes com assinaturas ativas continuam pagando o valor original no ASAAS.
+          </div>
+          <button class="btn-sm btn-rose-sm" style="align-self:flex-end" onclick="savePlanoConfig()">Salvar plano</button>
+          <div id="cfg-plano-msg" style="font-size:13px;min-height:16px;"></div>
+        </div>
+      </div>
       <!-- Card de URL do Servidor -->
       <div class="table-card" style="margin-top:20px;">
         <div class="tc-hdr"><h3>🌐 Conexão do App com o Servidor</h3></div>
@@ -1521,6 +1542,8 @@ async function loadConfig() {
   document.getElementById('cfg-whatsapp-msg').value = configMap.whatsapp_mensagem || '';
   document.getElementById('cfg-instagram').value = configMap.instagram_url || '';
   document.getElementById('cfg-email').value = configMap.email_contato || '';
+  document.getElementById('cfg-plano-valor').value = configMap.plano_valor || '19.90';
+  document.getElementById('cfg-plano-nome').value = configMap.plano_nome || '';
 
   // Carregar URL base do servidor
   const urlInfo = await apiFetch('/api/url-servidor') || {};
@@ -1580,6 +1603,27 @@ async function saveConfig() {
   } else {
     document.getElementById('cfg-contact-msg').textContent = 'Erro ao salvar configuracoes';
     document.getElementById('cfg-contact-msg').style.color = 'var(--err)';
+  }
+}
+
+async function savePlanoConfig() {
+  const msgEl = document.getElementById('cfg-plano-msg');
+  const valorStr = document.getElementById('cfg-plano-valor').value.replace(',', '.');
+  const valor = parseFloat(valorStr);
+  const nome = document.getElementById('cfg-plano-nome').value.trim();
+  if (!valor || valor <= 0) {
+    msgEl.textContent = 'Informe um valor válido.';
+    msgEl.style.color = 'var(--err)';
+    return;
+  }
+  const res = await apiFetch('/api/admin/config', { method: 'POST', body: JSON.stringify({ plano_valor: valor, plano_nome: nome }) });
+  if (res && res.status === 'success') {
+    msgEl.textContent = 'Plano atualizado com sucesso!';
+    msgEl.style.color = 'var(--ok)';
+    setTimeout(() => msgEl.textContent = '', 3000);
+  } else {
+    msgEl.textContent = 'Erro ao salvar.';
+    msgEl.style.color = 'var(--err)';
   }
 }
 

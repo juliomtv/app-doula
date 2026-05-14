@@ -1,6 +1,6 @@
 {
-  "versao": "1.5.20",
+  "versao": "1.5.21",
   "data": "2026-05-14",
-  "notas": "Libera acesso a todos os conteúdos automaticamente após o pagamento",
+  "notas": "Admin pode alterar o valor do plano premium",
   "obrigatoria": false
 }
