@@ -1167,16 +1167,17 @@ def _gerar_icones_pwa():
 # PAGAMENTO — ASAAS
 # ══════════════════════════════════════════════════════════════════
 try:
-    from nalin_api.config_pagamento import PLANO_VALOR, PLANO_NOME
+    from nalin_api.config_pagamento import PLANO_VALOR, PLANO_NOME, ASAAS_WEBHOOK_TOKEN
     from nalin_api import asaas as _asaas
     _ASAAS_OK = True
 except ImportError:
     try:
-        from config_pagamento import PLANO_VALOR, PLANO_NOME
+        from config_pagamento import PLANO_VALOR, PLANO_NOME, ASAAS_WEBHOOK_TOKEN
         import asaas as _asaas
         _ASAAS_OK = True
     except ImportError:
         _ASAAS_OK = False
+        ASAAS_WEBHOOK_TOKEN = ''
 
 @app.route('/api/pagamento/iniciar', methods=['POST', 'OPTIONS'])
 def iniciar_pagamento():
@@ -1239,6 +1240,9 @@ def iniciar_pagamento():
 @app.route('/api/pagamento/webhook', methods=['POST'])
 def pagamento_webhook():
     """Recebe notificações do ASAAS e atualiza acesso da usuária."""
+    token_recebido = request.headers.get('asaas-access-token', '')
+    if ASAAS_WEBHOOK_TOKEN and token_recebido != ASAAS_WEBHOOK_TOKEN:
+        return '', 401
     data = request.json or {}
     evento = data.get('event', '')
     payment = data.get('payment', {})

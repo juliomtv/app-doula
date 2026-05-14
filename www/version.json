@@ -1,6 +1,6 @@
 {
-  "versao": "1.5.12",
+  "versao": "1.5.13",
   "data": "2026-05-14",
-  "notas": "Admin: botao sincronizar assinatura ASAAS manualmente",
+  "notas": "Webhook ASAAS com validacao de token",
   "obrigatoria": false
 }
