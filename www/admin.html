@@ -714,6 +714,7 @@ async function renderDoulandas(){
         <button class="btn-sm btn-ghost" onclick="editDoula(${u.id})">✏️ Editar</button>
         <button class="btn-sm btn-ghost" onclick="resetSenhaDoula(${u.id},'${u.nome.replace(/'/g,'')}')">🔑 Senha</button>
         ${u.tipo==='publico'?`<button class="btn-sm btn-ghost" onclick="tornarDoulanda(${u.id},'${u.nome.replace(/'/g,'')}')">⭐ Doulanda</button>`:''}
+        ${u.asaas_subscription_id?`<button class="btn-sm btn-ghost" onclick="sincronizarAssinatura(${u.id},'${u.nome.replace(/'/g,'')}')">🔄 Assinatura</button>`:''}
         <button class="btn-sm btn-danger" onclick="toggleDoula(${u.id})">${u.ativo?'🚫 Desativar':'✅ Ativar'}</button>
         <button class="btn-sm btn-danger" onclick="excluirDoula(${u.id},'${u.nome.replace(/'/g,'')}')">🗑️ Excluir</button>
       </div></td>
@@ -745,6 +746,16 @@ function calcSemanasFromDPP() {
   const semanasRestantes = (dpp - hoje) / (7 * 24 * 60 * 60 * 1000);
   const semanas = Math.round(40 - semanasRestantes);
   semEl.value = Math.max(0, Math.min(42, semanas));
+}
+
+async function sincronizarAssinatura(id, nome) {
+  const res = await apiFetch(`/api/admin/users/${id}/sincronizar-assinatura`, { method: 'POST' });
+  if (res && res.status === 'success') {
+    await renderDoulandas();
+    showToast(`${nome}: assinatura ${res.assinatura_status} (ASAAS: ${res.asaas_status})`);
+  } else {
+    showToast('Erro: ' + (res?.message || 'tente novamente.'));
+  }
 }
 
 async function tornarDoulanda(id, nome) {

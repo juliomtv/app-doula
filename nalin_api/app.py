@@ -1265,6 +1265,36 @@ def status_pagamento():
     if not user: return jsonify({"status":"error"}), 404
     return jsonify(dict(user))
 
+@app.route('/api/admin/users/<int:user_id>/sincronizar-assinatura', methods=['POST', 'OPTIONS'])
+@require_admin
+def sincronizar_assinatura(user_id):
+    """Consulta o ASAAS e atualiza o status de acesso da usuária."""
+    if request.method == 'OPTIONS': return '', 204
+    if not _ASAAS_OK:
+        return jsonify({"status":"error","message":"Módulo de pagamento não configurado."}), 503
+    db = get_db()
+    user = db.execute('SELECT * FROM users WHERE id=?', (user_id,)).fetchone()
+    if not user: return jsonify({"status":"error","message":"Usuária não encontrada."}), 404
+    user = dict(user)
+    sub_id = user.get('asaas_subscription_id')
+    if not sub_id:
+        return jsonify({"status":"error","message":"Usuária não possui assinatura cadastrada."}), 400
+    try:
+        assinatura = _asaas.buscar_assinatura(sub_id)
+        status_asaas = assinatura.get('status', '')
+        if status_asaas == 'ACTIVE':
+            db.execute("UPDATE users SET assinatura_status='ativa', acesso_videos=1, acesso_ebooks=1 WHERE id=?", (user_id,))
+            novo_status = 'ativa'
+        elif status_asaas in ('INACTIVE', 'OVERDUE', 'EXPIRED'):
+            db.execute("UPDATE users SET assinatura_status='vencida', acesso_videos=0, acesso_ebooks=0 WHERE id=?", (user_id,))
+            novo_status = 'vencida'
+        else:
+            novo_status = status_asaas
+        db.commit()
+        return jsonify({"status":"success","asaas_status":status_asaas,"assinatura_status":novo_status})
+    except Exception as e:
+        return jsonify({"status":"error","message":str(e)}), 500
+
 if __name__ == '__main__':
     _gerar_icones_pwa()
     init_db()

@@ -1,6 +1,6 @@
 {
-  "versao": "1.5.11",
+  "versao": "1.5.12",
   "data": "2026-05-14",
-  "notas": "Remove modal e boleto, assinar vai direto para cartao via ASAAS",
+  "notas": "Admin: botao sincronizar assinatura ASAAS manualmente",
   "obrigatoria": false
 }
