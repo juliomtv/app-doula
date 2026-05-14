@@ -1163,6 +1163,85 @@ def _gerar_icones_pwa():
     _png(os.path.join(icons, 'icon-512.png'), 512)
     _png(os.path.join(icons, 'icon-180.png'), 180)
 
+# ══════════════════════════════════════════════════════════════════
+# PAGAMENTO — ASAAS
+# ══════════════════════════════════════════════════════════════════
+try:
+    from nalin_api.config_pagamento import PLANO_VALOR, PLANO_NOME
+    from nalin_api import asaas as _asaas
+    _ASAAS_OK = True
+except ImportError:
+    try:
+        from config_pagamento import PLANO_VALOR, PLANO_NOME
+        import asaas as _asaas
+        _ASAAS_OK = True
+    except ImportError:
+        _ASAAS_OK = False
+
+@app.route('/api/pagamento/iniciar', methods=['POST', 'OPTIONS'])
+def iniciar_pagamento():
+    """Cria cliente + assinatura no ASAAS e retorna o link de pagamento."""
+    if request.method == 'OPTIONS': return '', 204
+    if not _ASAAS_OK:
+        return jsonify({"status":"error","message":"Módulo de pagamento não configurado."}), 503
+    data = request.json or {}
+    user_id = data.get('user_id')
+    if not user_id:
+        return jsonify({"status":"error","message":"user_id obrigatório."}), 400
+    db = get_db()
+    user = db.execute('SELECT * FROM users WHERE id=?', (user_id,)).fetchone()
+    if not user:
+        return jsonify({"status":"error","message":"Usuária não encontrada."}), 404
+    user = dict(user)
+    try:
+        # Busca ou cria cliente no ASAAS
+        customer_id = user.get('asaas_customer_id')
+        if not customer_id:
+            cliente = _asaas.buscar_cliente_por_email(user['email'])
+            if not cliente:
+                cliente = _asaas.criar_cliente(user['nome'], user['email'], user.get('cpf'))
+            customer_id = cliente['id']
+            db.execute('UPDATE users SET asaas_customer_id=? WHERE id=?', (customer_id, user_id))
+            db.commit()
+        # Cria assinatura
+        assinatura = _asaas.criar_assinatura(customer_id, PLANO_VALOR, PLANO_NOME)
+        sub_id = assinatura.get('id')
+        db.execute('UPDATE users SET asaas_subscription_id=?, assinatura_status=? WHERE id=?',
+                   (sub_id, 'pendente', user_id))
+        db.commit()
+        return jsonify({"status":"success","subscription_id":sub_id,"assinatura":assinatura})
+    except Exception as e:
+        return jsonify({"status":"error","message":str(e)}), 500
+
+@app.route('/api/pagamento/webhook', methods=['POST'])
+def pagamento_webhook():
+    """Recebe notificações do ASAAS e atualiza acesso da usuária."""
+    data = request.json or {}
+    evento = data.get('event', '')
+    payment = data.get('payment', {})
+    subscription_id = payment.get('subscription') or data.get('subscription', {}).get('id')
+    if not subscription_id:
+        return '', 200
+    db = get_db()
+    user = db.execute('SELECT * FROM users WHERE asaas_subscription_id=?', (subscription_id,)).fetchone()
+    if not user:
+        return '', 200
+    if evento in ('PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED'):
+        db.execute("UPDATE users SET assinatura_status='ativa', acesso_videos=1, acesso_ebooks=1 WHERE id=?", (user['id'],))
+    elif evento in ('PAYMENT_OVERDUE', 'SUBSCRIPTION_INACTIVATED'):
+        db.execute("UPDATE users SET assinatura_status='vencida', acesso_videos=0, acesso_ebooks=0 WHERE id=?", (user['id'],))
+    db.commit()
+    return '', 200
+
+@app.route('/api/pagamento/status', methods=['GET'])
+def status_pagamento():
+    user_id = request.args.get('user_id')
+    if not user_id: return jsonify({"status":"error"}), 400
+    db = get_db()
+    user = db.execute('SELECT assinatura_status, acesso_videos, acesso_ebooks FROM users WHERE id=?', (user_id,)).fetchone()
+    if not user: return jsonify({"status":"error"}), 404
+    return jsonify(dict(user))
+
 if __name__ == '__main__':
     _gerar_icones_pwa()
     init_db()

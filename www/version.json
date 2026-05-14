@@ -1,6 +1,6 @@
 {
-  "versao": "1.5.5",
+  "versao": "1.5.6",
   "data": "2026-05-14",
-  "notas": "Cadastro publico, semanas+dias, modal corrigido, tornar doulanda",
+  "notas": "Semanas+dias no admin, estrutura ASAAS preparada",
   "obrigatoria": false
 }

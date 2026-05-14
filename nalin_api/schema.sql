@@ -43,6 +43,9 @@ CREATE TABLE IF NOT EXISTS users (
     acesso_videos INTEGER DEFAULT 1,
     acesso_ebooks INTEGER DEFAULT 1,
     tipo TEXT DEFAULT 'doulanda',
+    asaas_customer_id TEXT,
+    asaas_subscription_id TEXT,
+    assinatura_status TEXT DEFAULT 'inativa',
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

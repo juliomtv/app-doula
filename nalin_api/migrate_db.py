@@ -49,6 +49,9 @@ def migrate():
     ]
     required_user_columns.append(('senha_provisoria', 'INTEGER DEFAULT 0'))
     required_user_columns.append(('tipo', "TEXT DEFAULT 'doulanda'"))
+    required_user_columns.append(('asaas_customer_id', 'TEXT'))
+    required_user_columns.append(('asaas_subscription_id', 'TEXT'))
+    required_user_columns.append(('assinatura_status', "TEXT DEFAULT 'inativa'"))
     cursor.execute("PRAGMA table_info(users)")
     current_user_cols = [row[1] for row in cursor.fetchall()]
     for col_name, col_type in required_user_columns:
