@@ -134,7 +134,7 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif;}
   .curso-main{overflow-y:auto;}
   .player-area{
     /* largura máxima = altura_disponivel × 16/9, garante que o vídeo não ultrapassa a altura visível */
-    width:min(100%, calc((100vh - 240px) * 16 / 9));
+    width:min(100%, calc((100vh - 268px) * 16 / 9));
     aspect-ratio:16/9;
     margin:0 auto;
     flex-shrink:0;
@@ -2832,7 +2832,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.5.18';
+const APP_BUNDLE_VERSION = '1.5.19';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")

@@ -1,6 +1,6 @@
 {
-  "versao": "1.5.18",
+  "versao": "1.5.19",
   "data": "2026-05-14",
-  "notas": "Fix player desktop: min() garante video dentro da altura visivel",
+  "notas": "Aumenta margem do player desktop para controles ficarem visiveis",
   "obrigatoria": false
 }
