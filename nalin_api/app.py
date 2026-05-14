@@ -398,8 +398,8 @@ def register():
     senha = data.get('senha', '').strip()
     bebe  = data.get('bebe', '').strip()
     dpp   = data.get('dpp', '').strip()
-    if not nome or not email or not senha:
-        return jsonify({"status":"error","message":"Nome, e-mail e senha são obrigatórios."}), 400
+    if not nome or not email or not senha or not dpp:
+        return jsonify({"status":"error","message":"Nome, e-mail, senha e DPP são obrigatórios."}), 400
     if len(senha) < 6:
         return jsonify({"status":"error","message":"Senha deve ter pelo menos 6 caracteres."}), 400
     db = get_db()
@@ -487,6 +487,15 @@ def delete_user(user_id):
 @require_admin
 def toggle_user(user_id):
     db = get_db(); db.execute('UPDATE users SET ativo = NOT ativo WHERE id = ?',(user_id,)); db.commit()
+    return jsonify({"status":"success"})
+
+@app.route('/api/admin/users/<int:user_id>/tornar-doulanda', methods=['POST', 'OPTIONS'])
+@require_admin
+def tornar_doulanda(user_id):
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    db.execute("UPDATE users SET tipo='doulanda', acesso_videos=1, acesso_ebooks=1 WHERE id=?", (user_id,))
+    db.commit()
     return jsonify({"status":"success"})
 
 @app.route('/api/admin/users/<int:user_id>/acesso', methods=['POST', 'OPTIONS'])

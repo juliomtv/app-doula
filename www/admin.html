@@ -713,6 +713,7 @@ async function renderDoulandas(){
       <td><div class="td-actions">
         <button class="btn-sm btn-ghost" onclick="editDoula(${u.id})">✏️ Editar</button>
         <button class="btn-sm btn-ghost" onclick="resetSenhaDoula(${u.id},'${u.nome.replace(/'/g,'')}')">🔑 Senha</button>
+        ${u.tipo==='publico'?`<button class="btn-sm btn-ghost" onclick="tornarDoulanda(${u.id},'${u.nome.replace(/'/g,'')}')">⭐ Doulanda</button>`:''}
         <button class="btn-sm btn-danger" onclick="toggleDoula(${u.id})">${u.ativo?'🚫 Desativar':'✅ Ativar'}</button>
         <button class="btn-sm btn-danger" onclick="excluirDoula(${u.id},'${u.nome.replace(/'/g,'')}')">🗑️ Excluir</button>
       </div></td>
@@ -732,6 +733,17 @@ function calcSemanasFromDPP() {
   const semanasRestantes = (dpp - hoje) / (7 * 24 * 60 * 60 * 1000);
   const semanas = Math.round(40 - semanasRestantes);
   semEl.value = Math.max(0, Math.min(42, semanas));
+}
+
+async function tornarDoulanda(id, nome) {
+  if (!confirm(`Converter "${nome}" para Doulanda?\n\nIsso liberará o acesso a vídeos e e-books.`)) return;
+  const res = await apiFetch(`/api/admin/users/${id}/tornar-doulanda`, { method: 'POST' });
+  if (res && res.status === 'success') {
+    await renderDoulandas();
+    showToastA(`${nome} agora é Doulanda! ⭐`);
+  } else {
+    alert('Erro: ' + (res?.message || 'tente novamente.'));
+  }
 }
 
 async function excluirDoula(id, nome) {
