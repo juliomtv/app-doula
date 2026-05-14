@@ -1,6 +1,6 @@
 {
-  "versao": "1.5.14",
+  "versao": "1.5.15",
   "data": "2026-05-14",
-  "notas": "OTA update check so no app nativo, nao no browser",
+  "notas": "Corrige loop de OTA no browser e PWA iOS",
   "obrigatoria": false
 }

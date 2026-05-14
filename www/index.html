@@ -2766,7 +2766,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.5.14';
+const APP_BUNDLE_VERSION = '1.5.15';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")
@@ -2793,15 +2793,8 @@ function _getUpdater() {
 
 async function verificarAtualizacao() {
   if (!API_URL) return;
-  // OTA só se aplica ao app nativo — no browser o service worker gerencia atualizações
-  if (!window.Capacitor || !window.Capacitor.isNativePlatform || !window.Capacitor.isNativePlatform()) return;
+  const isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   try {
-    // Inicializa versão local com a versão do bundle atual se nunca foi definida.
-    // Evita que instalações novas peçam atualização imediatamente.
-    if (!localStorage.getItem(OTA_VERSION_KEY)) {
-      localStorage.setItem(OTA_VERSION_KEY, APP_BUNDLE_VERSION);
-    }
-
     const res = await fetch(`${API_URL}/ota/versao?_=${Date.now()}`, {
       signal: AbortSignal.timeout(8000),
       cache: 'no-store'
@@ -2809,26 +2802,37 @@ async function verificarAtualizacao() {
     if (!res.ok) return;
     const dados = await res.json();
     const versaoServidor = dados.versao || '1.0.0';
-    let versaoLocal = localStorage.getItem(OTA_VERSION_KEY) || APP_BUNDLE_VERSION;
-    const skipVersao = localStorage.getItem(OTA_SKIP_KEY) || '';
 
-    // Detecta reversão de OTA: localStorage tem versão mais nova que o bundle rodando.
-    if (compararVersao(versaoLocal, APP_BUNDLE_VERSION)) {
-      const versaoAplicada = versaoLocal;
-      versaoLocal = APP_BUNDLE_VERSION;
-      localStorage.setItem(OTA_VERSION_KEY, APP_BUNDLE_VERSION);
-      const lastApply = parseInt(localStorage.getItem('ota_last_apply') || '0');
-      if (Date.now() - lastApply < 15 * 60 * 1000) return;
-      // Cooldown passou mas Capgo continua revertendo: pula esta versão.
-      // O prompt só volta quando o servidor publicar uma versão AINDA mais nova.
-      localStorage.setItem(OTA_SKIP_KEY, versaoAplicada);
-      return;
-    }
+    if (isNative) {
+      // App nativo: usa localStorage (Capgo pode fazer rollback do bundle)
+      if (!localStorage.getItem(OTA_VERSION_KEY)) {
+        localStorage.setItem(OTA_VERSION_KEY, APP_BUNDLE_VERSION);
+      }
+      let versaoLocal = localStorage.getItem(OTA_VERSION_KEY) || APP_BUNDLE_VERSION;
+      const skipVersao = localStorage.getItem(OTA_SKIP_KEY) || '';
 
-    if (skipVersao && skipVersao === versaoServidor) return;
-
-    if (compararVersao(versaoServidor, versaoLocal)) {
-      mostrarModalOTA(versaoServidor, versaoLocal, dados.notas || 'Melhorias e correções de bugs.', dados.obrigatoria || false);
+      // Detecta reversão de OTA: localStorage tem versão mais nova que o bundle rodando.
+      if (compararVersao(versaoLocal, APP_BUNDLE_VERSION)) {
+        const versaoAplicada = versaoLocal;
+        versaoLocal = APP_BUNDLE_VERSION;
+        localStorage.setItem(OTA_VERSION_KEY, APP_BUNDLE_VERSION);
+        const lastApply = parseInt(localStorage.getItem('ota_last_apply') || '0');
+        if (Date.now() - lastApply < 15 * 60 * 1000) return;
+        localStorage.setItem(OTA_SKIP_KEY, versaoAplicada);
+        return;
+      }
+      if (skipVersao && skipVersao === versaoServidor) return;
+      if (compararVersao(versaoServidor, versaoLocal)) {
+        mostrarModalOTA(versaoServidor, versaoLocal, dados.notas || 'Melhorias e correções de bugs.', dados.obrigatoria || false);
+      }
+    } else {
+      // Browser / PWA (iOS, desktop): compara direto com APP_BUNDLE_VERSION
+      // Sem detecção de reversão — o service worker controla qual HTML está ativo
+      const skipVersao = localStorage.getItem(OTA_SKIP_KEY) || '';
+      if (skipVersao && skipVersao === versaoServidor) return;
+      if (compararVersao(versaoServidor, APP_BUNDLE_VERSION)) {
+        mostrarModalOTA(versaoServidor, APP_BUNDLE_VERSION, dados.notas || 'Melhorias e correções de bugs.', dados.obrigatoria || false);
+      }
     }
   } catch (e) { /* silencioso */ }
 }
@@ -2976,15 +2980,22 @@ async function otaAtualizar() {
       // set() normalmente reinicia sozinho, mas como fallback forçamos reload
       setTimeout(() => window.location.reload(), 1000);
     } else {
-      // ─── Caminho WEB (browser de desenvolvimento) ───────────────────
-      // Sem plugin nativo, apenas registra que viu a versão e recarrega.
-      if (txt) txt.textContent = 'Atualização registrada (modo browser).';
-      if (fill) fill.style.width = '100%';
-      localStorage.setItem(OTA_VERSION_KEY, versaoNova);
-      localStorage.setItem(OTA_HASH_KEY,    hashNovo);
-      localStorage.setItem('ota_last_apply', String(Date.now()));
+      // ─── Caminho WEB / PWA (iOS, desktop) ───────────────────────────
+      // Avisa o service worker para ativar a nova versão e recarrega.
+      if (txt) txt.textContent = 'Atualizando...';
+      if (fill) fill.style.width = '80%';
       localStorage.removeItem(OTA_SKIP_KEY);
-      setTimeout(() => window.location.reload(), 1200);
+      try {
+        if ('serviceWorker' in navigator) {
+          const reg = await navigator.serviceWorker.getRegistration();
+          if (reg && reg.waiting) {
+            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            await new Promise(r => setTimeout(r, 400));
+          }
+        }
+      } catch(_) {}
+      if (fill) fill.style.width = '100%';
+      setTimeout(() => window.location.reload(), 600);
     }
   } catch (e) {
     console.error('[OTA]', e);
