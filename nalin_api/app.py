@@ -1201,6 +1201,14 @@ def iniciar_pagamento():
     user = dict(user)
     try:
         customer_id = user.get('asaas_customer_id')
+        # Verifica se o cliente ainda existe e não foi removido no ASAAS
+        if customer_id:
+            try:
+                cliente_existente = _asaas.buscar_cliente_por_id(customer_id)
+                if not cliente_existente:
+                    customer_id = None  # Removido ou inválido
+            except Exception:
+                customer_id = None
         if not customer_id:
             cliente = _asaas.buscar_cliente_por_email(user['email'])
             if not cliente:

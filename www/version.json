@@ -1,6 +1,6 @@
 {
-  "versao": "1.5.9",
+  "versao": "1.5.10",
   "data": "2026-05-14",
-  "notas": "Modal pagamento com CPF obrigatorio para PIX/Boleto",
+  "notas": "Corrige cliente removido no ASAAS: recria cliente automaticamente",
   "obrigatoria": false
 }
