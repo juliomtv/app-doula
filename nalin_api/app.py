@@ -1186,6 +1186,9 @@ def iniciar_pagamento():
         return jsonify({"status":"error","message":"Módulo de pagamento não configurado."}), 503
     data = request.json or {}
     user_id = data.get('user_id')
+    billing_type = data.get('billing_type', 'PIX').upper()
+    if billing_type not in ('PIX', 'CREDIT_CARD'):
+        billing_type = 'PIX'
     if not user_id:
         return jsonify({"status":"error","message":"user_id obrigatório."}), 400
     db = get_db()
@@ -1194,7 +1197,6 @@ def iniciar_pagamento():
         return jsonify({"status":"error","message":"Usuária não encontrada."}), 404
     user = dict(user)
     try:
-        # Busca ou cria cliente no ASAAS
         customer_id = user.get('asaas_customer_id')
         if not customer_id:
             cliente = _asaas.buscar_cliente_por_email(user['email'])
@@ -1203,13 +1205,15 @@ def iniciar_pagamento():
             customer_id = cliente['id']
             db.execute('UPDATE users SET asaas_customer_id=? WHERE id=?', (customer_id, user_id))
             db.commit()
-        # Cria assinatura
-        assinatura = _asaas.criar_assinatura(customer_id, PLANO_VALOR, PLANO_NOME)
+        assinatura = _asaas.criar_assinatura(customer_id, PLANO_VALOR, PLANO_NOME, billing_type)
         sub_id = assinatura.get('id')
         db.execute('UPDATE users SET asaas_subscription_id=?, assinatura_status=? WHERE id=?',
                    (sub_id, 'pendente', user_id))
         db.commit()
-        return jsonify({"status":"success","subscription_id":sub_id,"assinatura":assinatura})
+        # Busca primeira cobrança para obter o link de pagamento
+        cobranca = _asaas.buscar_primeira_cobranca(sub_id)
+        invoice_url = cobranca.get('invoiceUrl') if cobranca else None
+        return jsonify({"status":"success","subscription_id":sub_id,"invoice_url":invoice_url,"billing_type":billing_type})
     except Exception as e:
         return jsonify({"status":"error","message":str(e)}), 500
 

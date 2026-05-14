@@ -975,19 +975,28 @@ async function doLogin(){
     errEl.style.color = '#c0392b';
   }
 }
-async function iniciarAssinatura(){
+function iniciarAssinatura(){
   if(!currentUser) return;
-  showToast('Iniciando pagamento... 💳');
+  document.getElementById('modal-pagamento').style.display='flex';
+}
+function fecharModalPagamento(){
+  document.getElementById('modal-pagamento').style.display='none';
+}
+async function confirmarPagamento(billing_type){
+  fecharModalPagamento();
+  showToast('Gerando link de pagamento...');
   const res = await apiFetch('/api/pagamento/iniciar', {
     method: 'POST',
-    body: JSON.stringify({user_id: currentUser.id})
+    body: JSON.stringify({user_id: currentUser.id, billing_type})
   });
   if(res && res.status === 'success'){
-    const url = res.assinatura?.invoiceUrl || res.assinatura?.bankSlipUrl;
-    if(url) _abrirUrl(url);
-    else showToast('Assinatura criada! Verifique seu e-mail para pagar. 💕');
+    if(res.invoice_url){
+      _abrirUrl(res.invoice_url);
+    } else {
+      showToast('Verifique seu e-mail para concluir o pagamento.');
+    }
   } else {
-    showToast('Erro ao iniciar pagamento: ' + (res?.message || 'tente novamente.'));
+    showToast('Erro: ' + (res?.message || 'tente novamente.'));
   }
 }
 function showEsqueceuSenha() {
@@ -2764,7 +2773,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.5.6';
+const APP_BUNDLE_VERSION = '1.5.7';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")
@@ -3054,6 +3063,22 @@ const _safetyTimer = setTimeout(() => _hideLoading(), 6000);
 setInterval(() => { if (currentUser && currentUser.id) syncUserData(); }, 2 * 60 * 1000);
 setInterval(loadDicas, 60000);
 </script>
+
+<!-- ── MODAL PAGAMENTO ── -->
+<div id="modal-pagamento" style="display:none;position:fixed;inset:0;background:rgba(58,40,32,.6);z-index:5000;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)fecharModalPagamento()">
+  <div style="background:white;border-radius:24px;padding:32px 28px;width:100%;max-width:360px;box-shadow:0 12px 48px rgba(169,107,85,.3);text-align:center;">
+    <div style="font-size:40px;margin-bottom:8px;">💳</div>
+    <h3 style="font-family:'Cormorant Garamond',serif;font-size:24px;font-style:italic;color:var(--dark);margin:0 0 6px;">Como deseja pagar?</h3>
+    <p style="font-size:13px;color:var(--mid);margin:0 0 24px;">R$ 19,90/mês · Cancele quando quiser</p>
+    <button onclick="confirmarPagamento('PIX')" style="width:100%;padding:15px;background:var(--rose);border:none;border-radius:14px;color:white;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:10px;">
+      <span style="font-size:22px;">⚡</span> PIX
+    </button>
+    <button onclick="confirmarPagamento('CREDIT_CARD')" style="width:100%;padding:15px;background:white;border:2px solid var(--rose);border-radius:14px;color:var(--rose);font-size:16px;font-weight:700;cursor:pointer;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:10px;">
+      <span style="font-size:22px;">💳</span> Cartão de Crédito
+    </button>
+    <button onclick="fecharModalPagamento()" style="background:none;border:none;color:var(--mid);font-size:14px;cursor:pointer;text-decoration:underline;">Cancelar</button>
+  </div>
+</div>
 
 <!-- ── MODAL CADASTRO ── -->
 <div id="modal-cadastro" style="display:none;position:fixed;inset:0;background:rgba(58,40,32,.5);z-index:5000;align-items:center;justify-content:center;padding:20px;overflow-y:auto;">
