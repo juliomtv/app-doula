@@ -1,6 +1,6 @@
 {
-  "versao": "1.5.22",
-  "data": "2026-05-14",
-  "notas": "Mapeamento de plataforma Android/PWA nas doulandas",
+  "versao": "1.5.23",
+  "data": "2026-05-15",
+  "notas": "Pagamento único em vez de assinatura recorrente",
   "obrigatoria": false
 }

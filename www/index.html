@@ -1250,10 +1250,10 @@ function _bloqueioAcesso(tipo_conteudo){
       ? `<div style="text-align:center;padding:48px 24px;">
           <div style="font-size:52px;margin-bottom:16px;">🔒</div>
           <div style="font-size:18px;font-weight:700;color:var(--dark);margin-bottom:8px;">Conteúdo exclusivo</div>
-          <div style="font-size:14px;color:var(--mid);margin-bottom:20px;">Assine o plano mensal e tenha acesso a todos os ${tipo_conteudo} e muito mais.</div>
-          <div style="font-size:28px;font-weight:800;color:var(--rose);margin-bottom:4px;">R$ ${_planoValor}<span style="font-size:14px;font-weight:400;color:var(--mid)">/mês</span></div>
-          <div style="font-size:12px;color:var(--light);margin-bottom:20px;">Cancele quando quiser</div>
-          <button class="btn-rose" onclick="iniciarAssinatura()">Quero assinar</button>
+          <div style="font-size:14px;color:var(--mid);margin-bottom:20px;">Adquira o acesso e tenha todos os ${tipo_conteudo} disponíveis para você.</div>
+          <div style="font-size:28px;font-weight:800;color:var(--rose);margin-bottom:4px;">R$ ${_planoValor}<span style="font-size:14px;font-weight:400;color:var(--mid)"> acesso único</span></div>
+          <div style="font-size:12px;color:var(--light);margin-bottom:20px;">Pagamento único · Acesso permanente</div>
+          <button class="btn-rose" onclick="iniciarAssinatura()">Quero ter acesso</button>
         </div>`
       : `<div style="text-align:center;padding:60px 24px;color:var(--mid);">
           <div style="font-size:48px;margin-bottom:16px;">🔒</div>
@@ -2850,7 +2850,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.5.22';
+const APP_BUNDLE_VERSION = '1.5.23';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")

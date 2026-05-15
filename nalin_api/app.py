@@ -1274,15 +1274,13 @@ def iniciar_pagamento():
             db.execute('UPDATE users SET cpf=? WHERE id=?', (cpf_fornecido, user_id))
             db.commit()
         plano_valor, plano_nome = get_plano_config()
-        assinatura = _asaas.criar_assinatura(customer_id, plano_valor, plano_nome, billing_type)
-        sub_id = assinatura.get('id')
+        cobranca = _asaas.criar_cobranca(customer_id, plano_valor, plano_nome, billing_type)
+        payment_id = cobranca.get('id')
+        invoice_url = cobranca.get('invoiceUrl')
         db.execute('UPDATE users SET asaas_subscription_id=?, assinatura_status=? WHERE id=?',
-                   (sub_id, 'pendente', user_id))
+                   (payment_id, 'pendente', user_id))
         db.commit()
-        # Busca primeira cobrança para obter o link de pagamento
-        cobranca = _asaas.buscar_primeira_cobranca(sub_id)
-        invoice_url = cobranca.get('invoiceUrl') if cobranca else None
-        return jsonify({"status":"success","subscription_id":sub_id,"invoice_url":invoice_url,"billing_type":billing_type})
+        return jsonify({"status":"success","payment_id":payment_id,"invoice_url":invoice_url,"billing_type":billing_type})
     except Exception as e:
         return jsonify({"status":"error","message":str(e)}), 500
 
@@ -1296,15 +1294,19 @@ def pagamento_webhook():
     evento = data.get('event', '')
     payment = data.get('payment', {})
     subscription_id = payment.get('subscription') or data.get('subscription', {}).get('id')
-    if not subscription_id:
-        return '', 200
+    payment_id = payment.get('id')
     db = get_db()
-    user = db.execute('SELECT * FROM users WHERE asaas_subscription_id=?', (subscription_id,)).fetchone()
+    # Busca por subscription_id (assinatura) ou payment_id (cobrança única)
+    user = None
+    if subscription_id:
+        user = db.execute('SELECT * FROM users WHERE asaas_subscription_id=?', (subscription_id,)).fetchone()
+    if not user and payment_id:
+        user = db.execute('SELECT * FROM users WHERE asaas_subscription_id=?', (payment_id,)).fetchone()
     if not user:
         return '', 200
     if evento in ('PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED'):
         db.execute("UPDATE users SET assinatura_status='ativa', acesso_videos=1, acesso_ebooks=1 WHERE id=?", (user['id'],))
-    elif evento in ('PAYMENT_OVERDUE', 'SUBSCRIPTION_INACTIVATED'):
+    elif evento in ('PAYMENT_OVERDUE', 'PAYMENT_REFUNDED', 'PAYMENT_CHARGEBACK', 'SUBSCRIPTION_INACTIVATED'):
         db.execute("UPDATE users SET assinatura_status='vencida', acesso_videos=0, acesso_ebooks=0 WHERE id=?", (user['id'],))
     db.commit()
     return '', 200
@@ -1331,18 +1333,33 @@ def sincronizar_assinatura(user_id):
     user = dict(user)
     sub_id = user.get('asaas_subscription_id')
     if not sub_id:
-        return jsonify({"status":"error","message":"Usuária não possui assinatura cadastrada."}), 400
+        return jsonify({"status":"error","message":"Usuária não possui pagamento cadastrado."}), 400
     try:
-        assinatura = _asaas.buscar_assinatura(sub_id)
-        status_asaas = assinatura.get('status', '')
-        if status_asaas == 'ACTIVE':
-            db.execute("UPDATE users SET assinatura_status='ativa', acesso_videos=1, acesso_ebooks=1 WHERE id=?", (user_id,))
-            novo_status = 'ativa'
-        elif status_asaas in ('INACTIVE', 'OVERDUE', 'EXPIRED'):
-            db.execute("UPDATE users SET assinatura_status='vencida', acesso_videos=0, acesso_ebooks=0 WHERE id=?", (user_id,))
-            novo_status = 'vencida'
+        # pay_* = cobrança única;  sub_* = assinatura recorrente (legado)
+        if sub_id.startswith('pay_'):
+            cobranca = _asaas.buscar_cobranca(sub_id)
+            if not cobranca:
+                return jsonify({"status":"error","message":"Cobrança não encontrada no ASAAS."}), 404
+            status_asaas = cobranca.get('status', '')
+            if status_asaas in ('CONFIRMED', 'RECEIVED'):
+                db.execute("UPDATE users SET assinatura_status='ativa', acesso_videos=1, acesso_ebooks=1 WHERE id=?", (user_id,))
+                novo_status = 'ativa'
+            elif status_asaas in ('OVERDUE', 'REFUNDED', 'CHARGEBACK'):
+                db.execute("UPDATE users SET assinatura_status='vencida', acesso_videos=0, acesso_ebooks=0 WHERE id=?", (user_id,))
+                novo_status = 'vencida'
+            else:
+                novo_status = status_asaas
         else:
-            novo_status = status_asaas
+            assinatura = _asaas.buscar_assinatura(sub_id)
+            status_asaas = assinatura.get('status', '')
+            if status_asaas == 'ACTIVE':
+                db.execute("UPDATE users SET assinatura_status='ativa', acesso_videos=1, acesso_ebooks=1 WHERE id=?", (user_id,))
+                novo_status = 'ativa'
+            elif status_asaas in ('INACTIVE', 'OVERDUE', 'EXPIRED'):
+                db.execute("UPDATE users SET assinatura_status='vencida', acesso_videos=0, acesso_ebooks=0 WHERE id=?", (user_id,))
+                novo_status = 'vencida'
+            else:
+                novo_status = status_asaas
         db.commit()
         return jsonify({"status":"success","asaas_status":status_asaas,"assinatura_status":novo_status})
     except Exception as e:
