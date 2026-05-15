@@ -791,6 +791,34 @@ textarea.dta:focus{border-color:var(--rose);}
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-escolha-pagamento">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-hdr"><h3>Como deseja pagar?</h3><button class="modal-close" onclick="closeModal('modal-escolha-pagamento')">✕</button></div>
+    <div class="modal-body" style="padding:24px;">
+      <p style="font-size:13px;color:var(--mid);text-align:center;margin-bottom:24px;">Pagamento único · Acesso permanente</p>
+      <button class="btn-rose" style="width:100%;margin-bottom:12px;" onclick="pagarCartao()">💳 Cartão de Crédito</button>
+      <button onclick="pagarPix()" style="width:100%;background:#32c77f;color:white;border:none;border-radius:50px;padding:16px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.3px;">PIX</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-pix-pagamento">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-hdr"><h3>Pagamento via PIX</h3><button class="modal-close" onclick="closeModal('modal-pix-pagamento');_pararPollingPagamento()">✕</button></div>
+    <div class="modal-body" style="padding:24px;text-align:center;">
+      <div id="pix-loading" style="padding:40px 0;font-size:14px;color:var(--mid);">Gerando QR Code...</div>
+      <img id="pix-qrcode-img" src="" alt="QR Code PIX" style="display:none;width:200px;height:200px;margin:0 auto 16px;border-radius:8px;">
+      <p style="font-size:13px;color:var(--mid);margin-bottom:10px;">Escaneie o QR Code ou copie o código abaixo:</p>
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <input id="pix-payload-txt" type="text" readonly style="flex:1;min-width:0;padding:9px;border:1px solid rgba(201,144,122,.3);border-radius:8px;font-size:11px;background:#fafafa;outline:none;overflow:hidden;text-overflow:ellipsis;">
+        <button onclick="copiarPix()" style="background:var(--rose);color:white;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">Copiar</button>
+      </div>
+      <p style="font-size:12px;color:var(--light);margin-bottom:4px;">Aguardando confirmação do pagamento...</p>
+      <div id="pix-status-msg" style="font-size:13px;color:var(--err);min-height:16px;"></div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- Script separado: notifyAppReady + safety timer independente do main script -->
@@ -993,8 +1021,13 @@ async function doLogin(){
     errEl.style.color = '#c0392b';
   }
 }
-async function iniciarAssinatura(){
+function iniciarAssinatura(){
   if(!currentUser) return;
+  openModal('modal-escolha-pagamento');
+}
+
+async function pagarCartao(){
+  closeModal('modal-escolha-pagamento');
   showToast('Gerando link de pagamento...');
   const res = await apiFetch('/api/pagamento/iniciar', {
     method: 'POST',
@@ -1009,6 +1042,48 @@ async function iniciarAssinatura(){
     }
   } else {
     showToast('Erro: ' + (res?.message || 'tente novamente.'));
+  }
+}
+
+async function pagarPix(){
+  closeModal('modal-escolha-pagamento');
+  const imgEl = document.getElementById('pix-qrcode-img');
+  const txtEl = document.getElementById('pix-payload-txt');
+  const loadEl = document.getElementById('pix-loading');
+  const errEl  = document.getElementById('pix-status-msg');
+  imgEl.style.display = 'none';
+  txtEl.value = '';
+  errEl.textContent = '';
+  loadEl.style.display = 'block';
+  openModal('modal-pix-pagamento');
+  const res = await apiFetch('/api/pagamento/iniciar', {
+    method: 'POST',
+    body: JSON.stringify({user_id: currentUser.id, billing_type: 'PIX', cpf: ''})
+  });
+  loadEl.style.display = 'none';
+  if(res && res.status === 'success' && res.pix_qrcode){
+    imgEl.src = 'data:image/png;base64,' + res.pix_qrcode;
+    imgEl.style.display = 'block';
+    txtEl.value = res.pix_payload || '';
+    _iniciarPollingPagamento();
+  } else {
+    errEl.textContent = 'Erro ao gerar PIX: ' + (res?.message || 'tente novamente.');
+  }
+}
+
+function copiarPix(){
+  const txt = document.getElementById('pix-payload-txt').value;
+  if(!txt) return;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(() => showToast('Código PIX copiado!')).catch(() => {
+      document.getElementById('pix-payload-txt').select();
+      document.execCommand('copy');
+      showToast('Código PIX copiado!');
+    });
+  } else {
+    document.getElementById('pix-payload-txt').select();
+    document.execCommand('copy');
+    showToast('Código PIX copiado!');
   }
 }
 
@@ -1045,6 +1120,8 @@ async function _onVisibilidadeChange(){
 
 async function _confirmarAcessoLiberado(){
   _pararPollingPagamento();
+  closeModal('modal-pix-pagamento');
+  closeModal('modal-escolha-pagamento');
   const me = await apiFetch(`/api/users/me?id=${currentUser.id}`);
   if(me && me.status === 'success' && me.user){
     currentUser = me.user;
@@ -2850,7 +2927,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.5.23';
+const APP_BUNDLE_VERSION = '1.5.24';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")

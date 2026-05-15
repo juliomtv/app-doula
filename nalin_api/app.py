@@ -1235,12 +1235,12 @@ def iniciar_pagamento():
         return jsonify({"status":"error","message":"Módulo de pagamento não configurado."}), 503
     data = request.json or {}
     user_id = data.get('user_id')
-    billing_type = data.get('billing_type', 'BOLETO').upper()
-    if billing_type not in ('BOLETO', 'CREDIT_CARD'):
-        billing_type = 'BOLETO'
+    billing_type = data.get('billing_type', 'PIX').upper()
+    if billing_type not in ('BOLETO', 'CREDIT_CARD', 'PIX'):
+        billing_type = 'PIX'
     cpf_fornecido = data.get('cpf', '').replace('.','').replace('-','').replace(' ','')
     if billing_type == 'BOLETO' and len(cpf_fornecido) < 11:
-        return jsonify({"status":"error","message":"CPF obrigatório para pagamento via PIX/Boleto."}), 400
+        return jsonify({"status":"error","message":"CPF obrigatório para pagamento via Boleto."}), 400
     if not user_id:
         return jsonify({"status":"error","message":"user_id obrigatório."}), 400
     db = get_db()
@@ -1280,7 +1280,16 @@ def iniciar_pagamento():
         db.execute('UPDATE users SET asaas_subscription_id=?, assinatura_status=? WHERE id=?',
                    (payment_id, 'pendente', user_id))
         db.commit()
-        return jsonify({"status":"success","payment_id":payment_id,"invoice_url":invoice_url,"billing_type":billing_type})
+        resp = {"status":"success","payment_id":payment_id,"invoice_url":invoice_url,"billing_type":billing_type}
+        if billing_type == 'PIX' and payment_id:
+            try:
+                pix = _asaas.buscar_pix_qrcode(payment_id)
+                if pix:
+                    resp['pix_qrcode'] = pix.get('encodedImage')
+                    resp['pix_payload'] = pix.get('payload')
+            except Exception:
+                pass
+        return jsonify(resp)
     except Exception as e:
         return jsonify({"status":"error","message":str(e)}), 500
 
