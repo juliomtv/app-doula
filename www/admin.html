@@ -794,7 +794,7 @@ function uploadApk() {
   form.append('versionCode', vc);
   form.append('versionName', vn);
   form.append('notas', notas);
-  const token = localStorage.getItem('admin_token') || '';
+  const token = getAdminToken();
   const wrap = document.getElementById('apk-progress-wrap');
   const bar = document.getElementById('apk-progress-bar');
   const ptxt = document.getElementById('apk-progress-txt');
