@@ -3244,12 +3244,10 @@ async function otaAtualizar() {
 
       if (fill) fill.style.width = '100%';
 
-      // 2) Aplica o bundle: set espera { id }, não o objeto BundleInfo inteiro.
-      //    set() destrói o contexto JS e recarrega o WebView automaticamente.
-      //    NÃO chamar window.location.reload() aqui — o próprio set() já reinicia.
+      // 2) Aplica o bundle. set() destrói o contexto JS e recarrega automaticamente.
+      //    NÃO chamar window.location.reload() — causa segundo reload que pode
+      //    servir o bundle compilado do APK em vez do OTA.
       await Updater.set({ id: bundle.id });
-      // set() normalmente reinicia sozinho, mas como fallback forçamos reload
-      setTimeout(() => window.location.reload(), 1000);
     } else {
       // ─── Caminho WEB / PWA (iOS, desktop) ───────────────────────────
       // Avisa o service worker para ativar a nova versão e recarrega.
