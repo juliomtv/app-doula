@@ -2903,14 +2903,24 @@ async function registrarPushNotifications() {
         });
       } catch(_) {}
     });
-    // Notificação recebida com app ABERTO — mostra toast e atualiza badge
+    // Notificação recebida com app ABERTO
     await PN.addListener('pushNotificationReceived', notif => {
-      showToast(notif.title || 'Nova notificação');
-      carregarBadgeNotificacoes();
+      const d = notif.data || {};
+      if (d.type === 'apk_update' && d.apk_url) {
+        mostrarModalAPK(d.apk_version_name || '', d.apk_url, notif.body || '');
+      } else {
+        showToast(notif.title || 'Nova notificação');
+        carregarBadgeNotificacoes();
+      }
     });
-    // Usuária tocou na notificação — abre o modal
-    await PN.addListener('pushNotificationActionPerformed', () => {
-      abrirNotificacoes();
+    // Usuária tocou na notificação na barra do Android
+    await PN.addListener('pushNotificationActionPerformed', action => {
+      const d = (action.notification && action.notification.data) || {};
+      if (d.type === 'apk_update' && d.apk_url) {
+        mostrarModalAPK(d.apk_version_name || '', d.apk_url, '');
+      } else {
+        abrirNotificacoes();
+      }
     });
   } catch(e) { console.error('[PUSH]', e); }
 }

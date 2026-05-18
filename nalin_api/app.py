@@ -317,9 +317,27 @@ def apk_notificar():
     ).fetchall()]
     if not tokens:
         return jsonify({'status': 'ok', 'enviado_para': 0, 'aviso': 'Nenhum token Android encontrado'})
+    if not FCM_OK:
+        return jsonify({'error': 'Firebase não configurado no servidor'}), 500
     titulo = f"Nova versão {cfg.get('versionName','')} disponível"
-    mensagem = cfg.get('notas') or 'Abra o app e toque em "Atualizar" para instalar.'
-    fcm_send(tokens, titulo, mensagem)
+    mensagem = cfg.get('notas') or 'Toque para baixar e instalar a atualização.'
+    apk_data = {
+        'type': 'apk_update',
+        'apk_url': cfg.get('url', ''),
+        'apk_version_name': cfg.get('versionName', ''),
+        'apk_version_code': str(cfg.get('versionCode', ''))
+    }
+    try:
+        msg = fb_messaging.MulticastMessage(
+            notification=fb_messaging.Notification(title=titulo, body=mensagem),
+            data=apk_data,
+            tokens=tokens,
+            android=fb_messaging.AndroidConfig(priority='high',
+                notification=fb_messaging.AndroidNotification(channel_id='doula_notif', sound='default'))
+        )
+        fb_messaging.send_each_for_multicast(msg)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
     return jsonify({'status': 'success', 'enviado_para': len(tokens)})
 
 @app.route('/ota/bundle.zip', methods=['GET','OPTIONS'])
