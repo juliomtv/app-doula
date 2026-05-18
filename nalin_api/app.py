@@ -102,10 +102,14 @@ UPLOAD_FOLDER = os.path.join(os.path.dirname(BASE_DIR), 'uploads')
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
 WWW_DIR = os.path.join(os.path.dirname(BASE_DIR), 'www')
 VERSION_FILE = os.path.join(WWW_DIR, 'version.json')
+APK_DIR = os.path.join(os.path.dirname(BASE_DIR), 'downloads')
+APK_CONFIG_PATH = os.path.join(os.path.dirname(BASE_DIR), 'apk_config.json')
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 150 * 1024 * 1024  # 150 MB para APKs
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
+os.makedirs(APK_DIR, exist_ok=True)
 
 def get_local_ip():
     try:
@@ -137,7 +141,7 @@ def start_cloudflared_tunnel():
 CORS(app, resources={
     r"/api/*": {"origins": "*", "methods": ["GET","POST","PUT","DELETE","OPTIONS"], "allow_headers": ["Content-Type","Authorization"]},
     r"/versao_app": {"origins": "*"}, r"/server-info": {"origins": "*"},
-    r"/ota/*": {"origins": "*"}, r"/uploads/*": {"origins": "*"}
+    r"/ota/*": {"origins": "*"}, r"/uploads/*": {"origins": "*"}, r"/downloads/*": {"origins": "*"}
 })
 
 app.add_url_rule("/uploads/<path:filename>", endpoint="uploads",
@@ -202,6 +206,14 @@ def get_index_hash():
         with open(os.path.join(WWW_DIR, 'index.html'), 'rb') as f: return hashlib.md5(f.read()).hexdigest()
     except: return ""
 
+def _get_apk_config():
+    try:
+        with open(APK_CONFIG_PATH, 'r', encoding='utf-8') as f: return json.load(f)
+    except: return {}
+
+def _save_apk_config(data):
+    with open(APK_CONFIG_PATH, 'w', encoding='utf-8') as f: json.dump(data, f, ensure_ascii=False, indent=2)
+
 # ── ROTAS ────────────────────────────────────────────────────────────────────
 @app.route('/api/status', methods=['GET','OPTIONS'])
 def status():
@@ -239,7 +251,76 @@ def url_servidor():
 @app.route('/ota/versao', methods=['GET','OPTIONS'])
 def ota_versao():
     if request.method == 'OPTIONS': return '', 204
-    ver = get_app_version(); ver['hash'] = get_index_hash(); return jsonify(ver)
+    ver = get_app_version(); ver['hash'] = get_index_hash()
+    apk = _get_apk_config()
+    if apk:
+        ver['apk_versionCode'] = apk.get('versionCode', 0)
+        ver['apk_versionName'] = apk.get('versionName', '')
+        ver['apk_url'] = apk.get('url', '')
+        ver['apk_notas'] = apk.get('notas', '')
+    return jsonify(ver)
+
+@app.route('/downloads/<filename>', methods=['GET','OPTIONS'])
+def serve_apk(filename):
+    if request.method == 'OPTIONS': return '', 204
+    if not filename.endswith('.apk'):
+        return jsonify({'error': 'Not found'}), 404
+    return send_from_directory(APK_DIR, filename, as_attachment=True,
+                               mimetype='application/vnd.android.package-archive')
+
+@app.route('/api/admin/apk/info', methods=['GET','OPTIONS'])
+@require_admin
+def apk_info():
+    if request.method == 'OPTIONS': return '', 204
+    return jsonify(_get_apk_config() or {})
+
+@app.route('/api/admin/apk/upload', methods=['POST','OPTIONS'])
+@require_admin
+def upload_apk():
+    if request.method == 'OPTIONS': return '', 204
+    if 'arquivo' not in request.files:
+        return jsonify({'error': 'Arquivo não enviado'}), 400
+    f = request.files['arquivo']
+    if not f.filename.endswith('.apk'):
+        return jsonify({'error': 'Apenas arquivos .apk são aceitos'}), 400
+    try:
+        version_code = int(request.form.get('versionCode', 0))
+    except (ValueError, TypeError):
+        return jsonify({'error': 'versionCode inválido'}), 400
+    version_name = request.form.get('versionName', '').strip()
+    notas = request.form.get('notas', '').strip()
+    if not version_code or not version_name:
+        return jsonify({'error': 'versionCode e versionName são obrigatórios'}), 400
+    filename = 'doula-nalin-nazareth-latest.apk'
+    f.save(os.path.join(APK_DIR, filename))
+    host = request.host_url.rstrip('/')
+    apk_url = f'{host}/downloads/{filename}'
+    _save_apk_config({
+        'versionCode': version_code,
+        'versionName': version_name,
+        'notas': notas,
+        'url': apk_url,
+        'atualizado_em': datetime.now(timezone.utc).isoformat()
+    })
+    return jsonify({'status': 'success', 'url': apk_url})
+
+@app.route('/api/admin/apk/notificar', methods=['POST','OPTIONS'])
+@require_admin
+def apk_notificar():
+    if request.method == 'OPTIONS': return '', 204
+    cfg = _get_apk_config()
+    if not cfg:
+        return jsonify({'error': 'Nenhum APK cadastrado ainda'}), 400
+    db = get_db()
+    tokens = [r['fcm_token'] for r in db.execute(
+        "SELECT fcm_token FROM users WHERE plataforma='android' AND ativo=1 AND fcm_token IS NOT NULL AND fcm_token != ''"
+    ).fetchall()]
+    if not tokens:
+        return jsonify({'status': 'ok', 'enviado_para': 0, 'aviso': 'Nenhum token Android encontrado'})
+    titulo = f"Nova versão {cfg.get('versionName','')} disponível"
+    mensagem = cfg.get('notas') or 'Abra o app e toque em "Atualizar" para instalar.'
+    fcm_send(tokens, titulo, mensagem)
+    return jsonify({'status': 'success', 'enviado_para': len(tokens)})
 
 @app.route('/ota/bundle.zip', methods=['GET','OPTIONS'])
 def ota_bundle_zip():

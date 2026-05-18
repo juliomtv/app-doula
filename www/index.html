@@ -3062,6 +3062,34 @@ function _getUpdater() {
   }
 }
 
+async function _getNativeVersionCode() {
+  try {
+    const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+    if (App && App.getInfo) {
+      const info = await App.getInfo();
+      return parseInt(info.build, 10) || 0;
+    }
+  } catch (_) {}
+  return 0;
+}
+
+function mostrarModalAPK(versaoNova, apkUrl, notas) {
+  const modal = document.getElementById('apk-modal');
+  if (!modal) return;
+  modal.dataset.apkUrl = apkUrl;
+  document.getElementById('apk-modal-version').textContent = versaoNova ? `Versão ${versaoNova}` : '';
+  document.getElementById('apk-modal-notas').textContent = notas || '';
+  modal.style.display = 'flex';
+}
+
+function apkBaixar() {
+  const modal = document.getElementById('apk-modal');
+  const url = modal && modal.dataset.apkUrl;
+  if (!url) return;
+  modal.style.display = 'none';
+  window.open(url, '_system');
+}
+
 async function verificarAtualizacao() {
   if (!API_URL) return;
   const isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
@@ -3074,41 +3102,48 @@ async function verificarAtualizacao() {
     const dados = await res.json();
     const versaoServidor = dados.versao || '1.0.0';
 
-    if (isNative) {
-      // App nativo: usa localStorage (Capgo pode fazer rollback do bundle)
-      if (!localStorage.getItem(OTA_VERSION_KEY)) {
-        localStorage.setItem(OTA_VERSION_KEY, APP_BUNDLE_VERSION);
-      }
-      let versaoLocal = localStorage.getItem(OTA_VERSION_KEY) || APP_BUNDLE_VERSION;
-      const skipVersao = localStorage.getItem(OTA_SKIP_KEY) || '';
+    // PWA/browser sempre busca o HTML mais recente do servidor — OTA não se aplica
+    if (!isNative) return;
 
-      // Detecta reversão de OTA: localStorage tem versão mais nova que o bundle rodando.
-      if (compararVersao(versaoLocal, APP_BUNDLE_VERSION)) {
-        const versaoAplicada = versaoLocal;
-        versaoLocal = APP_BUNDLE_VERSION;
-        localStorage.setItem(OTA_VERSION_KEY, APP_BUNDLE_VERSION);
-        const lastApply = parseInt(localStorage.getItem('ota_last_apply') || '0');
-        if (Date.now() - lastApply < 15 * 60 * 1000) return;
-        localStorage.setItem(OTA_SKIP_KEY, versaoAplicada);
+    // 1. Verifica se precisa instalar novo APK nativo
+    if (dados.apk_versionCode) {
+      const nativeVc = await _getNativeVersionCode();
+      if (nativeVc > 0 && dados.apk_versionCode > nativeVc) {
+        mostrarModalAPK(dados.apk_versionName || '', dados.apk_url || '', dados.apk_notas || 'Nova versão do app disponível.');
         return;
       }
-      if (skipVersao && skipVersao === versaoServidor) return;
-      if (compararVersao(versaoServidor, versaoLocal)) {
-        mostrarModalOTA(versaoServidor, versaoLocal, dados.notas || 'Melhorias e correções de bugs.', dados.obrigatoria || false);
-      }
-    } else {
-      // Browser / PWA (iOS, desktop): compara direto com APP_BUNDLE_VERSION
-      // Sem detecção de reversão — o service worker controla qual HTML está ativo
-      const skipVersao = localStorage.getItem(OTA_SKIP_KEY) || '';
-      if (skipVersao && skipVersao === versaoServidor) return;
-      if (compararVersao(versaoServidor, APP_BUNDLE_VERSION)) {
-        mostrarModalOTA(versaoServidor, APP_BUNDLE_VERSION, dados.notas || 'Melhorias e correções de bugs.', dados.obrigatoria || false);
-      }
+    }
+
+    // 2. App nativo (Android): verifica atualização de bundle OTA
+    if (!localStorage.getItem(OTA_VERSION_KEY)) {
+      localStorage.setItem(OTA_VERSION_KEY, APP_BUNDLE_VERSION);
+    }
+    let versaoLocal = localStorage.getItem(OTA_VERSION_KEY) || APP_BUNDLE_VERSION;
+    const skipVersao = localStorage.getItem(OTA_SKIP_KEY) || '';
+
+    // Detecta reversão de OTA: localStorage tem versão mais nova que o bundle rodando.
+    if (compararVersao(versaoLocal, APP_BUNDLE_VERSION)) {
+      const versaoAplicada = versaoLocal;
+      versaoLocal = APP_BUNDLE_VERSION;
+      localStorage.setItem(OTA_VERSION_KEY, APP_BUNDLE_VERSION);
+      const lastApply = parseInt(localStorage.getItem('ota_last_apply') || '0');
+      if (Date.now() - lastApply < 15 * 60 * 1000) return;
+      localStorage.setItem(OTA_SKIP_KEY, versaoAplicada);
+      return;
+    }
+    if (skipVersao && skipVersao === versaoServidor) return;
+    if (compararVersao(versaoServidor, versaoLocal)) {
+      mostrarModalOTA(versaoServidor, versaoLocal, dados.notas || 'Melhorias e correções de bugs.', dados.obrigatoria || false);
     }
   } catch (e) { /* silencioso */ }
 }
 
 async function verificarAtualizacaoManual() {
+  const isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  if (!isNative) {
+    showToast('Web/PWA sempre usa a versão mais recente automaticamente. ✨');
+    return;
+  }
   if (!API_URL) {
     showToast('Configure a URL do servidor primeiro.');
     return;
@@ -3121,7 +3156,7 @@ async function verificarAtualizacaoManual() {
     const versaoServidor = dados.versao || '1.0.0';
     const hashServidor   = dados.hash   || '';
     const hashLocal      = localStorage.getItem(OTA_HASH_KEY) || '';
-    const versaoLocal    = localStorage.getItem(OTA_VERSION_KEY) || '0.0.0';
+    const versaoLocal    = localStorage.getItem(OTA_VERSION_KEY) || APP_BUNDLE_VERSION;
 
     const hashMudou  = hashServidor && hashLocal && hashServidor !== hashLocal;
     const versaoNova = compararVersao(versaoServidor, versaoLocal);
@@ -3398,6 +3433,21 @@ setInterval(loadDicas, 60000);
     <div class="ota-btns" id="ota-btns">
       <button class="ota-btn-later" onclick="otaAdiar()">Agora não</button>
       <button class="ota-btn-update" onclick="otaAtualizar()">✓ Atualizar agora</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── APK UPDATE MODAL ── -->
+<div id="apk-modal" style="position:fixed;inset:0;background:rgba(58,40,32,.6);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px;">
+  <div class="ota-box">
+    <div class="ota-icon">📦</div>
+    <div class="ota-title">Atualização do app</div>
+    <div class="ota-version" id="apk-modal-version"></div>
+    <div class="ota-notas" id="apk-modal-notas"></div>
+    <div style="font-size:12px;color:var(--light);margin:8px 0 16px;line-height:1.5;">Toque em <strong>Baixar</strong> para instalar a nova versão.<br>O Android vai pedir confirmação para instalar.</div>
+    <div class="ota-btns">
+      <button class="ota-btn-later" onclick="document.getElementById('apk-modal').style.display='none'">Agora não</button>
+      <button class="ota-btn-update" onclick="apkBaixar()">⬇ Baixar</button>
     </div>
   </div>
 </div>

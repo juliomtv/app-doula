@@ -216,6 +216,7 @@ tr:hover td{background:rgba(247,237,232,.5);}
       <div class="sb-item" onclick="goPage('notificacoes',this)"><span class="si">🔔</span><span>Notificações</span></div>
       <div class="sb-sect">Sistema</div>
       <div class="sb-item" onclick="goPage('config',this)"><span class="si">⚙️</span><span>Configurações</span></div>
+      <div class="sb-item" onclick="goPage('apk',this)"><span class="si">📦</span><span>Atualização APK</span></div>
     </div>
     <div class="sb-footer">
       <div class="sb-user">
@@ -423,6 +424,72 @@ tr:hover td{background:rgba(247,237,232,.5);}
         </div>
       </div>
     </div>
+
+    <!-- ════ APK ════ -->
+    <div class="page" id="p-apk">
+      <div class="page-hdr"><h1>Atualização APK</h1><p>Distribua novas versões do app automaticamente para Doulandas Android</p></div>
+
+      <!-- Status atual -->
+      <div class="table-card" style="margin-bottom:20px;">
+        <div class="tc-hdr"><h3>📦 APK publicado atualmente</h3><button class="btn-sm" onclick="renderApkPage()" style="background:var(--rose-p);color:var(--rose-d);border:1px solid var(--rose-l);">↻ Atualizar</button></div>
+        <div id="apk-status" style="padding:20px;"></div>
+      </div>
+
+      <!-- Upload novo APK -->
+      <div class="table-card" style="margin-bottom:20px;">
+        <div class="tc-hdr"><h3>⬆️ Publicar novo APK</h3></div>
+        <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+          <div style="background:#fff8f0;border:1px solid #f5c6a0;border-radius:10px;padding:14px;font-size:13px;line-height:1.6;color:#7a4a2a;">
+            <strong>Fluxo:</strong> Builde o APK no Android Studio → suba aqui → as Doulandas recebem notificação e baixam automaticamente em 2 toques.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="mfield">
+              <label>Version Code (número inteiro)</label>
+              <input type="number" id="apk-version-code" placeholder="Ex: 9" min="1">
+            </div>
+            <div class="mfield">
+              <label>Version Name (texto)</label>
+              <input type="text" id="apk-version-name" placeholder="Ex: 1.5.26">
+            </div>
+          </div>
+          <div class="mfield">
+            <label>Notas da versão (aparece na notificação)</label>
+            <textarea id="apk-notas" placeholder="Ex: Nova tela de comunidade e correções de estabilidade." style="height:70px;resize:vertical;width:100%;border:1.5px solid var(--rose-p);border-radius:12px;padding:11px 14px;font-size:14px;color:var(--dark);background:var(--warm);outline:none;"></textarea>
+          </div>
+          <div class="upload-area" id="apk-drop" onclick="document.getElementById('apk-file').click()" ondragover="event.preventDefault()" ondrop="apkDrop(event)">
+            <div class="ui">📱</div>
+            <p id="apk-file-name">Clique ou arraste o arquivo .apk aqui</p>
+            <small>Máximo 150 MB</small>
+          </div>
+          <input type="file" id="apk-file" accept=".apk" style="display:none" onchange="apkFileSelected(this)">
+          <div id="apk-progress-wrap" style="display:none;">
+            <div style="font-size:12px;color:var(--mid);margin-bottom:6px;" id="apk-progress-txt">Enviando...</div>
+            <div style="background:var(--rose-p);border-radius:50px;height:8px;overflow:hidden;">
+              <div id="apk-progress-bar" style="background:var(--rose);height:8px;width:0%;transition:width .3s;border-radius:50px;"></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;">
+            <button class="btn-sm btn-rose-sm" style="padding:10px 24px;font-size:14px;" onclick="uploadApk()">Publicar APK</button>
+            <div id="apk-upload-msg" style="font-size:13px;min-height:16px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notificação manual -->
+      <div class="table-card">
+        <div class="tc-hdr"><h3>🔔 Notificar Doulandas Android</h3></div>
+        <div style="padding:20px;display:flex;flex-direction:column;gap:12px;">
+          <div style="font-size:13px;color:var(--mid);line-height:1.6;">
+            Ao publicar um APK, as Doulandas são notificadas automaticamente no app ao abrirem. Use este botão para reenviar a notificação push (FCM) para todas as Doulandas com Android.
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;">
+            <button class="btn-sm btn-rose-sm" style="padding:10px 24px;font-size:14px;" onclick="notificarAndroidApk()">Enviar notificação</button>
+            <div id="apk-notif-msg" style="font-size:13px;min-height:16px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -677,8 +744,101 @@ function goPage(id,el){
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
   document.getElementById('p-'+id).classList.add('active');
   el.classList.add('active');
-  const renders={dashboard:renderDashboard,doulandas:renderDoulandas,ranking:renderRankingAdmin,videos:()=>renderConteudoTable('video'),ebooks:renderEbooksPage,meditacoes:()=>renderConteudoTable('meditacao'),dicas:renderDicas,notificacoes:renderNotificacoes,config:loadConfig};
+  const renders={dashboard:renderDashboard,doulandas:renderDoulandas,ranking:renderRankingAdmin,videos:()=>renderConteudoTable('video'),ebooks:renderEbooksPage,meditacoes:()=>renderConteudoTable('meditacao'),dicas:renderDicas,notificacoes:renderNotificacoes,config:loadConfig,apk:renderApkPage};
   if(renders[id])renders[id]();
+}
+
+async function renderApkPage() {
+  const el = document.getElementById('apk-status');
+  el.innerHTML = '<div style="color:var(--lite);font-size:13px;">Carregando...</div>';
+  const cfg = await apiFetch('/api/admin/apk/info');
+  if (!cfg || !cfg.versionCode) {
+    el.innerHTML = '<div style="color:var(--lite);font-size:13px;">Nenhum APK publicado ainda. Faça o upload abaixo.</div>';
+    return;
+  }
+  const dt = cfg.atualizado_em ? new Date(cfg.atualizado_em).toLocaleString('pt-BR') : '—';
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;">
+      <div><div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--lite);font-weight:600;margin-bottom:4px;">Versão</div><div style="font-size:22px;font-weight:700;color:var(--rose-d);">${cfg.versionName}</div></div>
+      <div><div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--lite);font-weight:600;margin-bottom:4px;">Version Code</div><div style="font-size:22px;font-weight:700;color:var(--rose-d);">${cfg.versionCode}</div></div>
+      <div><div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--lite);font-weight:600;margin-bottom:4px;">Publicado em</div><div style="font-size:14px;color:var(--mid);">${dt}</div></div>
+    </div>
+    ${cfg.notas ? `<div style="margin-top:14px;font-size:13px;color:var(--mid);background:var(--rose-p);padding:10px 14px;border-radius:10px;">${cfg.notas}</div>` : ''}
+    <div style="margin-top:14px;"><a href="${cfg.url}" target="_blank" style="font-size:12px;color:var(--rose-d);">🔗 ${cfg.url}</a></div>`;
+}
+
+function apkFileSelected(input) {
+  const f = input.files[0];
+  document.getElementById('apk-file-name').textContent = f ? f.name : 'Clique ou arraste o arquivo .apk aqui';
+}
+
+function apkDrop(e) {
+  e.preventDefault();
+  const f = e.dataTransfer.files[0];
+  if (!f) return;
+  document.getElementById('apk-file').files = e.dataTransfer.files;
+  document.getElementById('apk-file-name').textContent = f.name;
+}
+
+function uploadApk() {
+  const file = document.getElementById('apk-file').files[0];
+  const vc = document.getElementById('apk-version-code').value.trim();
+  const vn = document.getElementById('apk-version-name').value.trim();
+  const notas = document.getElementById('apk-notas').value.trim();
+  const msgEl = document.getElementById('apk-upload-msg');
+  msgEl.style.color = 'var(--err)'; msgEl.textContent = '';
+  if (!file) { msgEl.textContent = 'Selecione o arquivo .apk primeiro.'; return; }
+  if (!vc || !vn) { msgEl.textContent = 'Preencha Version Code e Version Name.'; return; }
+  const form = new FormData();
+  form.append('arquivo', file);
+  form.append('versionCode', vc);
+  form.append('versionName', vn);
+  form.append('notas', notas);
+  const token = localStorage.getItem('admin_token') || '';
+  const wrap = document.getElementById('apk-progress-wrap');
+  const bar = document.getElementById('apk-progress-bar');
+  const ptxt = document.getElementById('apk-progress-txt');
+  wrap.style.display = 'block'; bar.style.width = '0%';
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', API_URL.replace(/\/$/, '') + '/api/admin/apk/upload');
+  xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+  xhr.upload.onprogress = (e) => {
+    if (e.lengthComputable) {
+      const pct = Math.round(e.loaded / e.total * 100);
+      bar.style.width = pct + '%';
+      ptxt.textContent = `Enviando... ${pct}%`;
+    }
+  };
+  xhr.onload = () => {
+    wrap.style.display = 'none';
+    try {
+      const r = JSON.parse(xhr.responseText);
+      if (r.status === 'success') {
+        msgEl.style.color = 'var(--ok)';
+        msgEl.textContent = 'APK publicado com sucesso!';
+        renderApkPage();
+      } else {
+        msgEl.textContent = r.error || 'Erro ao publicar.';
+      }
+    } catch { msgEl.textContent = 'Erro ao publicar.'; }
+  };
+  xhr.onerror = () => { wrap.style.display = 'none'; msgEl.textContent = 'Erro de conexão.'; };
+  xhr.send(form);
+}
+
+async function notificarAndroidApk() {
+  const msgEl = document.getElementById('apk-notif-msg');
+  msgEl.style.color = 'var(--mid)'; msgEl.textContent = 'Enviando...';
+  const r = await apiFetch('/api/admin/apk/notificar', {method:'POST'});
+  if (!r) { msgEl.style.color = 'var(--err)'; msgEl.textContent = 'Erro ao enviar.'; return; }
+  if (r.status === 'success') {
+    msgEl.style.color = 'var(--ok)';
+    msgEl.textContent = `Notificação enviada para ${r.enviado_para} Doulanda(s).`;
+  } else if (r.aviso) {
+    msgEl.style.color = 'var(--warn)'; msgEl.textContent = r.aviso;
+  } else {
+    msgEl.style.color = 'var(--err)'; msgEl.textContent = r.error || 'Erro.';
+  }
 }
 
 async function renderDashboard(){
