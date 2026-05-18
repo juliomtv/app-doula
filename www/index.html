@@ -2914,10 +2914,15 @@ async function registrarPushNotifications() {
       }
     });
     // Usuária tocou na notificação na barra do Android
-    await PN.addListener('pushNotificationActionPerformed', action => {
+    await PN.addListener('pushNotificationActionPerformed', async action => {
       const d = (action.notification && action.notification.data) || {};
-      if (d.type === 'apk_update' && d.apk_url) {
-        mostrarModalAPK(d.apk_version_name || '', d.apk_url, '');
+      if (d.type === 'apk_update') {
+        // Tenta dados do payload primeiro; fallback: busca no servidor
+        if (d.apk_url) {
+          mostrarModalAPK(d.apk_version_name || '', d.apk_url, '');
+        } else {
+          await _verificarApkUpdate();
+        }
       } else {
         abrirNotificacoes();
       }
@@ -3083,6 +3088,23 @@ async function _getNativeVersionCode() {
   return 0;
 }
 
+// Busca APK info do servidor e mostra modal se houver versão mais nova
+async function _verificarApkUpdate() {
+  if (!API_URL) return false;
+  try {
+    const res = await fetch(`${API_URL}/ota/versao?_=${Date.now()}`, { signal: AbortSignal.timeout(8000), cache: 'no-store' });
+    if (!res.ok) return false;
+    const dados = await res.json();
+    if (!dados.apk_versionCode || !dados.apk_url) return false;
+    const nativeVc = await _getNativeVersionCode();
+    if (nativeVc > 0 && dados.apk_versionCode > nativeVc) {
+      mostrarModalAPK(dados.apk_versionName || '', dados.apk_url, dados.apk_notas || '');
+      return true;
+    }
+  } catch (_) {}
+  return false;
+}
+
 function mostrarModalAPK(versaoNova, apkUrl, notas) {
   const modal = document.getElementById('apk-modal');
   if (!modal) return;
@@ -3116,10 +3138,10 @@ async function verificarAtualizacao() {
     if (!isNative) return;
 
     // 1. Verifica se precisa instalar novo APK nativo
-    if (dados.apk_versionCode) {
+    if (dados.apk_versionCode && dados.apk_url) {
       const nativeVc = await _getNativeVersionCode();
       if (nativeVc > 0 && dados.apk_versionCode > nativeVc) {
-        mostrarModalAPK(dados.apk_versionName || '', dados.apk_url || '', dados.apk_notas || 'Nova versão do app disponível.');
+        mostrarModalAPK(dados.apk_versionName || '', dados.apk_url, dados.apk_notas || 'Nova versão do app disponível.');
         return;
       }
     }
