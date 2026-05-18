@@ -1329,7 +1329,7 @@ def ranking_comunidade():
                COALESCE(SUM(CASE WHEN vp.assistido=1 THEN 1 ELSE 0 END),0) AS assistidos
         FROM users u
         LEFT JOIN video_progresso vp ON vp.user_id=u.id
-        WHERE u.ativo=1 AND u.admin=0
+        WHERE u.ativo=1
         GROUP BY u.id
         ORDER BY assistidos DESC, u.nome ASC
     """).fetchall()
