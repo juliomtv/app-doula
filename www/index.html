@@ -2914,18 +2914,10 @@ async function registrarPushNotifications() {
       }
     });
     // Usuária tocou na notificação na barra do Android
-    await PN.addListener('pushNotificationActionPerformed', async action => {
-      const d = (action.notification && action.notification.data) || {};
-      if (d.type === 'apk_update') {
-        // Tenta dados do payload primeiro; fallback: busca no servidor
-        if (d.apk_url) {
-          mostrarModalAPK(d.apk_version_name || '', d.apk_url, '');
-        } else {
-          await _verificarApkUpdate();
-        }
-      } else {
-        abrirNotificacoes();
-      }
+    await PN.addListener('pushNotificationActionPerformed', async () => {
+      // Sempre verifica APK update no servidor (payload FCM é instável no Android background)
+      const temApk = await _verificarApkUpdate();
+      if (!temApk) abrirNotificacoes();
     });
   } catch(e) { console.error('[PUSH]', e); }
 }
@@ -3096,8 +3088,16 @@ async function _verificarApkUpdate() {
     if (!res.ok) return false;
     const dados = await res.json();
     if (!dados.apk_versionCode || !dados.apk_url) return false;
+    // Tenta versionCode nativo via App.getInfo()
     const nativeVc = await _getNativeVersionCode();
-    if (nativeVc > 0 && dados.apk_versionCode > nativeVc) {
+    let precisaAtualizar = false;
+    if (nativeVc > 0) {
+      precisaAtualizar = dados.apk_versionCode > nativeVc;
+    } else {
+      // Fallback: compara versionName com a versão do bundle JS atual
+      precisaAtualizar = dados.apk_versionName && compararVersao(dados.apk_versionName, APP_BUNDLE_VERSION);
+    }
+    if (precisaAtualizar) {
       mostrarModalAPK(dados.apk_versionName || '', dados.apk_url, dados.apk_notas || '');
       return true;
     }
