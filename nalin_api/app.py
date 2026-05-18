@@ -106,7 +106,7 @@ APK_DIR = os.path.join(os.path.dirname(BASE_DIR), 'downloads')
 APK_CONFIG_PATH = os.path.join(os.path.dirname(BASE_DIR), 'apk_config.json')
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 150 * 1024 * 1024  # 150 MB para APKs
+app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200 MB para APKs
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 os.makedirs(APK_DIR, exist_ok=True)
