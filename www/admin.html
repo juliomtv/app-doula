@@ -751,7 +751,14 @@ function goPage(id,el){
 async function renderApkPage() {
   const el = document.getElementById('apk-status');
   el.innerHTML = '<div style="color:var(--lite);font-size:13px;">Carregando...</div>';
-  const cfg = await apiFetch('/api/admin/apk/info');
+  const [cfg, ver] = await Promise.all([apiFetch('/api/admin/apk/info'), apiFetch('/ota/versao')]);
+
+  // Pré-preenche campos do formulário automaticamente
+  const vcInput = document.getElementById('apk-version-code');
+  const vnInput = document.getElementById('apk-version-name');
+  if (!vcInput.value) vcInput.value = cfg && cfg.versionCode ? cfg.versionCode + 1 : 1;
+  if (!vnInput.value && ver && ver.versao) vnInput.value = ver.versao;
+
   if (!cfg || !cfg.versionCode) {
     el.innerHTML = '<div style="color:var(--lite);font-size:13px;">Nenhum APK publicado ainda. Faça o upload abaixo.</div>';
     return;
