@@ -818,11 +818,14 @@ function uploadApk() {
         msgEl.textContent = 'APK publicado com sucesso!';
         renderApkPage();
       } else {
-        msgEl.textContent = r.error || 'Erro ao publicar.';
+        msgEl.textContent = r.error || `Erro ${xhr.status} ao publicar.`;
       }
-    } catch { msgEl.textContent = 'Erro ao publicar.'; }
+    } catch {
+      msgEl.textContent = `Erro HTTP ${xhr.status}${xhr.status === 413 ? ' — arquivo muito grande para o servidor (Nginx). Veja o console.' : ': resposta inesperada do servidor.'}`;
+      console.error('[APK upload]', xhr.status, xhr.responseText.slice(0, 300));
+    }
   };
-  xhr.onerror = () => { wrap.style.display = 'none'; msgEl.textContent = 'Erro de conexão.'; };
+  xhr.onerror = () => { wrap.style.display = 'none'; msgEl.textContent = 'Erro de conexão com o servidor.'; };
   xhr.send(form);
 }
 
