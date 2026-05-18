@@ -205,6 +205,7 @@ tr:hover td{background:rgba(247,237,232,.5);}
       <div class="sb-sect">Principal</div>
       <div class="sb-item active" onclick="goPage('dashboard',this)"><span class="si">📊</span><span>Dashboard</span></div>
       <div class="sb-item" onclick="goPage('doulandas',this)"><span class="si">🤰</span><span>Doulandas</span></div>
+      <div class="sb-item" onclick="goPage('ranking',this)"><span class="si">🏆</span><span>Comunidade</span></div>
       <div class="sb-sect">Conteúdo</div>
       <div class="sb-item" onclick="goPage('videos',this)"><span class="si">🎬</span><span>Vídeos</span></div>
       <div class="sb-item" onclick="goPage('ebooks',this)"><span class="si">📖</span><span>E-books</span></div>
@@ -249,6 +250,19 @@ tr:hover td{background:rgba(247,237,232,.5);}
       </div>
       <div class="search-bar"><input type="text" id="search-doula" placeholder="🔍 Buscar por nome ou e-mail..." oninput="renderDoulandas()"></div>
       <div class="table-card"><table><thead><tr><th>Nome</th><th>Semanas</th><th>Bebê</th><th>Parto Previsto</th><th>Status</th><th>Acesso</th><th>Ações</th></tr></thead><tbody id="doulandas-tbody"></tbody></table></div>
+    </div>
+
+    <div class="page" id="p-ranking">
+      <div class="page-hdr"><h1>Comunidade</h1><p>Ranking de progresso das Doulandas no Mini Curso</p></div>
+      <div class="table-card">
+        <div class="tc-hdr" style="display:flex;align-items:center;justify-content:space-between;">
+          <h3>🏆 Ranking Geral</h3>
+          <button class="btn-sm" onclick="renderRankingAdmin()" style="background:var(--rose-pale);color:var(--rose);border:1px solid var(--rose);">↻ Atualizar</button>
+        </div>
+        <div id="admin-ranking-list" style="padding:8px 0;">
+          <div style="text-align:center;padding:32px;color:#aaa;font-size:14px;">Carregando...</div>
+        </div>
+      </div>
     </div>
 
     <div class="page" id="p-videos">
@@ -627,12 +641,43 @@ async function adminLogin(){
 }
 function adminLogout(){DB.del('nn_admin_session');localStorage.removeItem('nn_admin_token');location.reload();}
 
+async function renderRankingAdmin(){
+  const el = document.getElementById('admin-ranking-list');
+  el.innerHTML = '<div style="text-align:center;padding:32px;color:#aaa;">Carregando...</div>';
+  const data = await apiFetch('/api/comunidade/ranking');
+  if(!data || !data.ranking){ el.innerHTML = '<div style="text-align:center;padding:32px;color:#aaa;">Erro ao carregar ranking.</div>'; return; }
+  const nivelBadge = {
+    'Doulanda em Formação':'<span style="background:#eafbea;color:#27ae60;padding:2px 8px;border-radius:50px;font-size:11px;font-weight:600;">🌱 Em Formação</span>',
+    'Doulanda Iniciante':'<span style="background:#fef9e7;color:#e6a817;padding:2px 8px;border-radius:50px;font-size:11px;font-weight:600;">⭐ Iniciante</span>',
+    'Doulanda Experiente':'<span style="background:#fdf0ec;color:#c9907a;padding:2px 8px;border-radius:50px;font-size:11px;font-weight:600;">🌟 Experiente</span>',
+  };
+  const medalhas = ['🥇','🥈','🥉'];
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;">
+    <thead><tr style="font-size:12px;color:#aaa;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #f0e8e4;">
+      <th style="padding:10px 16px;text-align:left;">#</th>
+      <th style="padding:10px 16px;text-align:left;">Nome</th>
+      <th style="padding:10px 16px;text-align:left;">Nível</th>
+      <th style="padding:10px 16px;text-align:center;">Progresso</th>
+      <th style="padding:10px 16px;text-align:center;">Vídeos</th>
+      <th style="padding:10px 16px;text-align:center;">%</th>
+    </tr></thead>
+    <tbody>${data.ranking.map(u=>`<tr style="border-bottom:1px solid #faf4f2;">
+      <td style="padding:12px 16px;font-size:${u.posicao<=3?'20':'14'}px;font-weight:${u.posicao>3?700:400};">${u.posicao<=3?medalhas[u.posicao-1]:'#'+u.posicao}</td>
+      <td style="padding:12px 16px;font-weight:600;color:#3a2820;">${u.nome}</td>
+      <td style="padding:12px 16px;">${nivelBadge[u.nivel]||u.nivel}</td>
+      <td style="padding:12px 24px;"><div style="background:#f5ebe8;border-radius:50px;height:8px;min-width:80px;overflow:hidden;"><div style="background:#c9907a;height:8px;width:${u.percentual}%;border-radius:50px;"></div></div></td>
+      <td style="padding:12px 16px;text-align:center;color:#7a5a50;font-size:13px;">${u.assistidos}/${u.total}</td>
+      <td style="padding:12px 16px;text-align:center;font-weight:700;color:#c9907a;">${u.percentual}%</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
 function goPage(id,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
   document.getElementById('p-'+id).classList.add('active');
   el.classList.add('active');
-  const renders={dashboard:renderDashboard,doulandas:renderDoulandas,videos:()=>renderConteudoTable('video'),ebooks:renderEbooksPage,meditacoes:()=>renderConteudoTable('meditacao'),dicas:renderDicas,notificacoes:renderNotificacoes,config:loadConfig};
+  const renders={dashboard:renderDashboard,doulandas:renderDoulandas,ranking:renderRankingAdmin,videos:()=>renderConteudoTable('video'),ebooks:renderEbooksPage,meditacoes:()=>renderConteudoTable('meditacao'),dicas:renderDicas,notificacoes:renderNotificacoes,config:loadConfig};
   if(renders[id])renders[id]();
 }
 

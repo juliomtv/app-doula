@@ -452,6 +452,7 @@ textarea.dta:focus{border-color:var(--rose);}
     <div class="nitem" onclick="navTo('gestacao')"><div class="ni">🤰</div><div class="nl">Gestação</div></div>
     <div class="nitem" onclick="navTo('conteudo')"><div class="ni">🎬</div><div class="nl">Conteúdo</div></div>
     <div class="nitem" onclick="navTo('diario')"><div class="ni">📝</div><div class="nl">Diário</div></div>
+    <div class="nitem" onclick="navTo('comunidade')"><div class="ni">🏆</div><div class="nl">Comunidade</div></div>
     <div class="nitem" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
   </div>
 </div>
@@ -506,6 +507,7 @@ textarea.dta:focus{border-color:var(--rose);}
     <div class="nitem" onclick="navTo('gestacao')"><div class="ni">🤰</div><div class="nl">Gestação</div></div>
     <div class="nitem active" onclick="navTo('conteudo')"><div class="ni">🎬</div><div class="nl">Conteúdo</div></div>
     <div class="nitem" onclick="navTo('diario')"><div class="ni">📝</div><div class="nl">Diário</div></div>
+    <div class="nitem" onclick="navTo('comunidade')"><div class="ni">🏆</div><div class="nl">Comunidade</div></div>
     <div class="nitem" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
   </div>
 </div>
@@ -531,6 +533,7 @@ textarea.dta:focus{border-color:var(--rose);}
     <div class="nitem active" onclick="navTo('gestacao')"><div class="ni">🤰</div><div class="nl">Gestação</div></div>
     <div class="nitem" onclick="navTo('conteudo')"><div class="ni">🎬</div><div class="nl">Conteúdo</div></div>
     <div class="nitem" onclick="navTo('diario')"><div class="ni">📝</div><div class="nl">Diário</div></div>
+    <div class="nitem" onclick="navTo('comunidade')"><div class="ni">🏆</div><div class="nl">Comunidade</div></div>
     <div class="nitem" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
   </div>
 </div>
@@ -552,6 +555,7 @@ textarea.dta:focus{border-color:var(--rose);}
     <div class="nitem" onclick="navTo('gestacao')"><div class="ni">🤰</div><div class="nl">Gestação</div></div>
     <div class="nitem" onclick="navTo('conteudo')"><div class="ni">🎬</div><div class="nl">Conteúdo</div></div>
     <div class="nitem active" onclick="navTo('agenda')"><div class="ni">📅</div><div class="nl">Agenda</div></div>
+    <div class="nitem" onclick="navTo('comunidade')"><div class="ni">🏆</div><div class="nl">Comunidade</div></div>
     <div class="nitem" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
   </div>
 </div>
@@ -592,6 +596,7 @@ textarea.dta:focus{border-color:var(--rose);}
     <div class="nitem" onclick="navTo('gestacao')"><div class="ni">🤰</div><div class="nl">Gestação</div></div>
     <div class="nitem" onclick="navTo('conteudo')"><div class="ni">🎬</div><div class="nl">Conteúdo</div></div>
     <div class="nitem active" onclick="navTo('diario')"><div class="ni">📝</div><div class="nl">Diário</div></div>
+    <div class="nitem" onclick="navTo('comunidade')"><div class="ni">🏆</div><div class="nl">Comunidade</div></div>
     <div class="nitem" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
   </div>
 </div>
@@ -631,7 +636,34 @@ textarea.dta:focus{border-color:var(--rose);}
     <div class="nitem" onclick="navTo('gestacao')"><div class="ni">🤰</div><div class="nl">Gestação</div></div>
     <div class="nitem" onclick="navTo('conteudo')"><div class="ni">🎬</div><div class="nl">Conteúdo</div></div>
     <div class="nitem" onclick="navTo('diario')"><div class="ni">📝</div><div class="nl">Diário</div></div>
+    <div class="nitem" onclick="navTo('comunidade')"><div class="ni">🏆</div><div class="nl">Comunidade</div></div>
     <div class="nitem active" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════ COMUNIDADE ═══════════════ -->
+<div class="screen" id="comunidade">
+  <div class="sbar"><span>9:41</span><span>📶🔋</span></div>
+  <div class="scroll">
+    <div style="background:linear-gradient(135deg,var(--rose-pale),#f5ebe8);padding:28px 20px 20px;text-align:center;">
+      <div style="font-size:36px;margin-bottom:8px;">🏆</div>
+      <h2 style="font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--dark);margin:0 0 4px;">Comunidade</h2>
+      <p style="font-size:13px;color:var(--mid);margin:0;">Ranking das Doulandas</p>
+    </div>
+    <div id="ranking-meu-card" style="padding:16px 16px 0;"></div>
+    <div style="padding:8px 16px 4px;font-size:11px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:1px;">Ranking Geral</div>
+    <div id="ranking-list" style="padding:0 16px 16px;">
+      <div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Carregando...</div>
+    </div>
+    <div style="height:80px;"></div>
+  </div>
+  <div class="bnav">
+    <div class="nitem" onclick="navTo('home')"><div class="ni">🏠</div><div class="nl">Início</div></div>
+    <div class="nitem" onclick="navTo('gestacao')"><div class="ni">🤰</div><div class="nl">Gestação</div></div>
+    <div class="nitem" onclick="navTo('conteudo')"><div class="ni">🎬</div><div class="nl">Conteúdo</div></div>
+    <div class="nitem" onclick="navTo('diario')"><div class="ni">📝</div><div class="nl">Diário</div></div>
+    <div class="nitem active" onclick="navTo('comunidade')"><div class="ni">🏆</div><div class="nl">Comunidade</div></div>
+    <div class="nitem" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
   </div>
 </div>
 
@@ -1214,6 +1246,51 @@ function navTo(id){
   if(id==='agenda')renderAgenda();
   if(id==='diario')renderDiario();
   if(id==='perfil')renderPerfil();
+  if(id==='comunidade')renderComunidade();
+}
+
+async function renderComunidade(){
+  const listEl = document.getElementById('ranking-list');
+  const meuCardEl = document.getElementById('ranking-meu-card');
+  listEl.innerHTML = '<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Carregando...</div>';
+  meuCardEl.innerHTML = '';
+
+  const data = await apiFetch('/api/comunidade/ranking');
+  if(!data || !data.ranking){
+    listEl.innerHTML = '<div style="text-align:center;padding:32px;color:var(--light);">Erro ao carregar ranking.</div>';
+    return;
+  }
+
+  const nivelIcon = {'Doulanda em Formação':'🌱','Doulanda Iniciante':'⭐','Doulanda Experiente':'🌟'};
+  const nivelCor  = {'Doulanda em Formação':'#5cb85c','Doulanda Iniciante':'#e6a817','Doulanda Experiente':'#c9907a'};
+  const medalhas  = ['🥇','🥈','🥉'];
+
+  function cardHTML(u, destaque){
+    const pos = u.posicao <= 3 ? medalhas[u.posicao-1] : '#' + u.posicao;
+    const bg     = destaque ? 'linear-gradient(135deg,#fff5f0,#fdf0ec)' : 'white';
+    const border = destaque ? '2px solid var(--rose)' : '1px solid rgba(0,0,0,0.05)';
+    return `<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:10px;background:${bg};border:${border};border-radius:16px;box-shadow:0 1px 6px rgba(0,0,0,0.06);">
+      <div style="font-size:${u.posicao<=3?'24':'15'}px;min-width:34px;text-align:center;font-weight:${u.posicao>3?700:400};color:var(--mid);">${pos}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;color:var(--dark);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${u.nome}${destaque?' <span style="font-size:11px;color:var(--rose);font-weight:500;">(você)</span>':''}</div>
+        <div style="font-size:12px;color:${nivelCor[u.nivel]||'var(--mid)'};font-weight:600;margin-bottom:6px;">${nivelIcon[u.nivel]||''} ${u.nivel}</div>
+        <div style="background:var(--rose-pale);border-radius:50px;height:5px;overflow:hidden;">
+          <div style="background:var(--rose);height:5px;width:${u.percentual}%;border-radius:50px;"></div>
+        </div>
+      </div>
+      <div style="text-align:right;min-width:44px;">
+        <div style="font-weight:700;color:var(--rose);font-size:16px;">${u.percentual}%</div>
+        <div style="font-size:11px;color:var(--light);">${u.assistidos}/${u.total}</div>
+      </div>
+    </div>`;
+  }
+
+  const meuId = currentUser?.id;
+  const minha = data.ranking.find(u => u.user_id === meuId);
+  if(minha){
+    meuCardEl.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Seu Progresso</div>' + cardHTML(minha, true);
+  }
+  listEl.innerHTML = data.ranking.map(u => cardHTML(u, u.user_id === meuId)).join('');
 }
 
 // ════ APP INIT ════
@@ -2950,7 +3027,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.5.24';
+const APP_BUNDLE_VERSION = '1.5.25';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")

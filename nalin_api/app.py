@@ -1320,6 +1320,37 @@ def pagamento_webhook():
     db.commit()
     return '', 200
 
+@app.route('/api/comunidade/ranking', methods=['GET'])
+def ranking_comunidade():
+    db = get_db()
+    total = db.execute("SELECT COUNT(*) FROM conteudos WHERE categoria='video' AND ativo=1").fetchone()[0]
+    rows = db.execute("""
+        SELECT u.id, u.nome,
+               COALESCE(SUM(CASE WHEN vp.assistido=1 THEN 1 ELSE 0 END),0) AS assistidos
+        FROM users u
+        LEFT JOIN video_progresso vp ON vp.user_id=u.id
+        WHERE u.ativo=1 AND u.admin=0
+        GROUP BY u.id
+        ORDER BY assistidos DESC, u.nome ASC
+    """).fetchall()
+
+    def _nivel(pct):
+        if pct >= 67: return 'Doulanda Experiente'
+        if pct >= 34: return 'Doulanda Iniciante'
+        return 'Doulanda em Formação'
+
+    def _nome_curto(nome):
+        p = (nome or '').strip().split()
+        return (p[0] + ' ' + p[-1]) if len(p) > 1 else (nome or '').strip()
+
+    ranking = []
+    for i, u in enumerate(rows, 1):
+        ass = u['assistidos']
+        pct = round(ass / total * 100) if total > 0 else 0
+        ranking.append({'posicao':i,'user_id':u['id'],'nome':_nome_curto(u['nome']),
+                        'assistidos':ass,'total':total,'percentual':pct,'nivel':_nivel(pct)})
+    return jsonify({'ranking':ranking,'total_videos':total})
+
 @app.route('/api/pagamento/status', methods=['GET'])
 def status_pagamento():
     user_id = request.args.get('user_id')
