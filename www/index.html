@@ -867,12 +867,23 @@ textarea.dta:focus{border-color:var(--rose);}
 
 <!-- Script separado: notifyAppReady + safety timer independente do main script -->
 <script>(function(){
-  // 1. notifyAppReady — precisa rodar antes de qualquer coisa
-  try {
-    var p = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorUpdater;
-    if(p && p.notifyAppReady) p.notifyAppReady();
-  } catch(_){}
-  // 2. Safety timer independente: esconde loading screen após 4s mesmo se main script travar
+  // notifyAppReady com retry — o plugin pode não estar disponível imediatamente
+  // após um bundle OTA ser carregado pelo CapacitorUpdater.set()
+  var _notifyDone = false;
+  function _tryNotify() {
+    if (_notifyDone) return;
+    try {
+      var p = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorUpdater;
+      if (p && p.notifyAppReady) { p.notifyAppReady(); _notifyDone = true; return; }
+    } catch(_) {}
+  }
+  _tryNotify();
+  // Retry a cada 300ms por até 10s — garante que o plugin seja notificado
+  // mesmo em devices lentos onde a bridge demora a inicializar
+  var _retryTimes = [300, 600, 1000, 1500, 2000, 3000, 4000, 6000, 8000, 10000];
+  _retryTimes.forEach(function(ms){ setTimeout(_tryNotify, ms); });
+
+  // Safety timer independente: esconde loading screen após 4s mesmo se main script travar
   setTimeout(function(){
     var ls = document.getElementById('loading-screen');
     if(ls){ ls.style.display='none'; }
@@ -880,8 +891,7 @@ textarea.dta:focus{border-color:var(--rose);}
 })();</script>
 
 <script>
-// Notifica o CapacitorUpdater IMEDIATAMENTE — deve ser a 1ª coisa que roda.
-// Se não for chamado dentro do appReadyTimeout (30s), o plugin faz rollback.
+// Segunda chamada imediata como garantia adicional.
 (function(){
   try {
     if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()){
