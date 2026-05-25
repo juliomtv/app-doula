@@ -224,6 +224,39 @@ CREATE TABLE IF NOT EXISTS video_comentarios (
     FOREIGN KEY (conteudo_id) REFERENCES conteudos(id)
 );
 
+-- ── COMUNIDADE ──────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS comunidade_posts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    texto TEXT NOT NULL,
+    categoria TEXT DEFAULT 'geral', -- 'geral', 'doacao', 'duvida', 'experiencia'
+    ativo INTEGER DEFAULT 1,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS comunidade_comentarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    texto TEXT NOT NULL,
+    ativo INTEGER DEFAULT 1,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id) REFERENCES comunidade_posts(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS comunidade_curtidas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(post_id, user_id),
+    FOREIGN KEY (post_id) REFERENCES comunidade_posts(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 -- Tabela de Logs de Atividade
 CREATE TABLE IF NOT EXISTS logs_atividade (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

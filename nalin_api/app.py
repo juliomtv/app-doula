@@ -185,6 +185,38 @@ def init_db():
             with open(SCHEMA_PATH, mode='r', encoding='utf-8') as f:
                 db.cursor().executescript(f.read())
             db.commit()
+        # Migration: tabelas de comunidade
+        db.executescript("""
+            CREATE TABLE IF NOT EXISTS comunidade_posts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                texto TEXT NOT NULL,
+                categoria TEXT DEFAULT 'geral',
+                ativo INTEGER DEFAULT 1,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            );
+            CREATE TABLE IF NOT EXISTS comunidade_comentarios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                post_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                texto TEXT NOT NULL,
+                ativo INTEGER DEFAULT 1,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (post_id) REFERENCES comunidade_posts(id),
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            );
+            CREATE TABLE IF NOT EXISTS comunidade_curtidas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                post_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(post_id, user_id),
+                FOREIGN KEY (post_id) REFERENCES comunidade_posts(id),
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            );
+        """)
+        db.commit()
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -1418,6 +1450,181 @@ def pagamento_webhook():
         db.execute("UPDATE users SET assinatura_status='vencida', acesso_videos=0, acesso_ebooks=0 WHERE id=?", (user['id'],))
     db.commit()
     return '', 200
+
+def _nome_curto(nome):
+    p = (nome or '').strip().split()
+    return (p[0] + ' ' + p[-1]) if len(p) > 1 else (nome or '').strip()
+
+def _eh_nalin(user_id):
+    try:
+        db = get_db()
+        u = db.execute("SELECT tipo FROM users WHERE id=?", (user_id,)).fetchone()
+        return u and u['tipo'] in ('doula', 'admin')
+    except: return False
+
+# ── COMUNIDADE — POSTS ───────────────────────────────────────────────────────
+
+@app.route('/api/comunidade/posts', methods=['GET', 'OPTIONS'])
+def listar_posts():
+    if request.method == 'OPTIONS': return '', 204
+    categoria = request.args.get('categoria', '')
+    page = max(1, int(request.args.get('page', 1)))
+    user_id = request.args.get('user_id', 0, type=int)
+    limit = 20; offset = (page - 1) * limit
+    db = get_db()
+    where = "WHERE p.ativo=1"
+    params = []
+    if categoria and categoria != 'todos':
+        where += " AND p.categoria=?"; params.append(categoria)
+    rows = db.execute(f"""
+        SELECT p.id, p.user_id, p.texto, p.categoria, p.criado_em,
+               u.nome AS autor_nome, u.tipo AS autor_tipo,
+               (SELECT COUNT(*) FROM comunidade_comentarios c WHERE c.post_id=p.id AND c.ativo=1) AS total_comentarios,
+               (SELECT COUNT(*) FROM comunidade_curtidas ct WHERE ct.post_id=p.id) AS curtidas,
+               CASE WHEN (SELECT COUNT(*) FROM comunidade_curtidas ct WHERE ct.post_id=p.id AND ct.user_id=?) > 0 THEN 1 ELSE 0 END AS curtiu
+        FROM comunidade_posts p
+        JOIN users u ON u.id=p.user_id
+        {where}
+        ORDER BY p.criado_em DESC
+        LIMIT ? OFFSET ?
+    """, [user_id] + params + [limit, offset]).fetchall()
+    return jsonify({'posts': [dict(r) for r in rows]})
+
+@app.route('/api/comunidade/posts', methods=['POST', 'OPTIONS'])
+def criar_post():
+    if request.method == 'OPTIONS': return '', 204
+    data = request.json or {}
+    user_id = data.get('user_id'); texto = (data.get('texto') or '').strip()
+    categoria = data.get('categoria', 'geral')
+    if categoria not in ('geral', 'doacao', 'duvida', 'experiencia'): categoria = 'geral'
+    if not user_id or not texto: return jsonify({'error': 'Dados incompletos'}), 400
+    if len(texto) > 1000: return jsonify({'error': 'Texto muito longo (máx. 1000 caracteres)'}), 400
+    db = get_db()
+    if not db.execute("SELECT id FROM users WHERE id=? AND ativo=1", (user_id,)).fetchone():
+        return jsonify({'error': 'Usuário não encontrado'}), 404
+    cur = db.execute("INSERT INTO comunidade_posts (user_id,texto,categoria) VALUES (?,?,?)", (user_id, texto, categoria))
+    db.commit()
+    return jsonify({'status': 'success', 'id': cur.lastrowid})
+
+@app.route('/api/comunidade/posts/<int:post_id>', methods=['DELETE', 'OPTIONS'])
+def deletar_post(post_id):
+    if request.method == 'OPTIONS': return '', 204
+    data = request.json or {}
+    user_id = data.get('user_id')
+    db = get_db()
+    post = db.execute("SELECT user_id FROM comunidade_posts WHERE id=?", (post_id,)).fetchone()
+    if not post: return jsonify({'error': 'Post não encontrado'}), 404
+    # Permite deletar se for o próprio autor ou admin
+    auth = request.headers.get('Authorization', '')
+    is_admin = False
+    if auth.startswith('Bearer '):
+        try:
+            jwt.decode(auth.split(' ', 1)[1], JWT_SECRET, algorithms=['HS256'])
+            is_admin = True
+        except: pass
+    if not is_admin and (not user_id or int(user_id) != post['user_id']):
+        return jsonify({'error': 'Sem permissão'}), 403
+    db.execute("UPDATE comunidade_posts SET ativo=0 WHERE id=?", (post_id,))
+    db.execute("UPDATE comunidade_comentarios SET ativo=0 WHERE post_id=?", (post_id,))
+    db.commit()
+    return jsonify({'status': 'success'})
+
+# ── COMUNIDADE — COMENTÁRIOS ─────────────────────────────────────────────────
+
+@app.route('/api/comunidade/posts/<int:post_id>/comentarios', methods=['GET', 'OPTIONS'])
+def listar_comentarios(post_id):
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    rows = db.execute("""
+        SELECT c.id, c.user_id, c.texto, c.criado_em,
+               u.nome AS autor_nome, u.tipo AS autor_tipo
+        FROM comunidade_comentarios c
+        JOIN users u ON u.id=c.user_id
+        WHERE c.post_id=? AND c.ativo=1
+        ORDER BY c.criado_em ASC
+    """, (post_id,)).fetchall()
+    return jsonify({'comentarios': [dict(r) for r in rows]})
+
+@app.route('/api/comunidade/posts/<int:post_id>/comentarios', methods=['POST', 'OPTIONS'])
+def criar_comentario(post_id):
+    if request.method == 'OPTIONS': return '', 204
+    data = request.json or {}
+    user_id = data.get('user_id'); texto = (data.get('texto') or '').strip()
+    if not user_id or not texto: return jsonify({'error': 'Dados incompletos'}), 400
+    if len(texto) > 500: return jsonify({'error': 'Comentário muito longo (máx. 500 caracteres)'}), 400
+    db = get_db()
+    if not db.execute("SELECT id FROM comunidade_posts WHERE id=? AND ativo=1", (post_id,)).fetchone():
+        return jsonify({'error': 'Post não encontrado'}), 404
+    cur = db.execute("INSERT INTO comunidade_comentarios (post_id,user_id,texto) VALUES (?,?,?)", (post_id, user_id, texto))
+    db.commit()
+    return jsonify({'status': 'success', 'id': cur.lastrowid})
+
+@app.route('/api/comunidade/comentarios/<int:coment_id>', methods=['DELETE', 'OPTIONS'])
+def deletar_comentario(coment_id):
+    if request.method == 'OPTIONS': return '', 204
+    data = request.json or {}
+    user_id = data.get('user_id')
+    db = get_db()
+    c = db.execute("SELECT user_id FROM comunidade_comentarios WHERE id=?", (coment_id,)).fetchone()
+    if not c: return jsonify({'error': 'Comentário não encontrado'}), 404
+    auth = request.headers.get('Authorization', '')
+    is_admin = False
+    if auth.startswith('Bearer '):
+        try:
+            jwt.decode(auth.split(' ', 1)[1], JWT_SECRET, algorithms=['HS256'])
+            is_admin = True
+        except: pass
+    if not is_admin and (not user_id or int(user_id) != c['user_id']):
+        return jsonify({'error': 'Sem permissão'}), 403
+    db.execute("UPDATE comunidade_comentarios SET ativo=0 WHERE id=?", (coment_id,))
+    db.commit()
+    return jsonify({'status': 'success'})
+
+# ── COMUNIDADE — CURTIDAS ─────────────────────────────────────────────────────
+
+@app.route('/api/comunidade/posts/<int:post_id>/curtir', methods=['POST', 'OPTIONS'])
+def curtir_post(post_id):
+    if request.method == 'OPTIONS': return '', 204
+    data = request.json or {}
+    user_id = data.get('user_id')
+    if not user_id: return jsonify({'error': 'user_id obrigatório'}), 400
+    db = get_db()
+    existe = db.execute("SELECT id FROM comunidade_curtidas WHERE post_id=? AND user_id=?", (post_id, user_id)).fetchone()
+    if existe:
+        db.execute("DELETE FROM comunidade_curtidas WHERE post_id=? AND user_id=?", (post_id, user_id))
+    else:
+        db.execute("INSERT INTO comunidade_curtidas (post_id,user_id) VALUES (?,?)", (post_id, user_id))
+    db.commit()
+    curtiu = not existe
+    total = db.execute("SELECT COUNT(*) FROM comunidade_curtidas WHERE post_id=?", (post_id,)).fetchone()[0]
+    return jsonify({'curtiu': curtiu, 'curtidas': total})
+
+# ── COMUNIDADE — ADMIN ────────────────────────────────────────────────────────
+
+@app.route('/api/admin/comunidade/posts', methods=['GET', 'OPTIONS'])
+@require_admin
+def admin_listar_posts():
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    rows = db.execute("""
+        SELECT p.id, p.user_id, p.texto, p.categoria, p.ativo, p.criado_em,
+               u.nome AS autor_nome,
+               (SELECT COUNT(*) FROM comunidade_comentarios c WHERE c.post_id=p.id AND c.ativo=1) AS total_comentarios,
+               (SELECT COUNT(*) FROM comunidade_curtidas cu WHERE cu.post_id=p.id) AS curtidas
+        FROM comunidade_posts p JOIN users u ON u.id=p.user_id
+        WHERE p.ativo=1
+        ORDER BY p.criado_em DESC LIMIT 200
+    """).fetchall()
+    return jsonify({'posts': [dict(r) for r in rows]})
+
+@app.route('/api/admin/comunidade/posts/<int:post_id>', methods=['DELETE', 'OPTIONS'])
+@require_admin
+def admin_deletar_post(post_id):
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    db.execute("UPDATE comunidade_posts SET ativo=0 WHERE id=?", (post_id,))
+    db.commit()
+    return jsonify({'ok': True})
 
 @app.route('/api/comunidade/ranking', methods=['GET'])
 def ranking_comunidade():

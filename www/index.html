@@ -365,6 +365,26 @@ textarea.dta:focus{border-color:var(--rose);}
 .ota-btns{display:flex;gap:10px;}
 .ota-btn-update{flex:1;background:var(--rose);color:white;border:none;border-radius:50px;padding:12px;font-size:14px;font-weight:500;cursor:pointer;}
 .ota-btn-later{flex:1;background:var(--rose-pale);color:var(--mid);border:none;border-radius:50px;padding:12px;font-size:14px;cursor:pointer;}
+/* ── COMUNIDADE ── */
+.com-filter{border:1.5px solid var(--rose-pale);background:white;color:var(--mid);border-radius:50px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;}
+.com-filter.active{background:var(--rose);border-color:var(--rose);color:white;}
+.com-cat-sel{border:1.5px solid var(--rose-pale);background:white;color:var(--mid);border-radius:50px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
+.com-cat-sel.active{background:var(--rose);border-color:var(--rose);color:white;}
+.feed-card{background:white;border-radius:16px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
+.feed-avatar{width:38px;height:38px;border-radius:50%;background:var(--rose);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:15px;flex-shrink:0;}
+.feed-nalin-badge{font-size:10px;background:linear-gradient(135deg,var(--rose),#c9907a);color:white;border-radius:50px;padding:2px 7px;font-weight:700;margin-left:5px;}
+.feed-cat-tag{font-size:11px;border-radius:50px;padding:2px 9px;font-weight:600;}
+.feed-cat-geral{background:#e8f4fd;color:#3d85c8;}
+.feed-cat-doacao{background:#fdeee8;color:#c96a3d;}
+.feed-cat-duvida{background:#edf8ee;color:#3d9c48;}
+.feed-cat-experiencia{background:#fde8f4;color:#c83d8f;}
+.feed-actions{display:flex;gap:16px;margin-top:10px;padding-top:10px;border-top:1px solid #f5f0ee;}
+.feed-action-btn{border:none;background:none;color:var(--mid);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0;}
+.feed-action-btn.liked{color:var(--rose);}
+.feed-comments{margin-top:10px;border-top:1px solid #f5f0ee;padding-top:10px;display:none;}
+.com-comment{display:flex;gap:8px;margin-bottom:10px;}
+.com-comment-av{width:28px;height:28px;border-radius:50%;background:var(--rose-pale);display:flex;align-items:center;justify-content:center;color:var(--rose);font-weight:700;font-size:11px;flex-shrink:0;}
+.com-comment-box{background:#faf8f7;border-radius:10px;padding:8px 10px;flex:1;}
 </style>
 </head>
 <body>
@@ -645,16 +665,70 @@ textarea.dta:focus{border-color:var(--rose);}
 <div class="screen" id="comunidade">
   <div class="sbar"><span>9:41</span><span>📶🔋</span></div>
   <div class="scroll">
-    <div style="background:linear-gradient(135deg,var(--rose-pale),#f5ebe8);padding:28px 20px 20px;text-align:center;">
-      <div style="font-size:36px;margin-bottom:8px;">🏆</div>
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,var(--rose-pale),#f5ebe8);padding:24px 20px 0;text-align:center;">
+      <div style="font-size:32px;margin-bottom:6px;">🌸</div>
       <h2 style="font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--dark);margin:0 0 4px;">Comunidade</h2>
-      <p style="font-size:13px;color:var(--mid);margin:0;">Ranking das Doulandas</p>
+      <p style="font-size:13px;color:var(--mid);margin:0 0 14px;">Compartilhe, conecte e apoie</p>
+      <!-- Tabs -->
+      <div style="display:flex;gap:0;background:white;border-radius:50px;padding:3px;margin:0 auto 0;max-width:260px;box-shadow:0 2px 8px rgba(0,0,0,.07);">
+        <button id="com-tab-feed" onclick="switchComunidadeTab('feed')" style="flex:1;border:none;border-radius:50px;padding:8px 0;font-size:13px;font-weight:600;cursor:pointer;background:var(--rose);color:white;transition:all .2s;">💬 Feed</button>
+        <button id="com-tab-ranking" onclick="switchComunidadeTab('ranking')" style="flex:1;border:none;border-radius:50px;padding:8px 0;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--mid);transition:all .2s;">🏆 Ranking</button>
+      </div>
+      <div style="height:14px;"></div>
     </div>
-    <div id="ranking-meu-card" style="padding:16px 16px 0;"></div>
-    <div style="padding:8px 16px 4px;font-size:11px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:1px;">Ranking Geral</div>
-    <div id="ranking-list" style="padding:0 16px 16px;">
-      <div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Carregando...</div>
+
+    <!-- ── TAB FEED ── -->
+    <div id="com-feed-tab">
+      <!-- Criar post -->
+      <div style="padding:14px 16px 0;">
+        <div onclick="toggleCriarPost()" id="com-post-trigger" style="display:flex;align-items:center;gap:10px;background:white;border-radius:16px;padding:12px 16px;box-shadow:0 2px 8px rgba(0,0,0,.06);cursor:pointer;">
+          <div id="com-avatar-trigger" style="width:36px;height:36px;border-radius:50%;background:var(--rose);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:15px;flex-shrink:0;">?</div>
+          <div style="color:var(--light);font-size:14px;">Compartilhe algo com a comunidade...</div>
+        </div>
+        <div id="com-post-form" style="display:none;background:white;border-radius:16px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-top:8px;">
+          <!-- Categoria -->
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+            <button class="com-cat-sel active" data-cat="geral" onclick="selecionarCategPost(this)">💬 Geral</button>
+            <button class="com-cat-sel" data-cat="doacao" onclick="selecionarCategPost(this)">🎁 Doação</button>
+            <button class="com-cat-sel" data-cat="duvida" onclick="selecionarCategPost(this)">❓ Dúvida</button>
+            <button class="com-cat-sel" data-cat="experiencia" onclick="selecionarCategPost(this)">💕 Experiência</button>
+          </div>
+          <textarea id="com-post-texto" placeholder="O que você quer compartilhar?" maxlength="1000" style="width:100%;border:1.5px solid var(--rose-pale);border-radius:12px;padding:10px 12px;font-size:14px;font-family:inherit;resize:vertical;min-height:90px;outline:none;color:var(--dark);"></textarea>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+            <span id="com-post-chars" style="font-size:11px;color:var(--light);">0/1000</span>
+            <div style="display:flex;gap:8px;">
+              <button onclick="toggleCriarPost()" style="border:none;background:var(--rose-pale);color:var(--mid);border-radius:50px;padding:8px 16px;font-size:13px;cursor:pointer;">Cancelar</button>
+              <button onclick="submitPost()" style="border:none;background:var(--rose);color:white;border-radius:50px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;">Publicar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtros de categoria -->
+      <div style="display:flex;gap:6px;padding:12px 16px 4px;overflow-x:auto;scrollbar-width:none;">
+        <button class="com-filter active" data-cat="todos" onclick="filtrarFeed(this)">Todos</button>
+        <button class="com-filter" data-cat="geral" onclick="filtrarFeed(this)">💬 Geral</button>
+        <button class="com-filter" data-cat="doacao" onclick="filtrarFeed(this)">🎁 Doações</button>
+        <button class="com-filter" data-cat="duvida" onclick="filtrarFeed(this)">❓ Dúvidas</button>
+        <button class="com-filter" data-cat="experiencia" onclick="filtrarFeed(this)">💕 Experiências</button>
+      </div>
+
+      <!-- Feed de posts -->
+      <div id="com-feed" style="padding:8px 16px 0;">
+        <div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Carregando...</div>
+      </div>
     </div>
+
+    <!-- ── TAB RANKING ── -->
+    <div id="com-ranking-tab" style="display:none;">
+      <div id="ranking-meu-card" style="padding:16px 16px 0;"></div>
+      <div style="padding:8px 16px 4px;font-size:11px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:1px;">Ranking Geral</div>
+      <div id="ranking-list" style="padding:0 16px 16px;">
+        <div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Carregando...</div>
+      </div>
+    </div>
+
     <div style="height:80px;"></div>
   </div>
   <div class="bnav">
@@ -662,7 +736,7 @@ textarea.dta:focus{border-color:var(--rose);}
     <div class="nitem" onclick="navTo('gestacao')"><div class="ni">🤰</div><div class="nl">Gestação</div></div>
     <div class="nitem" onclick="navTo('conteudo')"><div class="ni">🎬</div><div class="nl">Conteúdo</div></div>
     <div class="nitem" onclick="navTo('diario')"><div class="ni">📝</div><div class="nl">Diário</div></div>
-    <div class="nitem active" onclick="navTo('comunidade')"><div class="ni">🏆</div><div class="nl">Comunidade</div></div>
+    <div class="nitem active" onclick="navTo('comunidade')"><div class="ni">🌸</div><div class="nl">Comunidade</div></div>
     <div class="nitem" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
   </div>
 </div>
@@ -1259,7 +1333,261 @@ function navTo(id){
   if(id==='comunidade')renderComunidade();
 }
 
+// ════ COMUNIDADE ════
+let _comFeedData = [];
+let _comFeedFiltro = 'todos';
+
 async function renderComunidade(){
+  // avatar trigger com inicial do usuário
+  const av = document.getElementById('com-avatar-trigger');
+  if(av && currentUser) av.textContent = (currentUser.nome||'?')[0].toUpperCase();
+  switchComunidadeTab('feed');
+  await renderFeed();
+}
+
+function switchComunidadeTab(tab){
+  const feedTab    = document.getElementById('com-feed-tab');
+  const rankingTab = document.getElementById('com-ranking-tab');
+  const btnFeed    = document.getElementById('com-tab-feed');
+  const btnRank    = document.getElementById('com-tab-ranking');
+  if(tab === 'feed'){
+    feedTab.style.display = '';
+    rankingTab.style.display = 'none';
+    btnFeed.style.background = 'var(--rose)';
+    btnFeed.style.color = 'white';
+    btnRank.style.background = 'transparent';
+    btnRank.style.color = 'var(--mid)';
+  } else {
+    feedTab.style.display = 'none';
+    rankingTab.style.display = '';
+    btnRank.style.background = 'var(--rose)';
+    btnRank.style.color = 'white';
+    btnFeed.style.background = 'transparent';
+    btnFeed.style.color = 'var(--mid)';
+    _renderRanking();
+  }
+}
+
+function toggleCriarPost(){
+  const trigger = document.getElementById('com-post-trigger');
+  const form    = document.getElementById('com-post-form');
+  const visible = form.style.display !== 'none';
+  trigger.style.display = visible ? '' : 'none';
+  form.style.display    = visible ? 'none' : '';
+  if(!visible){
+    document.getElementById('com-post-texto').value = '';
+    document.getElementById('com-post-chars').textContent = '0/1000';
+    document.querySelectorAll('.com-cat-sel').forEach(b => b.classList.toggle('active', b.dataset.cat === 'geral'));
+    document.getElementById('com-post-texto').focus();
+    document.getElementById('com-post-texto').oninput = function(){
+      document.getElementById('com-post-chars').textContent = this.value.length + '/1000';
+    };
+  }
+}
+
+function selecionarCategPost(el){
+  document.querySelectorAll('.com-cat-sel').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+async function submitPost(){
+  if(!currentUser) return;
+  const texto = (document.getElementById('com-post-texto').value || '').trim();
+  if(!texto){ showToast('Escreva algo antes de publicar.'); return; }
+  const catBtn = document.querySelector('.com-cat-sel.active');
+  const categoria = catBtn ? catBtn.dataset.cat : 'geral';
+  const btn = document.querySelector('#com-post-form button[onclick="submitPost()"]');
+  if(btn){ btn.disabled = true; btn.textContent = 'Publicando...'; }
+  try {
+    const res = await apiFetch('/api/comunidade/posts', {
+      method:'POST',
+      body: JSON.stringify({ user_id: currentUser.id, texto, categoria })
+    });
+    if(res && res.id){
+      toggleCriarPost();
+      showToast('Post publicado! 🌸');
+      await renderFeed();
+    } else {
+      showToast('Erro ao publicar. Tente novamente.');
+    }
+  } catch(e){ showToast('Erro de conexão.'); }
+  if(btn){ btn.disabled = false; btn.textContent = 'Publicar'; }
+}
+
+function filtrarFeed(el){
+  document.querySelectorAll('.com-filter').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  _comFeedFiltro = el.dataset.cat || 'todos';
+  _renderFeedCards();
+}
+
+async function renderFeed(){
+  const feedEl = document.getElementById('com-feed');
+  feedEl.innerHTML = '<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Carregando...</div>';
+  const data = await apiFetch('/api/comunidade/posts?user_id=' + (currentUser?.id || ''));
+  if(!data || !data.posts){
+    feedEl.innerHTML = '<div style="text-align:center;padding:32px;color:var(--light);">Erro ao carregar feed.</div>';
+    return;
+  }
+  _comFeedData = data.posts;
+  _renderFeedCards();
+}
+
+function _renderFeedCards(){
+  const feedEl = document.getElementById('com-feed');
+  const lista  = _comFeedFiltro === 'todos' ? _comFeedData : _comFeedData.filter(p => p.categoria === _comFeedFiltro);
+  if(!lista.length){
+    feedEl.innerHTML = '<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Nenhum post ainda. Seja a primeira! 🌸</div>';
+    return;
+  }
+  feedEl.innerHTML = lista.map(p => _renderPost(p)).join('');
+}
+
+const _catLabel = {geral:'💬 Geral', doacao:'🎁 Doação', duvida:'❓ Dúvida', experiencia:'💕 Experiência'};
+const _catClass = {geral:'feed-cat-geral', doacao:'feed-cat-doacao', duvida:'feed-cat-duvida', experiencia:'feed-cat-experiencia'};
+
+function _renderPost(p){
+  const inicial = (p.autor_nome || '?')[0].toUpperCase();
+  const isNalin = p.autor_tipo === 'nalin' || p.autor_tipo === 'admin';
+  const nalinBadge = isNalin ? '<span class="feed-nalin-badge">🌸 Doula</span>' : '';
+  const isMeu = currentUser && p.user_id === currentUser.id;
+  const deleteBtn = isMeu ? `<button class="feed-action-btn" onclick="deletarPost(${p.id})" style="margin-left:auto;color:#d9534f;">🗑 Excluir</button>` : '';
+  const likedClass = p.curtiu ? 'liked' : '';
+  const catTag = `<span class="feed-cat-tag ${_catClass[p.categoria]||'feed-cat-geral'}">${_catLabel[p.categoria]||p.categoria}</span>`;
+  return `<div class="feed-card" id="post-${p.id}">
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;">
+      <div class="feed-avatar">${inicial}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;color:var(--dark);font-size:14px;">${escHtml(p.autor_nome||'Usuária')}${nalinBadge}</div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px;">
+          ${catTag}
+          <span style="font-size:11px;color:var(--light);">${_tempoAtras(p.criado_em)}</span>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:14px;color:var(--dark);line-height:1.55;margin:0 0 0;">${escHtml(p.texto).replace(/\n/g,'<br>')}</p>
+    <div class="feed-actions">
+      <button class="feed-action-btn ${likedClass}" onclick="curtirPost(${p.id},this)">
+        ${p.curtiu ? '❤️' : '🤍'} ${p.curtidas}
+      </button>
+      <button class="feed-action-btn" onclick="toggleComentarios(${p.id})">
+        💬 ${p.total_comentarios} comentário${p.total_comentarios !== 1 ? 's' : ''}
+      </button>
+      ${deleteBtn}
+    </div>
+    <div class="feed-comments" id="comments-${p.id}">
+      <div id="comments-list-${p.id}" style="margin-bottom:8px;"></div>
+      <div style="display:flex;gap:8px;align-items:flex-end;">
+        <div class="com-comment-av">${inicial}</div>
+        <textarea id="com-new-comment-${p.id}" placeholder="Escreva um comentário..." maxlength="500"
+          style="flex:1;border:1.5px solid var(--rose-pale);border-radius:10px;padding:8px 10px;font-size:13px;font-family:inherit;resize:none;height:38px;outline:none;color:var(--dark);"
+          oninput="this.style.height='38px';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+        <button onclick="submitComentario(${p.id})" style="border:none;background:var(--rose);color:white;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;flex-shrink:0;">➤</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function escHtml(str){
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function curtirPost(postId, btn){
+  if(!currentUser) return;
+  btn.disabled = true;
+  const res = await apiFetch('/api/comunidade/posts/' + postId + '/curtir', {
+    method:'POST', body: JSON.stringify({user_id: currentUser.id})
+  });
+  if(res){
+    const p = _comFeedData.find(x => x.id === postId);
+    if(p){
+      p.curtidas = res.curtidas;
+      p.curtiu   = res.curtiu;
+    }
+    const liked = res.curtiu;
+    btn.className = 'feed-action-btn' + (liked ? ' liked' : '');
+    btn.innerHTML = (liked ? '❤️' : '🤍') + ' ' + res.curtidas;
+  }
+  btn.disabled = false;
+}
+
+function toggleComentarios(postId){
+  const box = document.getElementById('comments-' + postId);
+  const aberto = box.style.display === 'block';
+  box.style.display = aberto ? 'none' : 'block';
+  if(!aberto) carregarComentarios(postId);
+}
+
+async function carregarComentarios(postId){
+  const listEl = document.getElementById('comments-list-' + postId);
+  listEl.innerHTML = '<div style="font-size:12px;color:var(--light);padding:4px 0;">Carregando...</div>';
+  const res = await apiFetch('/api/comunidade/posts/' + postId + '/comentarios?user_id=' + (currentUser?.id||''));
+  if(!res || !res.comentarios){ listEl.innerHTML = ''; return; }
+  if(!res.comentarios.length){ listEl.innerHTML = '<div style="font-size:12px;color:var(--light);padding:4px 0;">Nenhum comentário ainda.</div>'; return; }
+  listEl.innerHTML = res.comentarios.map(c => {
+    const ini = (c.autor_nome||'?')[0].toUpperCase();
+    const isMeu = currentUser && c.user_id === currentUser.id;
+    const delBtn = isMeu ? `<button onclick="deletarComentario(${c.id},${postId})" style="border:none;background:none;font-size:10px;color:#d9534f;cursor:pointer;padding:0;">✕</button>` : '';
+    return `<div class="com-comment">
+      <div class="com-comment-av">${ini}</div>
+      <div class="com-comment-box">
+        <div style="font-weight:700;font-size:12px;color:var(--dark);margin-bottom:2px;">${escHtml(c.autor_nome||'Usuária')} ${delBtn}</div>
+        <div style="font-size:13px;color:var(--mid);line-height:1.4;">${escHtml(c.texto).replace(/\n/g,'<br>')}</div>
+        <div style="font-size:10px;color:var(--light);margin-top:3px;">${_tempoAtras(c.criado_em)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function submitComentario(postId){
+  if(!currentUser) return;
+  const txtEl = document.getElementById('com-new-comment-' + postId);
+  const texto = (txtEl.value||'').trim();
+  if(!texto) return;
+  const res = await apiFetch('/api/comunidade/posts/' + postId + '/comentarios', {
+    method:'POST', body: JSON.stringify({user_id: currentUser.id, texto})
+  });
+  if(res && res.id){
+    txtEl.value = '';
+    txtEl.style.height = '38px';
+    await carregarComentarios(postId);
+    const p = _comFeedData.find(x => x.id === postId);
+    if(p){ p.total_comentarios = (p.total_comentarios||0) + 1; }
+    const btn = document.querySelector(`#post-${postId} .feed-action-btn:nth-child(2)`);
+    if(btn && p) btn.textContent = `💬 ${p.total_comentarios} comentário${p.total_comentarios!==1?'s':''}`;
+  }
+}
+
+async function deletarComentario(comentId, postId){
+  if(!currentUser) return;
+  if(!confirm('Excluir comentário?')) return;
+  await apiFetch('/api/comunidade/comentarios/' + comentId, {
+    method:'DELETE', body: JSON.stringify({user_id: currentUser.id})
+  });
+  await carregarComentarios(postId);
+}
+
+async function deletarPost(postId){
+  if(!currentUser) return;
+  if(!confirm('Excluir post?')) return;
+  await apiFetch('/api/comunidade/posts/' + postId, {
+    method:'DELETE', body: JSON.stringify({user_id: currentUser.id})
+  });
+  _comFeedData = _comFeedData.filter(p => p.id !== postId);
+  _renderFeedCards();
+}
+
+function _tempoAtras(ts){
+  if(!ts) return '';
+  const d = new Date(ts.replace(' ','T') + 'Z');
+  const diff = (Date.now() - d.getTime()) / 1000;
+  if(diff < 60)  return 'agora';
+  if(diff < 3600) return Math.floor(diff/60) + 'min';
+  if(diff < 86400) return Math.floor(diff/3600) + 'h';
+  return Math.floor(diff/86400) + 'd';
+}
+
+async function _renderRanking(){
   const listEl = document.getElementById('ranking-list');
   const meuCardEl = document.getElementById('ranking-meu-card');
   listEl.innerHTML = '<div style="text-align:center;padding:32px;color:var(--light);font-size:14px;">Carregando...</div>';
