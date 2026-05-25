@@ -1512,7 +1512,10 @@ def listar_posts():
         ORDER BY p.criado_em DESC
         LIMIT ? OFFSET ?
     """, [user_id] + params + [limit, offset]).fetchall()
-    return jsonify({'posts': [dict(r) for r in rows]})
+    posts = [dict(r) for r in rows]
+    for p in posts:
+        p['autor_nome'] = _nome_curto(p['autor_nome'])
+    return jsonify({'posts': posts})
 
 @app.route('/api/comunidade/posts', methods=['POST', 'OPTIONS'])
 def criar_post():
@@ -1577,7 +1580,10 @@ def listar_comentarios(post_id):
         WHERE c.post_id=? AND c.ativo=1
         ORDER BY c.criado_em ASC
     """, (post_id,)).fetchall()
-    return jsonify({'comentarios': [dict(r) for r in rows]})
+    comentarios = [dict(r) for r in rows]
+    for c in comentarios:
+        c['autor_nome'] = _nome_curto(c['autor_nome'])
+    return jsonify({'comentarios': comentarios})
 
 @app.route('/api/comunidade/posts/<int:post_id>/comentarios', methods=['POST', 'OPTIONS'])
 def criar_comentario(post_id):
@@ -1665,7 +1671,10 @@ def admin_listar_posts():
         WHERE p.ativo=1
         ORDER BY p.criado_em DESC LIMIT 200
     """).fetchall()
-    return jsonify({'posts': [dict(r) for r in rows]})
+    posts = [dict(r) for r in rows]
+    for p in posts:
+        p['autor_nome'] = _nome_curto(p['autor_nome'])
+    return jsonify({'posts': posts})
 
 @app.route('/api/admin/comunidade/posts/<int:post_id>', methods=['DELETE', 'OPTIONS'])
 @require_admin
