@@ -1,4 +1,4 @@
-const CACHE = 'nalin-pwa-v1';
+const CACHE = 'nalin-pwa-v2';
 const PRECACHE = ['/', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -14,12 +14,10 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  // Nunca cacheia chamadas de API, OTA ou uploads
-  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/ota/') || url.pathname.startsWith('/uploads/')) {
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/ota/') || url.pathname.startsWith('/uploads/') || url.pathname.startsWith('/downloads/')) {
     e.respondWith(fetch(e.request));
     return;
   }
-  // Para o resto: tenta rede primeiro, fallback no cache
   e.respondWith(
     fetch(e.request)
       .then(res => {
@@ -30,5 +28,35 @@ self.addEventListener('fetch', e => {
         return res;
       })
       .catch(() => caches.match(e.request).then(cached => cached || caches.match('/')))
+  );
+});
+
+// ── PUSH NOTIFICATIONS ────────────────────────────────────────────────────────
+self.addEventListener('push', e => {
+  let data = {};
+  try { data = e.data ? e.data.json() : {}; } catch(_) {}
+  const title = data.title || '🌸 Nalin Nazareth';
+  const options = {
+    body: data.body || '',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    vibrate: [200, 100, 200],
+    data: data,
+    requireInteraction: false
+  };
+  e.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const client of list) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      return clients.openWindow('/');
+    })
   );
 });

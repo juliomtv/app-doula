@@ -1,6 +1,6 @@
 {
-  "versao": "1.5.28",
+  "versao": "1.5.29",
   "data": "2026-05-25",
-  "notas": "Comunidade: curtidas em comentários, Nalin participa pelo admin",
+  "notas": "Notificações push para iOS e Android PWA (Web Push VAPID)",
   "obrigatoria": false
 }

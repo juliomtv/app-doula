@@ -3226,9 +3226,65 @@ function _PN() {
     ? Capacitor.Plugins.PushNotifications : null;
 }
 
+function _urlBase64ToUint8Array(b64){
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const base64 = (b64 + pad).replace(/-/g,'+').replace(/_/g,'/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));
+}
+
+async function registrarWebPush(){
+  if(!currentUser?.id || !API_URL) return;
+  if(!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted') return;
+    const reg = await navigator.serviceWorker.ready;
+    const {publicKey} = await apiFetch('/api/vapid-public-key');
+    if(!publicKey) return;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: _urlBase64ToUint8Array(publicKey)
+    });
+    const j = sub.toJSON();
+    await apiFetch('/api/users/web_push_subscription', {
+      method:'POST',
+      body: JSON.stringify({user_id: currentUser.id, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth})
+    });
+    console.log('[WEB PUSH] Registrado com sucesso.');
+  } catch(e){ console.warn('[WEB PUSH]', e); }
+}
+
+function _mostrarBannerIOS(){
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if(!isIOS || isStandalone) return;
+  if(localStorage.getItem('ios_banner_dismissed')) return;
+  const banner = document.createElement('div');
+  banner.id = 'ios-install-banner';
+  banner.style.cssText = 'position:fixed;bottom:80px;left:12px;right:12px;background:white;border-radius:16px;padding:14px 16px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:9999;display:flex;gap:12px;align-items:flex-start;';
+  banner.innerHTML = `
+    <div style="font-size:28px;flex-shrink:0;">🌸</div>
+    <div style="flex:1;">
+      <div style="font-weight:700;font-size:14px;color:#3a2820;margin-bottom:4px;">Ative as notificações</div>
+      <div style="font-size:12px;color:#7a5a50;line-height:1.5;">Para receber avisos da Nalin, adicione o app à tela inicial:<br><strong>Compartilhar (□↑) → Adicionar à Tela de Início</strong></div>
+    </div>
+    <button onclick="document.getElementById('ios-install-banner').remove();localStorage.setItem('ios_banner_dismissed','1')" style="border:none;background:none;font-size:18px;color:#aaa;cursor:pointer;padding:0;flex-shrink:0;">✕</button>
+  `;
+  document.body.appendChild(banner);
+}
+
 async function registrarPushNotifications() {
   const PN = _PN();
-  if (!PN || !currentUser?.id || !API_URL) return;
+  if(!currentUser?.id || !API_URL) return;
+  // PWA: registra Web Push VAPID (funciona em Android Chrome e iOS 16.4+ standalone)
+  const isNativePlatform = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  if(!isNativePlatform){
+    _mostrarBannerIOS();
+    await registrarWebPush();
+    return;
+  }
+  if (!PN) return;
   try {
     // Cria canal Android
     await PN.createChannel({ id: 'doula_notif', name: 'Notificações da Doula', importance: 5, sound: 'default', vibration: true, visibility: 1 });
@@ -3392,7 +3448,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.5.28';
+const APP_BUNDLE_VERSION = '1.5.29';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")

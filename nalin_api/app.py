@@ -14,6 +14,34 @@ import jwt
 from datetime import datetime, timezone, timedelta
 from functools import wraps
 
+# ── WEB PUSH (VAPID) ──────────────────────────────────────────────────────────
+_VAPID_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'vapid_keys.json')
+_VAPID_KEYS = {}
+try:
+    with open(_VAPID_FILE) as _f:
+        _VAPID_KEYS = json.load(_f)
+    print('[VAPID] Chaves carregadas.')
+except Exception as _e:
+    print(f'[VAPID] Chaves não encontradas: {_e}')
+
+def web_push_send(subscriptions, titulo, mensagem):
+    if not _VAPID_KEYS or not subscriptions: return
+    try:
+        from pywebpush import webpush, WebPushException
+    except ImportError:
+        print('[WEBPUSH] pywebpush não instalado'); return
+    payload = json.dumps({'title': titulo, 'body': mensagem, 'icon': '/icons/icon-192.png'})
+    for sub in subscriptions:
+        try:
+            webpush(
+                subscription_info={'endpoint': sub['endpoint'], 'keys': {'p256dh': sub['p256dh'], 'auth': sub['auth']}},
+                data=payload,
+                vapid_private_key=_VAPID_KEYS['private'],
+                vapid_claims={'sub': 'mailto:contato@appdoula.com'}
+            )
+        except Exception as _e:
+            print(f'[WEBPUSH] Erro: {_e}')
+
 # ── FIREBASE ADMIN ────────────────────────────────────────────────────────────
 try:
     import firebase_admin
@@ -222,6 +250,16 @@ def init_db():
                 criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(comentario_id, user_id),
                 FOREIGN KEY (comentario_id) REFERENCES comunidade_comentarios(id),
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            );
+            CREATE TABLE IF NOT EXISTS push_subscriptions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                endpoint TEXT NOT NULL,
+                p256dh TEXT NOT NULL,
+                auth TEXT NOT NULL,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, endpoint),
                 FOREIGN KEY (user_id) REFERENCES users(id)
             );
         """)
@@ -649,6 +687,31 @@ def toggle_acesso(user_id):
     valor = 1 if data.get('valor') else 0
     db = get_db()
     db.execute(f'UPDATE users SET {campo}=? WHERE id=?', (valor, user_id))
+    db.commit()
+    return jsonify({'status': 'success'})
+
+# ── WEB PUSH ENDPOINTS ───────────────────────────────────────────────────────
+@app.route('/api/vapid-public-key', methods=['GET', 'OPTIONS'])
+def vapid_public_key():
+    if request.method == 'OPTIONS': return '', 204
+    return jsonify({'publicKey': _VAPID_KEYS.get('public', '')})
+
+@app.route('/api/users/web_push_subscription', methods=['POST', 'OPTIONS'])
+def save_web_push_subscription():
+    if request.method == 'OPTIONS': return '', 204
+    data = request.json or {}
+    user_id = data.get('user_id')
+    endpoint = (data.get('endpoint') or '').strip()
+    p256dh = (data.get('p256dh') or '').strip()
+    auth = (data.get('auth') or '').strip()
+    if not user_id or not endpoint or not p256dh or not auth:
+        return jsonify({'error': 'Dados incompletos'}), 400
+    db = get_db()
+    db.execute("""
+        INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
+        VALUES (?,?,?,?)
+        ON CONFLICT(user_id, endpoint) DO UPDATE SET p256dh=excluded.p256dh, auth=excluded.auth
+    """, (user_id, endpoint, p256dh, auth))
     db.commit()
     return jsonify({'status': 'success'})
 
@@ -1479,6 +1542,8 @@ def _notif_user(db, user_id, titulo, mensagem):
         db.execute("INSERT INTO notificacoes (user_id,titulo,mensagem) VALUES (?,?,?)", (user_id, titulo, mensagem))
         u = db.execute("SELECT fcm_token FROM users WHERE id=? AND fcm_token IS NOT NULL AND fcm_token!=''", (user_id,)).fetchone()
         if u: fcm_send([u['fcm_token']], titulo, mensagem)
+        subs = db.execute("SELECT endpoint,p256dh,auth FROM push_subscriptions WHERE user_id=?", (user_id,)).fetchall()
+        if subs: web_push_send([dict(s) for s in subs], titulo, mensagem)
     except Exception as e:
         print(f'[NOTIF] Erro: {e}')
 
@@ -1487,11 +1552,15 @@ def _notif_todos(db, titulo, mensagem, excluir_ids=None):
         excluir_ids = excluir_ids or []
         users = db.execute("SELECT id, fcm_token FROM users WHERE ativo=1").fetchall()
         tokens = []
+        all_subs = []
         for u in users:
             if u['id'] in excluir_ids: continue
             db.execute("INSERT INTO notificacoes (user_id,titulo,mensagem) VALUES (?,?,?)", (u['id'], titulo, mensagem))
             if u['fcm_token']: tokens.append(u['fcm_token'])
+            subs = db.execute("SELECT endpoint,p256dh,auth FROM push_subscriptions WHERE user_id=?", (u['id'],)).fetchall()
+            all_subs.extend([dict(s) for s in subs])
         if tokens: fcm_send(tokens, titulo, mensagem)
+        if all_subs: web_push_send(all_subs, titulo, mensagem)
     except Exception as e:
         print(f'[NOTIF] Erro broadcast: {e}')
 
