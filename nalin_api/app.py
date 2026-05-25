@@ -1711,9 +1711,10 @@ def sincronizar_assinatura(user_id):
     except Exception as e:
         return jsonify({"status":"error","message":str(e)}), 500
 
+init_db()
+
 if __name__ == '__main__':
     _gerar_icones_pwa()
-    init_db()
     try:
         from migrate_db import migrate
         migrate()
