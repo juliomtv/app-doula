@@ -215,6 +215,15 @@ def init_db():
                 FOREIGN KEY (post_id) REFERENCES comunidade_posts(id),
                 FOREIGN KEY (user_id) REFERENCES users(id)
             );
+            CREATE TABLE IF NOT EXISTS comunidade_comentarios_curtidas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                comentario_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(comentario_id, user_id),
+                FOREIGN KEY (comentario_id) REFERENCES comunidade_comentarios(id),
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            );
         """)
         db.commit()
 
@@ -1571,19 +1580,39 @@ def deletar_post(post_id):
 @app.route('/api/comunidade/posts/<int:post_id>/comentarios', methods=['GET', 'OPTIONS'])
 def listar_comentarios(post_id):
     if request.method == 'OPTIONS': return '', 204
+    user_id = request.args.get('user_id', 0, type=int)
     db = get_db()
     rows = db.execute("""
         SELECT c.id, c.user_id, c.texto, c.criado_em,
-               u.nome AS autor_nome, u.tipo AS autor_tipo
+               u.nome AS autor_nome, u.tipo AS autor_tipo,
+               (SELECT COUNT(*) FROM comunidade_comentarios_curtidas cc WHERE cc.comentario_id=c.id) AS curtidas,
+               CASE WHEN (SELECT COUNT(*) FROM comunidade_comentarios_curtidas cc WHERE cc.comentario_id=c.id AND cc.user_id=?) > 0 THEN 1 ELSE 0 END AS curtiu
         FROM comunidade_comentarios c
         JOIN users u ON u.id=c.user_id
         WHERE c.post_id=? AND c.ativo=1
         ORDER BY c.criado_em ASC
-    """, (post_id,)).fetchall()
+    """, (user_id, post_id)).fetchall()
     comentarios = [dict(r) for r in rows]
     for c in comentarios:
         c['autor_nome'] = _nome_curto(c['autor_nome'])
     return jsonify({'comentarios': comentarios})
+
+@app.route('/api/comunidade/comentarios/<int:coment_id>/curtir', methods=['POST', 'OPTIONS'])
+def curtir_comentario(coment_id):
+    if request.method == 'OPTIONS': return '', 204
+    data = request.json or {}
+    user_id = data.get('user_id')
+    if not user_id: return jsonify({'error': 'user_id obrigatório'}), 400
+    db = get_db()
+    existe = db.execute("SELECT id FROM comunidade_comentarios_curtidas WHERE comentario_id=? AND user_id=?", (coment_id, user_id)).fetchone()
+    if existe:
+        db.execute("DELETE FROM comunidade_comentarios_curtidas WHERE comentario_id=? AND user_id=?", (coment_id, user_id))
+    else:
+        db.execute("INSERT INTO comunidade_comentarios_curtidas (comentario_id,user_id) VALUES (?,?)", (coment_id, user_id))
+    db.commit()
+    curtiu = not existe
+    total = db.execute("SELECT COUNT(*) FROM comunidade_comentarios_curtidas WHERE comentario_id=?", (coment_id,)).fetchone()[0]
+    return jsonify({'curtiu': curtiu, 'curtidas': total})
 
 @app.route('/api/comunidade/posts/<int:post_id>/comentarios', methods=['POST', 'OPTIONS'])
 def criar_comentario(post_id):
@@ -1742,6 +1771,23 @@ def admin_nalin_curtir(post_id):
         if post and post['user_id'] != nalin['id']:
             _notif_user(db, post['user_id'], '🌸 Nalin curtiu seu post', '')
             db.commit()
+    return jsonify({'curtiu': curtiu, 'curtidas': total})
+
+@app.route('/api/admin/comunidade/comentarios/<int:coment_id>/curtir', methods=['POST', 'OPTIONS'])
+@require_admin
+def admin_nalin_curtir_comentario(coment_id):
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    nalin = _get_nalin_user(db)
+    if not nalin: return jsonify({'error': 'Usuária Nalin não encontrada'}), 404
+    existe = db.execute("SELECT id FROM comunidade_comentarios_curtidas WHERE comentario_id=? AND user_id=?", (coment_id, nalin['id'])).fetchone()
+    if existe:
+        db.execute("DELETE FROM comunidade_comentarios_curtidas WHERE comentario_id=? AND user_id=?", (coment_id, nalin['id']))
+    else:
+        db.execute("INSERT INTO comunidade_comentarios_curtidas (comentario_id,user_id) VALUES (?,?)", (coment_id, nalin['id']))
+    db.commit()
+    curtiu = not existe
+    total = db.execute("SELECT COUNT(*) FROM comunidade_comentarios_curtidas WHERE comentario_id=?", (coment_id,)).fetchone()[0]
     return jsonify({'curtiu': curtiu, 'curtidas': total})
 
 @app.route('/api/comunidade/ranking', methods=['GET'])

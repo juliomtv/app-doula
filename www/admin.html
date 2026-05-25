@@ -812,13 +812,16 @@ async function _renderPostsAdmin(){
             <span style="font-size:11px;color:#aaa;">${dt}</span>
           </div>
           <div style="font-size:13px;color:#5a4040;line-height:1.5;margin-bottom:10px;">${escHtml(p.texto).replace(/\n/g,'<br>')}</div>
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <button onclick="adminCurtirPost(${p.id},this)" style="border:1.5px solid #e8d0c8;background:white;color:#c9907a;border-radius:50px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;" data-curtidas="${p.curtidas||0}">❤️ ${p.curtidas||0}</button>
-            <button onclick="toggleAdminComment(${p.id})" style="border:1.5px solid #e8d0c8;background:white;color:#7a5a50;border-radius:50px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;">💬 Comentar</button>
-            <span style="font-size:11px;color:#aaa;">💬 ${p.total_comentarios||0} comentário(s)</span>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <button onclick="adminCurtirPost(${p.id},this)" style="border:1.5px solid #e8d0c8;background:white;color:#c9907a;border-radius:50px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;">❤️ ${p.curtidas||0}</button>
+            <button onclick="toggleAdminComentarios(${p.id})" style="border:1.5px solid #e8d0c8;background:white;color:#7a5a50;border-radius:50px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;">💬 ${p.total_comentarios||0} comentário(s)</button>
+            <button onclick="toggleAdminComment(${p.id})" style="border:1.5px solid var(--rose);background:white;color:var(--rose);border-radius:50px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;">✏️ Comentar</button>
             <button onclick="deletarPostAdmin(${p.id},this)" style="border:none;background:#fdeaea;color:#d9534f;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;margin-left:auto;">🗑 Excluir</button>
           </div>
-          <div id="adm-comment-form-${p.id}" style="display:none;margin-top:10px;display:none;">
+          <!-- Lista de comentários -->
+          <div id="adm-comments-list-${p.id}" style="display:none;margin-top:10px;border-top:1px solid #f5ede9;padding-top:8px;"></div>
+          <!-- Form comentar -->
+          <div id="adm-comment-form-${p.id}" style="display:none;margin-top:10px;">
             <div style="display:flex;gap:8px;align-items:flex-end;">
               <textarea id="adm-comment-txt-${p.id}" placeholder="Comentar como Nalin..." maxlength="500"
                 style="flex:1;border:1.5px solid #e8d0c8;border-radius:10px;padding:8px 10px;font-size:13px;font-family:inherit;resize:none;height:38px;outline:none;"></textarea>
@@ -835,6 +838,55 @@ function toggleAdminComment(postId){
   const f = document.getElementById('adm-comment-form-'+postId);
   f.style.display = f.style.display === 'none' || f.style.display === '' ? 'block' : 'none';
   if(f.style.display==='block') document.getElementById('adm-comment-txt-'+postId).focus();
+}
+
+async function toggleAdminComentarios(postId){
+  const el = document.getElementById('adm-comments-list-'+postId);
+  if(el.style.display === 'block'){ el.style.display='none'; return; }
+  el.style.display = 'block';
+  el.innerHTML = '<div style="font-size:12px;color:#aaa;padding:4px 0;">Carregando...</div>';
+  await _carregarComentariosAdmin(postId);
+}
+
+async function _carregarComentariosAdmin(postId){
+  const el = document.getElementById('adm-comments-list-'+postId);
+  const token = localStorage.getItem('nn_admin_token');
+  const res = await fetch(API_URL + '/api/comunidade/posts/'+postId+'/comentarios', {
+    headers:{'Authorization':'Bearer '+token}
+  }).then(r=>r.json()).catch(()=>null);
+  if(!res || !res.comentarios || !res.comentarios.length){
+    el.innerHTML = '<div style="font-size:12px;color:#aaa;padding:4px 0;">Nenhum comentário ainda.</div>';
+    return;
+  }
+  el.innerHTML = res.comentarios.map(c=>{
+    const ini = (c.autor_nome||'?')[0].toUpperCase();
+    const isNalin = ['nalin','admin','doula'].includes(c.autor_tipo);
+    const badge = isNalin ? '<span style="font-size:10px;background:linear-gradient(135deg,var(--rose),#c9907a);color:white;border-radius:50px;padding:1px 6px;font-weight:700;margin-left:4px;">🌸</span>' : '';
+    return `<div style="display:flex;gap:8px;margin-bottom:8px;align-items:flex-start;">
+      <div style="width:28px;height:28px;border-radius:50%;background:#f5ebe8;display:flex;align-items:center;justify-content:center;color:#c9907a;font-weight:700;font-size:11px;flex-shrink:0;">${ini}</div>
+      <div style="background:#faf6f4;border-radius:10px;padding:7px 10px;flex:1;">
+        <div style="font-weight:700;font-size:12px;color:#3a2820;margin-bottom:2px;">${escHtml(c.autor_nome||'—')}${badge}</div>
+        <div style="font-size:13px;color:#5a4040;line-height:1.4;">${escHtml(c.texto).replace(/\n/g,'<br>')}</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+          <span style="font-size:10px;color:#aaa;">${c.criado_em||''}</span>
+          <button onclick="adminCurtirComentario(${c.id},this)" style="border:none;background:none;font-size:11px;font-weight:600;cursor:pointer;color:#c9907a;padding:0;">${c.curtiu?'❤️':'🤍'} ${c.curtidas||0}</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function adminCurtirComentario(comentId, btn){
+  btn.disabled = true;
+  const token = localStorage.getItem('nn_admin_token');
+  const res = await fetch(API_URL + '/api/admin/comunidade/comentarios/'+comentId+'/curtir', {
+    method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}
+  }).then(r=>r.json()).catch(()=>null);
+  if(res){
+    btn.style.color = res.curtiu ? '#c9907a' : '#aaa';
+    btn.innerHTML = (res.curtiu ? '❤️' : '🤍') + ' ' + res.curtidas;
+  }
+  btn.disabled = false;
 }
 
 async function adminCurtirPost(postId, btn){
@@ -863,7 +915,9 @@ async function adminEnviarComentario(postId){
     txtEl.value = '';
     toggleAdminComment(postId);
     showToastA('🌸 Comentário enviado!');
-    _renderPostsAdmin();
+    const listEl = document.getElementById('adm-comments-list-'+postId);
+    if(listEl && listEl.style.display==='block') await _carregarComentariosAdmin(postId);
+    else _renderPostsAdmin();
   } else { showToastA('Erro ao comentar.'); }
 }
 
