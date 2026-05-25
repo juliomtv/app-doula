@@ -1449,7 +1449,7 @@ const _catClass = {geral:'feed-cat-geral', doacao:'feed-cat-doacao', duvida:'fee
 
 function _renderPost(p){
   const inicial = (p.autor_nome || '?')[0].toUpperCase();
-  const isNalin = p.autor_tipo === 'nalin' || p.autor_tipo === 'admin';
+  const isNalin = ['nalin','admin','doula'].includes(p.autor_tipo);
   const nalinBadge = isNalin ? '<span class="feed-nalin-badge">🌸 Doula</span>' : '';
   const isMeu = currentUser && p.user_id === currentUser.id;
   const deleteBtn = isMeu ? `<button class="feed-action-btn" onclick="deletarPost(${p.id})" style="margin-left:auto;color:#d9534f;">🗑 Excluir</button>` : '';

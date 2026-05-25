@@ -1459,8 +1459,32 @@ def _eh_nalin(user_id):
     try:
         db = get_db()
         u = db.execute("SELECT tipo FROM users WHERE id=?", (user_id,)).fetchone()
-        return u and u['tipo'] in ('doula', 'admin')
+        return u and u['tipo'] in ('doula', 'admin', 'nalin')
     except: return False
+
+def _get_nalin_user(db):
+    return db.execute("SELECT id, fcm_token FROM users WHERE tipo IN ('doula','admin','nalin') AND ativo=1 LIMIT 1").fetchone()
+
+def _notif_user(db, user_id, titulo, mensagem):
+    try:
+        db.execute("INSERT INTO notificacoes (user_id,titulo,mensagem) VALUES (?,?,?)", (user_id, titulo, mensagem))
+        u = db.execute("SELECT fcm_token FROM users WHERE id=? AND fcm_token IS NOT NULL AND fcm_token!=''", (user_id,)).fetchone()
+        if u: fcm_send([u['fcm_token']], titulo, mensagem)
+    except Exception as e:
+        print(f'[NOTIF] Erro: {e}')
+
+def _notif_todos(db, titulo, mensagem, excluir_ids=None):
+    try:
+        excluir_ids = excluir_ids or []
+        users = db.execute("SELECT id, fcm_token FROM users WHERE ativo=1").fetchall()
+        tokens = []
+        for u in users:
+            if u['id'] in excluir_ids: continue
+            db.execute("INSERT INTO notificacoes (user_id,titulo,mensagem) VALUES (?,?,?)", (u['id'], titulo, mensagem))
+            if u['fcm_token']: tokens.append(u['fcm_token'])
+        if tokens: fcm_send(tokens, titulo, mensagem)
+    except Exception as e:
+        print(f'[NOTIF] Erro broadcast: {e}')
 
 # ── COMUNIDADE — POSTS ───────────────────────────────────────────────────────
 
@@ -1503,6 +1527,16 @@ def criar_post():
     if not db.execute("SELECT id FROM users WHERE id=? AND ativo=1", (user_id,)).fetchone():
         return jsonify({'error': 'Usuário não encontrado'}), 404
     cur = db.execute("INSERT INTO comunidade_posts (user_id,texto,categoria) VALUES (?,?,?)", (user_id, texto, categoria))
+    db.commit()
+    autor = db.execute("SELECT nome, tipo FROM users WHERE id=?", (user_id,)).fetchone()
+    nome_curto = _nome_curto(autor['nome']) if autor else 'Alguém'
+    is_nalin = autor and autor['tipo'] in ('doula', 'admin', 'nalin')
+    if is_nalin:
+        _notif_todos(db, '🌸 Nova mensagem da Nalin', texto[:80] + ('...' if len(texto) > 80 else ''), excluir_ids=[user_id])
+    else:
+        nalin = _get_nalin_user(db)
+        if nalin:
+            _notif_user(db, nalin['id'], f'💬 {nome_curto} postou na comunidade', texto[:80] + ('...' if len(texto) > 80 else ''))
     db.commit()
     return jsonify({'status': 'success', 'id': cur.lastrowid})
 
@@ -1557,6 +1591,15 @@ def criar_comentario(post_id):
         return jsonify({'error': 'Post não encontrado'}), 404
     cur = db.execute("INSERT INTO comunidade_comentarios (post_id,user_id,texto) VALUES (?,?,?)", (post_id, user_id, texto))
     db.commit()
+    post = db.execute("SELECT user_id FROM comunidade_posts WHERE id=?", (post_id,)).fetchone()
+    autor = db.execute("SELECT nome FROM users WHERE id=?", (user_id,)).fetchone()
+    nome_curto = _nome_curto(autor['nome']) if autor else 'Alguém'
+    if post and post['user_id'] != user_id:
+        _notif_user(db, post['user_id'], f'💬 {nome_curto} comentou no seu post', texto[:80] + ('...' if len(texto) > 80 else ''))
+    nalin = _get_nalin_user(db)
+    if nalin and nalin['id'] != user_id and (not post or post['user_id'] != nalin['id']):
+        _notif_user(db, nalin['id'], f'💬 {nome_curto} comentou na comunidade', texto[:80] + ('...' if len(texto) > 80 else ''))
+    db.commit()
     return jsonify({'status': 'success', 'id': cur.lastrowid})
 
 @app.route('/api/comunidade/comentarios/<int:coment_id>', methods=['DELETE', 'OPTIONS'])
@@ -1597,6 +1640,13 @@ def curtir_post(post_id):
     db.commit()
     curtiu = not existe
     total = db.execute("SELECT COUNT(*) FROM comunidade_curtidas WHERE post_id=?", (post_id,)).fetchone()[0]
+    if curtiu:
+        post = db.execute("SELECT user_id FROM comunidade_posts WHERE id=?", (post_id,)).fetchone()
+        if post and post['user_id'] != user_id:
+            quem = db.execute("SELECT nome FROM users WHERE id=?", (user_id,)).fetchone()
+            nome_curto = _nome_curto(quem['nome']) if quem else 'Alguém'
+            _notif_user(db, post['user_id'], f'❤️ {nome_curto} curtiu seu post', '')
+            db.commit()
     return jsonify({'curtiu': curtiu, 'curtidas': total})
 
 # ── COMUNIDADE — ADMIN ────────────────────────────────────────────────────────
@@ -1625,6 +1675,65 @@ def admin_deletar_post(post_id):
     db.execute("UPDATE comunidade_posts SET ativo=0 WHERE id=?", (post_id,))
     db.commit()
     return jsonify({'ok': True})
+
+@app.route('/api/admin/comunidade/postar', methods=['POST', 'OPTIONS'])
+@require_admin
+def admin_nalin_postar():
+    if request.method == 'OPTIONS': return '', 204
+    data = request.json or {}
+    texto = (data.get('texto') or '').strip()
+    categoria = data.get('categoria', 'geral')
+    if categoria not in ('geral', 'doacao', 'duvida', 'experiencia'): categoria = 'geral'
+    if not texto: return jsonify({'error': 'Texto vazio'}), 400
+    db = get_db()
+    nalin = _get_nalin_user(db)
+    if not nalin: return jsonify({'error': 'Usuária Nalin não encontrada no banco'}), 404
+    cur = db.execute("INSERT INTO comunidade_posts (user_id,texto,categoria) VALUES (?,?,?)", (nalin['id'], texto, categoria))
+    db.commit()
+    _notif_todos(db, '🌸 Nova mensagem da Nalin', texto[:80] + ('...' if len(texto) > 80 else ''), excluir_ids=[nalin['id']])
+    db.commit()
+    return jsonify({'ok': True, 'id': cur.lastrowid})
+
+@app.route('/api/admin/comunidade/posts/<int:post_id>/comentar', methods=['POST', 'OPTIONS'])
+@require_admin
+def admin_nalin_comentar(post_id):
+    if request.method == 'OPTIONS': return '', 204
+    data = request.json or {}
+    texto = (data.get('texto') or '').strip()
+    if not texto: return jsonify({'error': 'Texto vazio'}), 400
+    db = get_db()
+    nalin = _get_nalin_user(db)
+    if not nalin: return jsonify({'error': 'Usuária Nalin não encontrada'}), 404
+    post = db.execute("SELECT user_id FROM comunidade_posts WHERE id=? AND ativo=1", (post_id,)).fetchone()
+    if not post: return jsonify({'error': 'Post não encontrado'}), 404
+    cur = db.execute("INSERT INTO comunidade_comentarios (post_id,user_id,texto) VALUES (?,?,?)", (post_id, nalin['id'], texto))
+    db.commit()
+    if post['user_id'] != nalin['id']:
+        _notif_user(db, post['user_id'], '🌸 Nalin comentou no seu post', texto[:80] + ('...' if len(texto) > 80 else ''))
+        db.commit()
+    return jsonify({'ok': True, 'id': cur.lastrowid})
+
+@app.route('/api/admin/comunidade/posts/<int:post_id>/curtir', methods=['POST', 'OPTIONS'])
+@require_admin
+def admin_nalin_curtir(post_id):
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    nalin = _get_nalin_user(db)
+    if not nalin: return jsonify({'error': 'Usuária Nalin não encontrada'}), 404
+    existe = db.execute("SELECT id FROM comunidade_curtidas WHERE post_id=? AND user_id=?", (post_id, nalin['id'])).fetchone()
+    if existe:
+        db.execute("DELETE FROM comunidade_curtidas WHERE post_id=? AND user_id=?", (post_id, nalin['id']))
+    else:
+        db.execute("INSERT INTO comunidade_curtidas (post_id,user_id) VALUES (?,?)", (post_id, nalin['id']))
+    db.commit()
+    curtiu = not existe
+    total = db.execute("SELECT COUNT(*) FROM comunidade_curtidas WHERE post_id=?", (post_id,)).fetchone()[0]
+    if curtiu:
+        post = db.execute("SELECT user_id FROM comunidade_posts WHERE id=?", (post_id,)).fetchone()
+        if post and post['user_id'] != nalin['id']:
+            _notif_user(db, post['user_id'], '🌸 Nalin curtiu seu post', '')
+            db.commit()
+    return jsonify({'curtiu': curtiu, 'curtidas': total})
 
 @app.route('/api/comunidade/ranking', methods=['GET'])
 def ranking_comunidade():

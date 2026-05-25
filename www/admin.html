@@ -160,7 +160,8 @@ tr:hover td{background:rgba(247,237,232,.5);}
   50% { width: 100%; }
   100% { width: 100%; }
 }
-
+.admin-cat-sel{border:1.5px solid var(--rose-p);background:white;color:var(--mid);border-radius:50px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
+.admin-cat-sel.active{background:var(--rose);border-color:var(--rose);color:white;}
 </style>
 </head>
 <body>
@@ -255,6 +256,24 @@ tr:hover td{background:rgba(247,237,232,.5);}
 
     <div class="page" id="p-ranking">
       <div class="page-hdr"><h1>Comunidade</h1><p>Feed de posts e ranking de progresso das Doulandas</p></div>
+
+      <!-- Nalin participa -->
+      <div class="table-card" style="margin-bottom:20px;">
+        <div class="tc-hdr"><h3>🌸 Nalin participa</h3></div>
+        <div style="padding:16px;">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+            <button class="admin-cat-sel active" data-cat="geral" onclick="selAdminCat(this)">💬 Geral</button>
+            <button class="admin-cat-sel" data-cat="doacao" onclick="selAdminCat(this)">🎁 Doação</button>
+            <button class="admin-cat-sel" data-cat="duvida" onclick="selAdminCat(this)">❓ Dúvida</button>
+            <button class="admin-cat-sel" data-cat="experiencia" onclick="selAdminCat(this)">💕 Experiência</button>
+          </div>
+          <textarea id="admin-nalin-texto" placeholder="Escreva uma mensagem para a comunidade..." maxlength="1000"
+            style="width:100%;border:1.5px solid var(--rose-p);border-radius:12px;padding:11px 14px;font-size:14px;color:var(--dark);background:var(--warm);outline:none;resize:vertical;min-height:80px;font-family:inherit;"></textarea>
+          <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+            <button onclick="adminNalinPostar()" class="btn-sm btn-rose-sm">🌸 Publicar como Nalin</button>
+          </div>
+        </div>
+      </div>
 
       <!-- Posts -->
       <div class="table-card" style="margin-bottom:20px;">
@@ -750,6 +769,28 @@ async function renderRankingAdmin(){
   </table>`;
 }
 
+function selAdminCat(el){
+  document.querySelectorAll('.admin-cat-sel').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+async function adminNalinPostar(){
+  const texto = (document.getElementById('admin-nalin-texto').value||'').trim();
+  if(!texto){ showToastA('Escreva algo antes de publicar.'); return; }
+  const catBtn = document.querySelector('.admin-cat-sel.active');
+  const categoria = catBtn ? catBtn.dataset.cat : 'geral';
+  const token = localStorage.getItem('nn_admin_token');
+  const res = await fetch(API_URL + '/api/admin/comunidade/postar', {
+    method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body: JSON.stringify({texto, categoria})
+  }).then(r=>r.json()).catch(()=>null);
+  if(res && res.ok){
+    document.getElementById('admin-nalin-texto').value = '';
+    showToastA('🌸 Post publicado e doulandas notificadas!');
+    _renderPostsAdmin();
+  } else { showToastA('Erro ao publicar.'); }
+}
+
 async function _renderPostsAdmin(){
   const el = document.getElementById('admin-posts-list');
   el.innerHTML = '<div style="text-align:center;padding:24px;color:#aaa;font-size:14px;">Carregando...</div>';
@@ -762,19 +803,68 @@ async function _renderPostsAdmin(){
   const catLabel = {geral:'💬 Geral',doacao:'🎁 Doação',duvida:'❓ Dúvida',experiencia:'💕 Experiência'};
   el.innerHTML = data.posts.map(p=>{
     const dt = p.criado_em ? new Date(p.criado_em.replace(' ','T')+'Z').toLocaleString('pt-BR') : '—';
-    return `<div style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid #faf4f2;">
-      <div style="flex:1;min-width:0;">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
-          <span style="font-weight:700;font-size:13px;color:#3a2820;">${escHtml(p.autor_nome||'—')}</span>
-          <span style="font-size:11px;background:#f5ebe8;color:#c9907a;border-radius:50px;padding:2px 8px;font-weight:600;">${catLabel[p.categoria]||p.categoria}</span>
-          <span style="font-size:11px;color:#aaa;">${dt}</span>
-          <span style="font-size:11px;color:#888;">❤️ ${p.curtidas||0} · 💬 ${p.total_comentarios||0}</span>
+    return `<div id="adm-post-${p.id}" style="padding:14px 16px;border-bottom:1px solid #faf4f2;">
+      <div style="display:flex;align-items:flex-start;gap:12px;">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+            <span style="font-weight:700;font-size:13px;color:#3a2820;">${escHtml(p.autor_nome||'—')}</span>
+            <span style="font-size:11px;background:#f5ebe8;color:#c9907a;border-radius:50px;padding:2px 8px;font-weight:600;">${catLabel[p.categoria]||p.categoria}</span>
+            <span style="font-size:11px;color:#aaa;">${dt}</span>
+          </div>
+          <div style="font-size:13px;color:#5a4040;line-height:1.5;margin-bottom:10px;">${escHtml(p.texto).replace(/\n/g,'<br>')}</div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <button onclick="adminCurtirPost(${p.id},this)" style="border:1.5px solid #e8d0c8;background:white;color:#c9907a;border-radius:50px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;" data-curtidas="${p.curtidas||0}">❤️ ${p.curtidas||0}</button>
+            <button onclick="toggleAdminComment(${p.id})" style="border:1.5px solid #e8d0c8;background:white;color:#7a5a50;border-radius:50px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;">💬 Comentar</button>
+            <span style="font-size:11px;color:#aaa;">💬 ${p.total_comentarios||0} comentário(s)</span>
+            <button onclick="deletarPostAdmin(${p.id},this)" style="border:none;background:#fdeaea;color:#d9534f;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;margin-left:auto;">🗑 Excluir</button>
+          </div>
+          <div id="adm-comment-form-${p.id}" style="display:none;margin-top:10px;display:none;">
+            <div style="display:flex;gap:8px;align-items:flex-end;">
+              <textarea id="adm-comment-txt-${p.id}" placeholder="Comentar como Nalin..." maxlength="500"
+                style="flex:1;border:1.5px solid #e8d0c8;border-radius:10px;padding:8px 10px;font-size:13px;font-family:inherit;resize:none;height:38px;outline:none;"></textarea>
+              <button onclick="adminEnviarComentario(${p.id})" style="border:none;background:var(--rose);color:white;border-radius:50%;width:36px;height:36px;font-size:16px;cursor:pointer;flex-shrink:0;">➤</button>
+            </div>
+          </div>
         </div>
-        <div style="font-size:13px;color:#5a4040;line-height:1.5;">${escHtml(p.texto).replace(/\n/g,'<br>')}</div>
       </div>
-      <button onclick="deletarPostAdmin(${p.id},this)" style="border:none;background:#fdeaea;color:#d9534f;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;">🗑 Excluir</button>
     </div>`;
   }).join('');
+}
+
+function toggleAdminComment(postId){
+  const f = document.getElementById('adm-comment-form-'+postId);
+  f.style.display = f.style.display === 'none' || f.style.display === '' ? 'block' : 'none';
+  if(f.style.display==='block') document.getElementById('adm-comment-txt-'+postId).focus();
+}
+
+async function adminCurtirPost(postId, btn){
+  btn.disabled = true;
+  const token = localStorage.getItem('nn_admin_token');
+  const res = await fetch(API_URL + '/api/admin/comunidade/posts/'+postId+'/curtir', {
+    method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}
+  }).then(r=>r.json()).catch(()=>null);
+  if(res){
+    btn.innerHTML = (res.curtiu ? '❤️' : '🤍') + ' ' + res.curtidas;
+    btn.style.color = res.curtiu ? '#c9907a' : '#7a5a50';
+  }
+  btn.disabled = false;
+}
+
+async function adminEnviarComentario(postId){
+  const txtEl = document.getElementById('adm-comment-txt-'+postId);
+  const texto = (txtEl.value||'').trim();
+  if(!texto) return;
+  const token = localStorage.getItem('nn_admin_token');
+  const res = await fetch(API_URL + '/api/admin/comunidade/posts/'+postId+'/comentar', {
+    method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body: JSON.stringify({texto})
+  }).then(r=>r.json()).catch(()=>null);
+  if(res && res.ok){
+    txtEl.value = '';
+    toggleAdminComment(postId);
+    showToastA('🌸 Comentário enviado!');
+    _renderPostsAdmin();
+  } else { showToastA('Erro ao comentar.'); }
 }
 
 async function deletarPostAdmin(postId, btn){
@@ -784,7 +874,7 @@ async function deletarPostAdmin(postId, btn){
   const res = await fetch(API_URL + '/api/admin/comunidade/posts/' + postId, {
     method:'DELETE', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}
   }).then(r=>r.json()).catch(()=>null);
-  if(res && res.ok){ btn.closest('div[style*="border-bottom"]').remove(); showToastA('Post excluído.'); }
+  if(res && res.ok){ document.getElementById('adm-post-'+postId)?.remove(); showToastA('Post excluído.'); }
   else { btn.disabled=false; btn.textContent='🗑 Excluir'; showToastA('Erro ao excluir.'); }
 }
 
