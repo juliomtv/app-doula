@@ -3318,10 +3318,16 @@ async function registrarPushNotifications() {
       }
     });
     // Usuária tocou na notificação na barra do Android
-    await PN.addListener('pushNotificationActionPerformed', async () => {
-      // Sempre verifica APK update no servidor (payload FCM é instável no Android background)
-      const temApk = await _verificarApkUpdate();
-      if (!temApk) abrirNotificacoes();
+    await PN.addListener('pushNotificationActionPerformed', async (action) => {
+      const tipo = action?.notification?.data?.type || '';
+      if (tipo === 'apk_update') {
+        // Notificação específica de APK — verifica e mostra modal de download
+        const temApk = await _verificarApkUpdate();
+        if (!temApk) abrirNotificacoes();
+      } else {
+        // Qualquer outra notificação (comunidade, aviso da Nalin, etc.) — abre a lista
+        abrirNotificacoes();
+      }
     });
   } catch(e) { console.error('[PUSH]', e); }
 }
@@ -3448,7 +3454,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.5.29';
+const APP_BUNDLE_VERSION = '1.5.30';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")
