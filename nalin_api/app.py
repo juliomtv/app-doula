@@ -494,6 +494,10 @@ def pwa_index():
 def pwa_manifest():
     return send_from_directory(WWW_DIR, 'manifest.json', mimetype='application/manifest+json')
 
+@app.route('/manifest-admin.json', methods=['GET'])
+def pwa_manifest_admin():
+    return send_from_directory(WWW_DIR, 'manifest-admin.json', mimetype='application/manifest+json')
+
 @app.route('/sw.js', methods=['GET'])
 def pwa_sw():
     resp = send_from_directory(WWW_DIR, 'sw.js', mimetype='application/javascript')
