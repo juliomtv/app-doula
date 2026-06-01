@@ -218,6 +218,7 @@ tr:hover td{background:rgba(247,237,232,.5);}
       <div class="sb-sect">Sistema</div>
       <div class="sb-item" onclick="goPage('config',this)"><span class="si">⚙️</span><span>Configurações</span></div>
       <div class="sb-item" onclick="goPage('apk',this)"><span class="si">📦</span><span>Atualização APK</span></div>
+      <div class="sb-item" onclick="goPage('contracoes',this)"><span class="si">⏱</span><span>Contrações</span></div>
     </div>
     <div class="sb-footer">
       <div class="sb-user">
@@ -455,6 +456,23 @@ tr:hover td{background:rgba(247,237,232,.5);}
     </div>
 
     <!-- ════ APK ════ -->
+    <div class="page" id="p-contracoes">
+      <div class="page-hdr" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div><h1>⏱ Monitoramento de Contrações</h1><p>Acompanhe em tempo real o padrão das gestantes</p></div>
+        <button class="btn-sm" onclick="renderContracoesAdmin()" style="background:var(--rose-pale);color:var(--rose);border:1px solid var(--rose);">↻ Atualizar</button>
+      </div>
+      <!-- Legenda -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+        <span style="background:#dbeafe;color:#1d4ed8;border-radius:50px;padding:4px 12px;font-size:12px;font-weight:600;">🔵 Observação</span>
+        <span style="background:#fef9c3;color:#854d0e;border-radius:50px;padding:4px 12px;font-size:12px;font-weight:600;">🟡 Atenção</span>
+        <span style="background:#ffedd5;color:#c2410c;border-radius:50px;padding:4px 12px;font-size:12px;font-weight:600;">🟠 Trab. de parto provável</span>
+        <span style="background:#fee2e2;color:#b91c1c;border-radius:50px;padding:4px 12px;font-size:12px;font-weight:600;">🔴 Prioridade alta</span>
+      </div>
+      <div id="admin-contracoes-list">
+        <div style="text-align:center;padding:48px;color:#aaa;font-size:14px;">Carregando...</div>
+      </div>
+    </div>
+
     <div class="page" id="p-apk">
       <div class="page-hdr"><h1>Atualização APK</h1><p>Distribua novas versões do app automaticamente para Doulandas Android</p></div>
 
@@ -934,12 +952,77 @@ async function deletarPostAdmin(postId, btn){
 
 function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
+async function renderContracoesAdmin(){
+  const el = document.getElementById('admin-contracoes-list');
+  el.innerHTML = '<div style="text-align:center;padding:48px;color:#aaa;font-size:14px;">Carregando...</div>';
+  const token = localStorage.getItem('nn_admin_token');
+  const data = await fetch(API_URL + '/api/admin/contracoes/monitoramento', {
+    headers:{'Authorization':'Bearer '+token}
+  }).then(r=>r.json()).catch(()=>null);
+
+  if(!data || !data.monitoramento || !data.monitoramento.length){
+    el.innerHTML = `<div style="text-align:center;padding:64px 24px;">
+      <div style="font-size:48px;margin-bottom:12px;">✅</div>
+      <div style="font-size:16px;font-weight:600;color:#3a2820;margin-bottom:6px;">Nenhuma gestante em alerta</div>
+      <div style="font-size:13px;color:#aaa;">Todas as contrações registradas estão dentro do padrão normal.</div>
+    </div>`;
+    return;
+  }
+
+  const cfg = {
+    observacao:    {label:'Observação',      bg:'#dbeafe',color:'#1d4ed8',icon:'🔵',borda:'#93c5fd'},
+    atencao:       {label:'Atenção',         bg:'#fef9c3',color:'#854d0e',icon:'🟡',borda:'#fde047'},
+    trabalho_parto:{label:'Trab. de parto',  bg:'#ffedd5',color:'#c2410c',icon:'🟠',borda:'#fb923c'},
+    prioridade_alta:{label:'Prioridade Alta',bg:'#fee2e2',color:'#b91c1c',icon:'🔴',borda:'#f87171'},
+  };
+
+  function fmtDur(s){ return s >= 60 ? Math.floor(s/60)+'min '+('0'+(s%60)).slice(-2)+'s' : s+'s'; }
+  function fmtInt(m){ if(!m) return '—'; return m < 1 ? Math.round(m*60)+'s' : m+'min'; }
+  function fmtData(ts){
+    if(!ts) return '—';
+    try{ return new Date(ts.replace(' ','T')+'Z').toLocaleString('pt-BR',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}); }
+    catch{ return ts; }
+  }
+
+  el.innerHTML = data.monitoramento.map(u => {
+    const c = cfg[u.status] || cfg.observacao;
+    return `<div style="background:${c.bg};border:2px solid ${c.borda};border-radius:16px;padding:18px 20px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+        <span style="font-size:22px;">${c.icon}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:16px;color:#1a0a00;">${escHtml(u.nome)}</div>
+          <div style="font-size:12px;font-weight:700;color:${c.color};margin-top:1px;text-transform:uppercase;letter-spacing:.5px;">${c.label}</div>
+        </div>
+        <div style="text-align:right;font-size:11px;color:#888;">Última: ${fmtData(u.ultima)}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+        <div style="background:rgba(255,255,255,.7);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">Contrações</div>
+          <div style="font-size:20px;font-weight:700;color:#1a0a00;">${u.total}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.7);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">Duração média</div>
+          <div style="font-size:16px;font-weight:700;color:#1a0a00;">${fmtDur(u.avg_dur_sec)}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.7);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">Intervalo médio</div>
+          <div style="font-size:16px;font-weight:700;color:#1a0a00;">${fmtInt(u.avg_int_min)}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.7);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">Frequência</div>
+          <div style="font-size:16px;font-weight:700;color:#1a0a00;">${u.avg_int_min ? '~'+u.avg_int_min+'min' : '—'}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 function goPage(id,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
   document.getElementById('p-'+id).classList.add('active');
   el.classList.add('active');
-  const renders={dashboard:renderDashboard,doulandas:renderDoulandas,ranking:renderRankingAdmin,videos:()=>renderConteudoTable('video'),ebooks:renderEbooksPage,meditacoes:()=>renderConteudoTable('meditacao'),dicas:renderDicas,notificacoes:renderNotificacoes,config:loadConfig,apk:renderApkPage};
+  const renders={dashboard:renderDashboard,doulandas:renderDoulandas,ranking:renderRankingAdmin,videos:()=>renderConteudoTable('video'),ebooks:renderEbooksPage,meditacoes:()=>renderConteudoTable('meditacao'),dicas:renderDicas,notificacoes:renderNotificacoes,config:loadConfig,apk:renderApkPage,contracoes:renderContracoesAdmin};
   if(renders[id])renders[id]();
 }
 

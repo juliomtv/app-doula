@@ -1190,6 +1190,60 @@ def contracoes():
     db.commit()
     return jsonify({'status':'success','id': db.execute('SELECT last_insert_rowid()').fetchone()[0]})
 
+@app.route('/api/admin/contracoes/monitoramento', methods=['GET', 'OPTIONS'])
+@require_admin
+def admin_monitoramento_contracoes():
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    users = db.execute("SELECT id, nome FROM users WHERE ativo=1").fetchall()
+    resultado = []
+    agora = datetime.now(timezone.utc)
+    for u in users:
+        rows = db.execute(
+            "SELECT start_time, end_time, duration_sec, interval_min FROM contracoes WHERE user_id=? ORDER BY start_time DESC LIMIT 20",
+            (u['id'],)
+        ).fetchall()
+        if not rows: continue
+        total = len(rows)
+        duracoes = [r['duration_sec'] for r in rows if r['duration_sec'] and r['duration_sec'] > 0]
+        intervalos = [r['interval_min'] for r in rows if r['interval_min'] and r['interval_min'] > 0]
+        if not duracoes: continue
+        avg_dur = round(sum(duracoes) / len(duracoes))
+        avg_int = round(sum(intervalos) / len(intervalos), 1) if intervalos else None
+        ultima = rows[0]['start_time'] or rows[0]['end_time'] or ''
+        # Verifica se padrão se mantém por 60 min (para "trabalho de parto provável")
+        padrao_60min = False
+        if len(rows) >= 3 and ultima:
+            try:
+                dt_ultima = datetime.fromisoformat(ultima.replace('Z','').rstrip('+00:00'))
+                dt_primeira = datetime.fromisoformat((rows[min(len(rows)-1,9)]['start_time'] or '').replace('Z','').rstrip('+00:00'))
+                padrao_60min = (dt_ultima - dt_primeira).total_seconds() >= 3600
+            except: pass
+        # Determina status
+        status = 'normal'
+        if avg_int is not None:
+            if avg_int < 3 and total > 10:
+                status = 'prioridade_alta'
+            elif avg_int < 5 and avg_dur >= 60 and padrao_60min:
+                status = 'trabalho_parto'
+            elif total >= 5 and avg_int < 7 and avg_dur >= 40:
+                status = 'atencao'
+            elif total >= 3 and avg_int < 10:
+                status = 'observacao'
+        if status == 'normal': continue
+        resultado.append({
+            'user_id': u['id'],
+            'nome': _nome_curto(u['nome']),
+            'status': status,
+            'avg_dur_sec': avg_dur,
+            'avg_int_min': avg_int,
+            'total': total,
+            'ultima': ultima
+        })
+    ordem = {'prioridade_alta': 0, 'trabalho_parto': 1, 'atencao': 2, 'observacao': 3}
+    resultado.sort(key=lambda x: ordem.get(x['status'], 9))
+    return jsonify({'monitoramento': resultado})
+
 @app.route('/api/contracoes/<int:cnt_id>', methods=['DELETE','OPTIONS'])
 def contracao_item(cnt_id):
     if request.method == 'OPTIONS': return '', 204
