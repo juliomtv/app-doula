@@ -262,6 +262,11 @@ def init_db():
                 UNIQUE(user_id, endpoint),
                 FOREIGN KEY (user_id) REFERENCES users(id)
             );
+            CREATE TABLE IF NOT EXISTS contracoes_dispensadas (
+                user_id INTEGER PRIMARY KEY,
+                dispensado_em TIMESTAMP NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            );
         """)
         db.commit()
 
@@ -1198,8 +1203,12 @@ def contracoes():
     return jsonify({'status':'success','id': new_id})
 
 def _checar_contracoes_notificar(db, user_id):
+    dispensada = db.execute(
+        "SELECT dispensado_em FROM contracoes_dispensadas WHERE user_id=?", (user_id,)
+    ).fetchone()
+    filtro = f" AND start_time > '{dispensada['dispensado_em']}'" if dispensada else ""
     rows = db.execute(
-        "SELECT duration_sec, interval_min, start_time FROM contracoes WHERE user_id=? ORDER BY start_time DESC LIMIT 20",
+        f"SELECT duration_sec, interval_min, start_time FROM contracoes WHERE user_id=?{filtro} ORDER BY start_time DESC LIMIT 20",
         (user_id,)
     ).fetchall()
     if not rows or len(rows) < 3: return
@@ -1261,6 +1270,19 @@ def admin_save_web_push():
     db.commit()
     return jsonify({'ok': True})
 
+@app.route('/api/admin/contracoes/<int:user_id>/dispensar', methods=['POST', 'OPTIONS'])
+@require_admin
+def admin_dispensar_contracoes(user_id):
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    db.execute("""
+        INSERT INTO contracoes_dispensadas (user_id, dispensado_em)
+        VALUES (?, datetime('now'))
+        ON CONFLICT(user_id) DO UPDATE SET dispensado_em=excluded.dispensado_em
+    """, (user_id,))
+    db.commit()
+    return jsonify({'ok': True})
+
 @app.route('/api/admin/contracoes/monitoramento', methods=['GET', 'OPTIONS'])
 @require_admin
 def admin_monitoramento_contracoes():
@@ -1270,8 +1292,13 @@ def admin_monitoramento_contracoes():
     resultado = []
     agora = datetime.now(timezone.utc)
     for u in users:
+        # Respeita dispensa: só considera contrações após o momento de dispensa
+        dispensada = db.execute(
+            "SELECT dispensado_em FROM contracoes_dispensadas WHERE user_id=?", (u['id'],)
+        ).fetchone()
+        filtro_data = f" AND start_time > '{dispensada['dispensado_em']}'" if dispensada else ""
         rows = db.execute(
-            "SELECT start_time, end_time, duration_sec, interval_min FROM contracoes WHERE user_id=? ORDER BY start_time DESC LIMIT 20",
+            f"SELECT start_time, end_time, duration_sec, interval_min FROM contracoes WHERE user_id=?{filtro_data} ORDER BY start_time DESC LIMIT 20",
             (u['id'],)
         ).fetchall()
         if not rows: continue

@@ -997,7 +997,11 @@ function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt
 
 async function renderContracoesAdmin(){
   const el = document.getElementById('admin-contracoes-list');
+  if(!el) return;
   el.innerHTML = '<div style="text-align:center;padding:48px;color:#aaa;font-size:14px;">Carregando...</div>';
+  // Inicia auto-refresh a cada 60s
+  if(_contAutoRefresh) clearInterval(_contAutoRefresh);
+  _contAutoRefresh = setInterval(()=>{ if(document.getElementById('p-contracoes').classList.contains('active')) _silentRefreshContracoes(); }, 60000);
   const token = localStorage.getItem('nn_admin_token');
   const data = await fetch(API_URL + '/api/admin/contracoes/monitoramento', {
     headers:{'Authorization':'Bearer '+token}
@@ -1038,7 +1042,7 @@ async function renderContracoesAdmin(){
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
           <span style="font-size:11px;color:#888;">Última: ${fmtData(u.ultima)}</span>
-          <button onclick="this.closest('.cnt-card').remove()" style="border:none;background:rgba(0,0,0,.08);color:#555;border-radius:50px;padding:3px 10px;font-size:11px;cursor:pointer;white-space:nowrap;">✓ Atendida</button>
+          <button onclick="dispensarContracoes(${u.user_id},this)" style="border:none;background:rgba(0,0,0,.08);color:#555;border-radius:50px;padding:3px 10px;font-size:11px;cursor:pointer;white-space:nowrap;">✓ Atendida</button>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
@@ -1072,6 +1076,77 @@ function closeSidebar(){
   document.getElementById('sb-overlay').classList.remove('open');
 }
 
+let _contAutoRefresh = null;
+
+async function _silentRefreshContracoes(){
+  const token = localStorage.getItem('nn_admin_token');
+  const data = await fetch(API_URL + '/api/admin/contracoes/monitoramento', {
+    headers:{'Authorization':'Bearer '+token}
+  }).then(r=>r.json()).catch(()=>null);
+  if(!data) return;
+  const el = document.getElementById('admin-contracoes-list');
+  if(!el) return;
+  const cfg = {
+    observacao:    {label:'Observação',      bg:'#dbeafe',color:'#1d4ed8',icon:'🔵',borda:'#93c5fd'},
+    atencao:       {label:'Atenção',         bg:'#fef9c3',color:'#854d0e',icon:'🟡',borda:'#fde047'},
+    trabalho_parto:{label:'Trab. de parto',  bg:'#ffedd5',color:'#c2410c',icon:'🟠',borda:'#fb923c'},
+    prioridade_alta:{label:'Prioridade Alta',bg:'#fee2e2',color:'#b91c1c',icon:'🔴',borda:'#f87171'},
+  };
+  function fmtDur(s){ return s >= 60 ? Math.floor(s/60)+'min '+('0'+(s%60)).slice(-2)+'s' : s+'s'; }
+  function fmtInt(m){ if(!m) return '—'; return m < 1 ? Math.round(m*60)+'s' : m+'min'; }
+  function fmtData(ts){
+    if(!ts) return '—';
+    try{ return new Date(ts.replace(' ','T')+'Z').toLocaleString('pt-BR',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}); }
+    catch{ return ts; }
+  }
+  if(!data.monitoramento || !data.monitoramento.length){
+    el.innerHTML = `<div style="text-align:center;padding:64px 24px;"><div style="font-size:48px;margin-bottom:12px;">✅</div><div style="font-size:16px;font-weight:600;color:#3a2820;margin-bottom:6px;">Nenhuma gestante em alerta</div><div style="font-size:13px;color:#aaa;">Todas as contrações registradas estão dentro do padrão normal.</div></div>`;
+    return;
+  }
+  el.innerHTML = data.monitoramento.map(u => {
+    const c = cfg[u.status] || cfg.observacao;
+    return `<div class="cnt-card" style="background:${c.bg};border:2px solid ${c.borda};border-radius:16px;padding:18px 20px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+        <span style="font-size:22px;">${c.icon}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:16px;color:#1a0a00;">${escHtml(u.nome)}</div>
+          <div style="font-size:12px;font-weight:700;color:${c.color};margin-top:1px;text-transform:uppercase;letter-spacing:.5px;">${c.label}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+          <span style="font-size:11px;color:#888;">Última: ${fmtData(u.ultima)}</span>
+          <button onclick="dispensarContracoes(${u.user_id},this)" style="border:none;background:rgba(0,0,0,.08);color:#555;border-radius:50px;padding:3px 10px;font-size:11px;cursor:pointer;white-space:nowrap;">✓ Atendida</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+        <div style="background:rgba(255,255,255,.7);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">Contrações</div><div style="font-size:20px;font-weight:700;color:#1a0a00;">${u.total}</div></div>
+        <div style="background:rgba(255,255,255,.7);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">Duração média</div><div style="font-size:16px;font-weight:700;color:#1a0a00;">${fmtDur(u.avg_dur_sec)}</div></div>
+        <div style="background:rgba(255,255,255,.7);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">Intervalo médio</div><div style="font-size:16px;font-weight:700;color:#1a0a00;">${fmtInt(u.avg_int_min)}</div></div>
+        <div style="background:rgba(255,255,255,.7);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">Frequência</div><div style="font-size:16px;font-weight:700;color:#1a0a00;">${u.avg_int_min ? '~'+u.avg_int_min+'min' : '—'}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function dispensarContracoes(userId, btn){
+  btn.disabled = true; btn.textContent = '...';
+  const token = localStorage.getItem('nn_admin_token');
+  const res = await fetch(API_URL + '/api/admin/contracoes/'+userId+'/dispensar', {
+    method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}
+  }).then(r=>r.json()).catch(()=>null);
+  if(res && res.ok){
+    btn.closest('.cnt-card').remove();
+    // Se ficou vazio, mostra mensagem
+    const el = document.getElementById('admin-contracoes-list');
+    if(el && !el.querySelector('.cnt-card')){
+      el.innerHTML = `<div style="text-align:center;padding:64px 24px;">
+        <div style="font-size:48px;margin-bottom:12px;">✅</div>
+        <div style="font-size:16px;font-weight:600;color:#3a2820;margin-bottom:6px;">Nenhuma gestante em alerta</div>
+        <div style="font-size:13px;color:#aaa;">Todas as contrações registradas estão dentro do padrão normal.</div>
+      </div>`;
+    }
+  } else { btn.disabled=false; btn.textContent='✓ Atendida'; showToastA('Erro ao registrar.'); }
+}
+
 async function limparHistoricoContracoes(userId, btn){
   if(!confirm('Limpar todo o histórico de contrações desta gestante?')) return;
   btn.disabled = true; btn.textContent = '...';
@@ -1084,6 +1159,8 @@ async function limparHistoricoContracoes(userId, btn){
 }
 
 function goPage(id,el){
+  // Para auto-refresh ao sair de contrações
+  if(_contAutoRefresh){ clearInterval(_contAutoRefresh); _contAutoRefresh = null; }
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
   document.getElementById('p-'+id).classList.add('active');
