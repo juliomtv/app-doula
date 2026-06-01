@@ -171,10 +171,17 @@ tr:hover td{background:rgba(247,237,232,.5);}
   .mrow{grid-template-columns:1fr;}
   .modal{max-width:100%;border-radius:16px 16px 0 0;margin-top:auto;}
   .modal-overlay{align-items:flex-end;padding:0;}
-  table th,table td{padding:10px 12px;font-size:12px;}
   .page-hdr h1{font-size:22px;}
   .page-hdr p{font-size:13px;}
   .tc-hdr{padding:14px 16px;flex-wrap:wrap;gap:8px;}
+
+  /* Tabelas: scroll horizontal sem quebrar o layout */
+  .table-card{overflow-x:auto;overflow-y:visible;}
+  .table-card table{min-width:480px;}
+  table th,table td{padding:10px 12px;font-size:12px;white-space:nowrap;}
+
+  /* Dashboard: grid vira coluna única */
+  #p-dashboard > div[style*="grid"]{display:flex;flex-direction:column;gap:14px;}
 }
 @media(max-width:400px){
   .stats-row{grid-template-columns:1fr;}
