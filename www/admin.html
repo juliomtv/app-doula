@@ -1021,7 +1021,7 @@ async function renderContracoesAdmin(){
 
   el.innerHTML = data.monitoramento.map(u => {
     const c = cfg[u.status] || cfg.observacao;
-    return `<div style="background:${c.bg};border:2px solid ${c.borda};border-radius:16px;padding:18px 20px;margin-bottom:14px;">
+    return `<div class="cnt-card" style="background:${c.bg};border:2px solid ${c.borda};border-radius:16px;padding:18px 20px;margin-bottom:14px;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
         <span style="font-size:22px;">${c.icon}</span>
         <div style="flex:1;min-width:0;">
@@ -1030,7 +1030,7 @@ async function renderContracoesAdmin(){
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
           <span style="font-size:11px;color:#888;">Última: ${fmtData(u.ultima)}</span>
-          <button onclick="limparHistoricoContracoes(${u.user_id},this)" style="border:none;background:rgba(0,0,0,.08);color:#555;border-radius:50px;padding:3px 10px;font-size:11px;cursor:pointer;white-space:nowrap;">🗑 Limpar histórico</button>
+          <button onclick="this.closest('.cnt-card').remove()" style="border:none;background:rgba(0,0,0,.08);color:#555;border-radius:50px;padding:3px 10px;font-size:11px;cursor:pointer;white-space:nowrap;">✓ Atendida</button>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
