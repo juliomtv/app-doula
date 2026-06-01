@@ -1192,7 +1192,74 @@ def contracoes():
                (user_id, data.get('start_time', data.get('start','')), data.get('end_time', data.get('end','')),
                 int(data.get('duration_sec', data.get('duration',0))), float(data.get('interval_min', data.get('interval',0)))))
     db.commit()
-    return jsonify({'status':'success','id': db.execute('SELECT last_insert_rowid()').fetchone()[0]})
+    new_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+    try: _checar_contracoes_notificar(db, user_id)
+    except Exception as _e: print(f'[CONTRACOES] Erro ao checar threshold: {_e}')
+    return jsonify({'status':'success','id': new_id})
+
+def _checar_contracoes_notificar(db, user_id):
+    rows = db.execute(
+        "SELECT duration_sec, interval_min, start_time FROM contracoes WHERE user_id=? ORDER BY start_time DESC LIMIT 20",
+        (user_id,)
+    ).fetchall()
+    if not rows or len(rows) < 3: return
+    duracoes  = [r['duration_sec']  for r in rows if r['duration_sec']  and r['duration_sec']  > 0]
+    intervalos = [r['interval_min'] for r in rows if r['interval_min'] and r['interval_min'] > 0]
+    if not duracoes or not intervalos: return
+    avg_dur = sum(duracoes) / len(duracoes)
+    avg_int = sum(intervalos) / len(intervalos)
+    total = len(rows)
+    if avg_int >= 10: return  # abaixo de qualquer threshold — ignora
+    # Define status atual
+    if avg_int < 3 and total > 10:
+        status = 'prioridade_alta'
+        titulo  = '🔴 PRIORIDADE ALTA'
+        corpo   = f'Intervalo {avg_int:.1f}min · {total} contrações · duração {int(avg_dur)}s'
+    elif avg_int < 5 and avg_dur >= 60:
+        status = 'trabalho_parto'
+        titulo  = '🟠 Trabalho de parto provável'
+        corpo   = f'Intervalo {avg_int:.1f}min · duração {int(avg_dur)}s'
+    elif total >= 5 and avg_int < 7 and avg_dur >= 40:
+        status = 'atencao'
+        titulo  = '🟡 Atenção'
+        corpo   = f'{total} contrações · intervalo {avg_int:.1f}min · duração {int(avg_dur)}s'
+    else:
+        status = 'observacao'
+        titulo  = '🔵 Observação'
+        corpo   = f'{total} contrações · intervalo {avg_int:.1f}min'
+    # Evita spam: ignora se já notificou esse status nos últimos 20 min
+    nalin = _get_nalin_user(db)
+    if not nalin: return
+    recente = db.execute(
+        "SELECT id FROM notificacoes WHERE user_id=? AND titulo=? AND criado_em > datetime('now','-20 minutes')",
+        (nalin['id'], titulo)
+    ).fetchone()
+    if recente: return
+    gestante = db.execute("SELECT nome FROM users WHERE id=?", (user_id,)).fetchone()
+    nome = _nome_curto(gestante['nome']) if gestante else 'Gestante'
+    _notif_user(db, nalin['id'], titulo, f'{nome} — {corpo}')
+    db.commit()
+
+@app.route('/api/admin/web_push_subscription', methods=['POST', 'OPTIONS'])
+@require_admin
+def admin_save_web_push():
+    if request.method == 'OPTIONS': return '', 204
+    data = request.json or {}
+    endpoint = (data.get('endpoint') or '').strip()
+    p256dh   = (data.get('p256dh')   or '').strip()
+    auth     = (data.get('auth')     or '').strip()
+    if not endpoint or not p256dh or not auth:
+        return jsonify({'error': 'Dados incompletos'}), 400
+    db = get_db()
+    nalin = _get_nalin_user(db)
+    if not nalin: return jsonify({'error': 'Nalin não encontrada'}), 404
+    db.execute("""
+        INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
+        VALUES (?,?,?,?)
+        ON CONFLICT(user_id, endpoint) DO UPDATE SET p256dh=excluded.p256dh, auth=excluded.auth
+    """, (nalin['id'], endpoint, p256dh, auth))
+    db.commit()
+    return jsonify({'ok': True})
 
 @app.route('/api/admin/contracoes/monitoramento', methods=['GET', 'OPTIONS'])
 @require_admin

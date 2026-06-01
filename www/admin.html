@@ -790,6 +790,7 @@ async function adminLogin(){
     document.getElementById('admin-login').style.display='none';
     document.getElementById('admin-shell').classList.add('active');
     renderDashboard();
+    setTimeout(registrarWebPushAdmin, 2000);
   } else {
     errEl.textContent = res ? (res.message || 'Credenciais incorretas.') : '❌ Não foi possível conectar ao servidor.';
     errEl.style.color = '#c0392b';
@@ -2299,12 +2300,43 @@ async function deleteDica(id) {
 }
 
 
+function _urlB64ToUint8Array(b64){
+  const pad='='.repeat((4-b64.length%4)%4);
+  const base64=(b64+pad).replace(/-/g,'+').replace(/_/g,'/');
+  const raw=atob(base64);
+  return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));
+}
+
+async function registrarWebPushAdmin(){
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)) return;
+  try {
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted'){ console.warn('[ADMIN PUSH] Permissão negada'); return; }
+    const reg = await navigator.serviceWorker.ready;
+    const res = await fetch(API_URL + '/api/vapid-public-key').then(r=>r.json()).catch(()=>null);
+    if(!res?.publicKey) return;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: _urlB64ToUint8Array(res.publicKey)
+    });
+    const j = sub.toJSON();
+    const token = getAdminToken();
+    await fetch(API_URL + '/api/admin/web_push_subscription', {
+      method:'POST',
+      headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body: JSON.stringify({endpoint:j.endpoint, p256dh:j.keys.p256dh, auth:j.keys.auth})
+    });
+    console.log('[ADMIN PUSH] Subscription registrada com sucesso.');
+  } catch(e){ console.warn('[ADMIN PUSH]', e); }
+}
+
 // Inicialização: restaura sessão
 (async function initAdmin(){
   if(DB.get('nn_admin_session') && getAdminToken()){
     document.getElementById('admin-login').style.display='none';
     document.getElementById('admin-shell').classList.add('active');
     renderDashboard();
+    setTimeout(registrarWebPushAdmin, 2000);
   }
 })();
 
