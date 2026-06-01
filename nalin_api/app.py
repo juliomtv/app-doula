@@ -1244,6 +1244,15 @@ def admin_monitoramento_contracoes():
     resultado.sort(key=lambda x: ordem.get(x['status'], 9))
     return jsonify({'monitoramento': resultado})
 
+@app.route('/api/admin/contracoes/<int:user_id>', methods=['DELETE','OPTIONS'])
+@require_admin
+def admin_limpar_contracoes(user_id):
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    db.execute("DELETE FROM contracoes WHERE user_id=?", (user_id,))
+    db.commit()
+    return jsonify({'ok': True})
+
 @app.route('/api/contracoes/<int:cnt_id>', methods=['DELETE','OPTIONS'])
 def contracao_item(cnt_id):
     if request.method == 'OPTIONS': return '', 204
