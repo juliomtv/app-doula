@@ -366,6 +366,18 @@ textarea.dta:focus{border-color:var(--rose);}
 .ota-btns{display:flex;gap:10px;}
 .ota-btn-update{flex:1;background:var(--rose);color:white;border:none;border-radius:50px;padding:12px;font-size:14px;font-weight:500;cursor:pointer;}
 .ota-btn-later{flex:1;background:var(--rose-pale);color:var(--mid);border:none;border-radius:50px;padding:12px;font-size:14px;cursor:pointer;}
+/* ── RECOMENDAÇÕES ── */
+.rec-filter{border:1.5px solid #e8d8f0;background:white;color:var(--mid);border-radius:50px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;}
+.rec-filter.active{background:#9b59b6;border-color:#9b59b6;color:white;}
+.rec-card{background:white;border-radius:16px;padding:0;box-shadow:0 2px 10px rgba(0,0,0,.07);overflow:hidden;display:flex;flex-direction:column;cursor:pointer;transition:transform .15s;}
+.rec-card:active{transform:scale(.98);}
+.rec-card-img{width:100%;aspect-ratio:1;object-fit:cover;background:var(--rose-pale);}
+.rec-card-body{padding:10px 12px 12px;flex:1;display:flex;flex-direction:column;}
+.rec-card-cat{font-size:10px;font-weight:700;color:#9b59b6;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.rec-card-nome{font-size:13px;font-weight:700;color:var(--dark);line-height:1.3;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.rec-card-desc{font-size:11px;color:var(--light);line-height:1.4;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.rec-card-badge{font-size:10px;background:#fff3e0;color:#e67e22;border-radius:50px;padding:2px 8px;font-weight:700;margin-bottom:6px;display:inline-block;}
+.rec-card-btn{width:100%;background:#9b59b6;color:white;border:none;border-radius:50px;padding:8px;font-size:12px;font-weight:600;cursor:pointer;margin-top:8px;}
 /* ── COMUNIDADE ── */
 .com-filter{border:1.5px solid var(--rose-pale);background:white;color:var(--mid);border-radius:50px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;}
 .com-filter.active{background:var(--rose);border-color:var(--rose);color:white;}
@@ -644,6 +656,7 @@ textarea.dta:focus{border-color:var(--rose);}
       <div class="mitem" onclick="openModal('modal-maternidade')"><div class="mico">🏥</div><div class="mtext"><span>Maternidade</span><span>Documentos e o que levar</span></div><span class="marr">›</span></div>
       <div class="mitem" onclick="navTo('agenda')"><div class="mico">📅</div><div class="mtext"><span>Minha Agenda</span><span>Consultas e compromissos</span></div><span class="marr">›</span></div>
       <div class="mitem" onclick="openModal('modal-contracoes')"><div class="mico">⏱</div><div class="mtext"><span>Contador de Contrações</span><span>Monitore o trabalho de parto</span></div><span class="marr">›</span></div>
+      <div class="mitem" onclick="navTo('recomendacoes')"><div class="mico">💜</div><div class="mtext"><span>Recomendações da Nalin</span><span>Produtos selecionados para você</span></div><span class="marr">›</span></div>
       <div class="mitem" onclick="openWhatsapp()"><div class="mico">💬</div><div class="mtext"><span>Falar com a Nalin</span><span>Enviar mensagem via WhatsApp</span></div><span class="marr">›</span></div>
     </div>
     <div style="text-align:center;padding:4px 0 12px;">
@@ -740,6 +753,59 @@ textarea.dta:focus{border-color:var(--rose);}
     <div class="nitem active" onclick="navTo('comunidade')"><div class="ni">🌸</div><div class="nl">Comunidade</div></div>
     <div class="nitem" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
   </div>
+</div>
+
+<!-- ═══════════════ RECOMENDAÇÕES ═══════════════ -->
+<div class="screen" id="recomendacoes">
+  <div class="sbar"><span>9:41</span><span>📶🔋</span></div>
+  <div class="scroll">
+    <div style="background:linear-gradient(135deg,#f5e8f7,#ede8f5);padding:24px 20px 0;text-align:center;">
+      <div style="font-size:32px;margin-bottom:6px;">💜</div>
+      <h2 style="font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--dark);margin:0 0 4px;">Recomendações da Nalin</h2>
+      <p style="font-size:13px;color:var(--mid);margin:0 0 14px;">Produtos selecionados com carinho para você</p>
+      <!-- Busca -->
+      <input type="text" id="rec-busca" placeholder="🔍 Buscar produtos..." oninput="_filtrarRec()"
+        style="width:100%;max-width:320px;border:none;border-radius:50px;padding:10px 18px;font-size:14px;color:var(--dark);background:white;box-shadow:0 2px 8px rgba(0,0,0,.08);outline:none;margin-bottom:14px;">
+      <div style="height:14px;"></div>
+    </div>
+    <!-- Filtros categoria -->
+    <div style="display:flex;gap:6px;padding:12px 16px 4px;overflow-x:auto;scrollbar-width:none;">
+      <button class="rec-filter active" data-cat="todos" onclick="_filtrarRecCat(this)">Todos</button>
+      <button class="rec-filter" data-cat="Enxoval" onclick="_filtrarRecCat(this)">🛍 Enxoval</button>
+      <button class="rec-filter" data-cat="Amamentação" onclick="_filtrarRecCat(this)">🤱 Amamentação</button>
+      <button class="rec-filter" data-cat="Quarto do Bebê" onclick="_filtrarRecCat(this)">🛏 Quarto</button>
+      <button class="rec-filter" data-cat="Higiene" onclick="_filtrarRecCat(this)">🧴 Higiene</button>
+      <button class="rec-filter" data-cat="Transporte" onclick="_filtrarRecCat(this)">🚗 Transporte</button>
+      <button class="rec-filter" data-cat="Pós-parto" onclick="_filtrarRecCat(this)">💕 Pós-parto</button>
+      <button class="rec-filter" data-cat="Maternidade" onclick="_filtrarRecCat(this)">🏥 Maternidade</button>
+    </div>
+    <!-- Grid de produtos -->
+    <div id="rec-grid" style="padding:8px 16px 0;display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+      <div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--light);">Carregando...</div>
+    </div>
+    <div style="height:80px;"></div>
+  </div>
+  <div class="bnav">
+    <div class="nitem" onclick="navTo('home')"><div class="ni">🏠</div><div class="nl">Início</div></div>
+    <div class="nitem" onclick="navTo('gestacao')"><div class="ni">🤰</div><div class="nl">Gestação</div></div>
+    <div class="nitem" onclick="navTo('conteudo')"><div class="ni">🎬</div><div class="nl">Conteúdo</div></div>
+    <div class="nitem" onclick="navTo('diario')"><div class="ni">📝</div><div class="nl">Diário</div></div>
+    <div class="nitem" onclick="navTo('comunidade')"><div class="ni">🌸</div><div class="nl">Comunidade</div></div>
+    <div class="nitem" onclick="navTo('perfil')"><div class="ni">👤</div><div class="nl">Perfil</div></div>
+  </div>
+</div>
+
+<!-- BANNER RECOMENDAÇÃO (exibido na home) -->
+<div id="rec-banner" style="display:none;position:fixed;bottom:72px;left:12px;right:12px;background:white;border-radius:16px;padding:12px 14px;box-shadow:0 4px 20px rgba(0,0,0,.14);z-index:50;border-left:4px solid #9b59b6;max-width:480px;margin:0 auto;">
+  <div style="display:flex;align-items:flex-start;gap:10px;">
+    <img id="rec-banner-img" src="" style="width:48px;height:48px;border-radius:10px;object-fit:cover;flex-shrink:0;display:none;">
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:10px;font-weight:700;color:#9b59b6;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">💜 Recomendado pela sua doula</div>
+      <div id="rec-banner-msg" style="font-size:13px;color:var(--dark);line-height:1.4;font-weight:500;"></div>
+    </div>
+    <button onclick="_fecharBanner()" style="border:none;background:none;font-size:18px;color:var(--light);cursor:pointer;padding:0;flex-shrink:0;line-height:1;">✕</button>
+  </div>
+  <button id="rec-banner-btn" onclick="_clicarBanner()" style="width:100%;margin-top:10px;background:linear-gradient(135deg,#9b59b6,#8e44ad);color:white;border:none;border-radius:50px;padding:9px;font-size:13px;font-weight:600;cursor:pointer;">Ver recomendação</button>
 </div>
 
 <div class="modal-overlay" id="modal-notificacoes">
@@ -1332,6 +1398,91 @@ function navTo(id){
   if(id==='diario')renderDiario();
   if(id==='perfil')renderPerfil();
   if(id==='comunidade')renderComunidade();
+  if(id==='recomendacoes')renderRecomendacoes();
+  // Esconde banner ao sair da home
+  if(id!=='home') document.getElementById('rec-banner').style.display='none';
+}
+
+// ════ RECOMENDAÇÕES ════
+let _recData = []; let _recFiltro = 'todos'; let _recBusca = ''; let _recBannerProd = null;
+
+async function renderRecomendacoes(){
+  const uid = currentUser?.id || 0;
+  const data = await apiFetch(`/api/recomendacoes?user_id=${uid}`);
+  _recData = data?.produtos || [];
+  _renderRecGrid();
+}
+
+function _renderRecGrid(){
+  const el = document.getElementById('rec-grid');
+  if(!el) return;
+  let lista = _recData;
+  if(_recFiltro !== 'todos') lista = lista.filter(p => p.categoria === _recFiltro);
+  if(_recBusca) lista = lista.filter(p => (p.nome+' '+(p.descricao||'')).toLowerCase().includes(_recBusca.toLowerCase()));
+  if(!lista.length){
+    el.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px 16px;color:var(--light);">
+      <div style="font-size:40px;margin-bottom:8px;">💜</div>
+      <div style="font-size:14px;">Nenhum produto encontrado.</div></div>`;
+    return;
+  }
+  el.innerHTML = lista.map(p => {
+    const naoComprado = !p.item_comprado && p.item_enxoval;
+    const badge = naoComprado ? `<span class="rec-card-badge">⭐ Ainda não marcado no enxoval</span>` : '';
+    const img = p.imagem_url
+      ? `<img class="rec-card-img" src="${escHtml(p.imagem_url)}" loading="lazy" onerror="this.src='';this.style.background='var(--rose-pale)'">`
+      : `<div class="rec-card-img" style="display:flex;align-items:center;justify-content:center;font-size:40px;">🛍</div>`;
+    return `<div class="rec-card" onclick="_abrirProduto(${p.id},'${escHtml(p.url_produto)}')">
+      ${img}
+      <div class="rec-card-body">
+        <div class="rec-card-cat">${escHtml(p.categoria||'')}</div>
+        ${badge}
+        <div class="rec-card-nome">${escHtml(p.nome)}</div>
+        <div class="rec-card-desc">${escHtml(p.descricao||'')}</div>
+        <button class="rec-card-btn" onclick="event.stopPropagation();_abrirProduto(${p.id},'${escHtml(p.url_produto)}')">Ver Produto</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _filtrarRec(){ _recBusca = document.getElementById('rec-busca')?.value||''; _renderRecGrid(); }
+function _filtrarRecCat(el){
+  document.querySelectorAll('.rec-filter').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active'); _recFiltro = el.dataset.cat; _renderRecGrid();
+}
+
+function _abrirProduto(id, url){
+  if(currentUser?.id) apiFetch('/api/recomendacoes/evento',{method:'POST',body:JSON.stringify({user_id:currentUser.id,produto_id:id,evento:'product_click'})});
+  window.open(url, '_blank');
+}
+
+// ── Banner na home ──
+async function _carregarBannerRec(){
+  if(!currentUser?.id || !API_URL) return;
+  const data = await apiFetch(`/api/recomendacoes/banner?user_id=${currentUser.id}`);
+  const p = data?.produto;
+  if(!p){ document.getElementById('rec-banner').style.display='none'; return; }
+  _recBannerProd = p;
+  const msg = p.item_nao_comprado && p.item_enxoval
+    ? `Você ainda não marcou <strong>"${escHtml(p.item_enxoval)}"</strong> no enxoval. Veja esta dica!`
+    : escHtml(p.nome);
+  document.getElementById('rec-banner-msg').innerHTML = msg;
+  const img = document.getElementById('rec-banner-img');
+  if(p.imagem_url){ img.src=p.imagem_url; img.style.display=''; img.onerror=()=>img.style.display='none'; }
+  else img.style.display='none';
+  document.getElementById('rec-banner').style.display='';
+}
+
+function _fecharBanner(){
+  if(_recBannerProd && currentUser?.id){
+    apiFetch('/api/recomendacoes/evento',{method:'POST',body:JSON.stringify({user_id:currentUser.id,produto_id:_recBannerProd.id,evento:'banner_close'})});
+  }
+  document.getElementById('rec-banner').style.display='none';
+}
+
+function _clicarBanner(){
+  if(!_recBannerProd) return;
+  if(currentUser?.id) apiFetch('/api/recomendacoes/evento',{method:'POST',body:JSON.stringify({user_id:currentUser.id,produto_id:_recBannerProd.id,evento:'banner_click'})});
+  window.open(_recBannerProd.url_produto,'_blank');
 }
 
 // ════ COMUNIDADE ════
@@ -1676,6 +1827,7 @@ function goApp(){
 // ════ HOME ════
 async function renderHome(){
   if(!currentUser)return;
+  setTimeout(_carregarBannerRec, 3000); // Banner aparece 3s após abrir a home
   const u=currentUser;
   const {semanas,dias}=getSemanasDias(u);
   document.getElementById('h-nome').textContent=(u.nome||'').split(' ')[0];
@@ -3454,7 +3606,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.5.30';
+const APP_BUNDLE_VERSION = '1.5.31';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")

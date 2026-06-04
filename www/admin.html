@@ -261,6 +261,7 @@ tr:hover td{background:rgba(247,237,232,.5);}
       <div class="sb-item" onclick="goPage('config',this)"><span class="si">⚙️</span><span>Configurações</span></div>
       <div class="sb-item" onclick="goPage('apk',this)"><span class="si">📦</span><span>Atualização APK</span></div>
       <div class="sb-item" onclick="goPage('contracoes',this)"><span class="si">⏱</span><span>Contrações</span></div>
+      <div class="sb-item" onclick="goPage('recomendacoes',this)"><span class="si">💜</span><span>Recomendações</span></div>
     </div>
     <div class="sb-footer">
       <div class="sb-user">
@@ -512,6 +513,130 @@ tr:hover td{background:rgba(247,237,232,.5);}
       </div>
       <div id="admin-contracoes-list">
         <div style="text-align:center;padding:48px;color:#aaa;font-size:14px;">Carregando...</div>
+      </div>
+    </div>
+
+    <!-- ══ RECOMENDAÇÕES ══ -->
+    <div class="page" id="p-recomendacoes">
+      <div class="page-hdr" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div><h1>💜 Recomendações da Doula</h1><p>Gerencie produtos e acompanhe o desempenho</p></div>
+        <button class="btn-sm btn-rose-sm" onclick="abrirModalRec(null)">+ Novo Produto</button>
+      </div>
+
+      <!-- Tabs -->
+      <div style="display:flex;gap:4px;background:white;border-radius:50px;padding:3px;max-width:340px;margin-bottom:20px;box-shadow:0 2px 8px var(--shadow);">
+        <button id="rec-tab-btn-produtos" onclick="recTab('produtos')" style="flex:1;border:none;border-radius:50px;padding:8px 0;font-size:12px;font-weight:600;cursor:pointer;background:var(--rose);color:white;transition:all .2s;">📦 Produtos</button>
+        <button id="rec-tab-btn-stats" onclick="recTab('stats')" style="flex:1;border:none;border-radius:50px;padding:8px 0;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--mid);transition:all .2s;">📊 Métricas</button>
+        <button id="rec-tab-btn-config" onclick="recTab('config')" style="flex:1;border:none;border-radius:50px;padding:8px 0;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--mid);transition:all .2s;">⚙️ Config</button>
+      </div>
+
+      <!-- Tab Produtos -->
+      <div id="rec-tab-produtos">
+        <div class="table-card">
+          <div class="tc-hdr" style="display:flex;align-items:center;justify-content:space-between;">
+            <h3>Catálogo de Produtos</h3>
+            <button class="btn-sm" onclick="renderRecProdutos()" style="background:var(--rose-p);color:var(--rose);border:1px solid var(--rose);">↻</button>
+          </div>
+          <div id="rec-produtos-list" style="padding:8px 0;">
+            <div style="text-align:center;padding:32px;color:#aaa;">Carregando...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Stats -->
+      <div id="rec-tab-stats" style="display:none;">
+        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+          <span style="font-size:13px;font-weight:600;color:var(--mid);">Período:</span>
+          <select id="rec-stats-periodo" onchange="renderRecStats()" style="border:1.5px solid var(--rose-p);border-radius:50px;padding:6px 14px;font-size:13px;background:white;color:var(--dark);outline:none;">
+            <option value="1">Hoje</option>
+            <option value="7">7 dias</option>
+            <option value="30" selected>30 dias</option>
+            <option value="90">90 dias</option>
+            <option value="all">Todo período</option>
+          </select>
+        </div>
+        <div id="rec-stats-resumo" class="stats-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;"></div>
+        <div class="table-card">
+          <div class="tc-hdr"><h3>🏆 Ranking de Produtos</h3></div>
+          <div id="rec-stats-tabela" style="padding:8px 0;overflow-x:auto;"></div>
+        </div>
+      </div>
+
+      <!-- Tab Config -->
+      <div id="rec-tab-config" style="display:none;">
+        <div class="table-card">
+          <div class="tc-hdr"><h3>⚙️ Configurações de Exibição</h3></div>
+          <div style="padding:20px;">
+            <div class="mfield">
+              <label>Tempo para reaparecimento do banner (após fechar)</label>
+              <select id="rec-cooldown-sel" style="width:100%;border:1.5px solid var(--rose-p);border-radius:12px;padding:11px 14px;font-size:14px;color:var(--dark);background:var(--warm);outline:none;">
+                <option value="1">1 dia</option>
+                <option value="3" selected>3 dias</option>
+                <option value="7">7 dias</option>
+                <option value="14">14 dias</option>
+                <option value="30">30 dias</option>
+              </select>
+            </div>
+            <button onclick="salvarConfigRec()" class="btn-sm btn-rose-sm" style="padding:10px 24px;font-size:14px;">Salvar Configuração</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Adicionar/Editar Produto -->
+    <div class="modal-overlay" id="modal-rec">
+      <div class="modal" style="max-width:580px;">
+        <div class="modal-hdr">
+          <h3 id="modal-rec-titulo">Novo Produto</h3>
+          <button class="modal-close" onclick="fecharModalRec()">✕</button>
+        </div>
+        <div class="modal-body" style="max-height:75vh;overflow-y:auto;">
+          <!-- Importar URL -->
+          <div style="background:var(--rose-p);border-radius:12px;padding:14px;margin-bottom:18px;">
+            <div style="font-size:12px;font-weight:600;color:var(--mid);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Importar de URL</div>
+            <div style="display:flex;gap:8px;">
+              <input type="url" id="rec-import-url" placeholder="Cole o link do produto (Mercado Livre, Shopee, Amazon...)"
+                style="flex:1;border:1.5px solid var(--rose-l);border-radius:10px;padding:9px 12px;font-size:13px;background:white;outline:none;color:var(--dark);">
+              <button onclick="importarProdutoRec()" id="rec-import-btn" class="btn-sm btn-rose-sm" style="white-space:nowrap;">🔍 Importar</button>
+            </div>
+            <div id="rec-import-status" style="font-size:12px;color:var(--mid);margin-top:6px;"></div>
+          </div>
+          <!-- Campos -->
+          <input type="hidden" id="rec-edit-id">
+          <div class="mrow">
+            <div class="mfield"><label>Nome do Produto *</label><input type="text" id="rec-nome" placeholder="Ex: Berço Montessoriano"></div>
+            <div class="mfield"><label>Categoria</label>
+              <select id="rec-categoria" style="width:100%;border:1.5px solid var(--rose-p);border-radius:12px;padding:11px 14px;font-size:14px;color:var(--dark);background:var(--warm);outline:none;">
+                <option>Enxoval</option><option>Amamentação</option><option>Quarto do Bebê</option>
+                <option>Higiene</option><option>Transporte</option><option>Pós-parto</option><option>Maternidade</option>
+              </select>
+            </div>
+          </div>
+          <div class="mfield"><label>URL do Produto (link afiliado) *</label><input type="url" id="rec-url" placeholder="https://..."></div>
+          <div class="mrow">
+            <div class="mfield"><label>URL da Imagem</label><input type="url" id="rec-imagem" placeholder="https://..."></div>
+            <div class="mfield"><label>Marketplace</label><input type="text" id="rec-marketplace" placeholder="Mercado Livre, Shopee..."></div>
+          </div>
+          <div class="mfield"><label>Descrição curta</label><textarea id="rec-descricao" rows="2" placeholder="Breve descrição do produto..."></textarea></div>
+          <div class="mrow">
+            <div class="mfield"><label>Item do Enxoval Relacionado</label><input type="text" id="rec-item-enxoval" placeholder="Ex: Berço, Fralda, Carrinho..."></div>
+            <div class="mfield"><label>Comissão Estimada (R$)</label><input type="number" id="rec-comissao" placeholder="0.00" step="0.01" min="0"></div>
+          </div>
+          <!-- Preview imagem -->
+          <div id="rec-img-preview" style="display:none;margin-top:8px;">
+            <img id="rec-img-preview-tag" style="max-height:120px;border-radius:10px;object-fit:contain;border:1px solid var(--rose-p);">
+          </div>
+          <div class="mfield" style="margin-top:8px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+              <input type="checkbox" id="rec-ativo" checked style="width:16px;height:16px;accent-color:var(--rose);">
+              Produto ativo (visível para as gestantes)
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-full btn-cancel" onclick="fecharModalRec()">Cancelar</button>
+          <button class="btn-full btn-save" onclick="salvarProdutoRec()">Salvar Produto</button>
+        </div>
       </div>
     </div>
 
@@ -1067,6 +1192,194 @@ async function renderContracoesAdmin(){
   }).join('');
 }
 
+// ══ RECOMENDAÇÕES ══
+const REC_CATS = ['Enxoval','Amamentação','Quarto do Bebê','Higiene','Transporte','Pós-parto','Maternidade'];
+
+function recTab(tab){
+  ['produtos','stats','config'].forEach(t=>{
+    document.getElementById('rec-tab-'+t).style.display = t===tab ? '' : 'none';
+    const btn = document.getElementById('rec-tab-btn-'+t);
+    btn.style.background = t===tab ? 'var(--rose)' : 'transparent';
+    btn.style.color = t===tab ? 'white' : 'var(--mid)';
+  });
+  if(tab==='produtos') renderRecProdutos();
+  if(tab==='stats') renderRecStats();
+  if(tab==='config') carregarConfigRec();
+}
+
+async function renderRecProdutos(){
+  const el = document.getElementById('rec-produtos-list');
+  el.innerHTML = '<div style="text-align:center;padding:24px;color:#aaa;">Carregando...</div>';
+  const token = localStorage.getItem('nn_admin_token');
+  const data = await fetch(API_URL+'/api/admin/recomendacoes',{headers:{'Authorization':'Bearer '+token}}).then(r=>r.json()).catch(()=>[]);
+  if(!data.length){
+    el.innerHTML='<div style="text-align:center;padding:32px;color:#aaa;font-size:14px;">Nenhum produto cadastrado ainda.<br><br><button onclick="abrirModalRec(null)" class="btn-sm btn-rose-sm">+ Cadastrar primeiro produto</button></div>';
+    return;
+  }
+  el.innerHTML = `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;min-width:560px;">
+    <thead><tr style="background:var(--bg);font-size:11px;color:var(--lite);text-transform:uppercase;letter-spacing:1px;">
+      <th style="padding:10px 16px;text-align:left;">Produto</th>
+      <th style="padding:10px 16px;">Categoria</th>
+      <th style="padding:10px 16px;">Marketplace</th>
+      <th style="padding:10px 16px;">Enxoval</th>
+      <th style="padding:10px 16px;">Status</th>
+      <th style="padding:10px 16px;">Ações</th>
+    </tr></thead>
+    <tbody>${data.map(p=>`<tr style="border-top:1px solid var(--rose-p);">
+      <td style="padding:12px 16px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          ${p.imagem_url ? `<img src="${escHtml(p.imagem_url)}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">` : '<div style="width:40px;height:40px;border-radius:8px;background:var(--rose-p);display:flex;align-items:center;justify-content:center;font-size:20px;">🛍</div>'}
+          <div><div style="font-weight:600;font-size:13px;color:var(--dark);">${escHtml(p.nome)}</div><div style="font-size:11px;color:var(--lite);">R$ comissão: ${p.comissao_estimada||0}</div></div>
+        </div>
+      </td>
+      <td style="padding:12px 16px;text-align:center;font-size:12px;">${escHtml(p.categoria||'—')}</td>
+      <td style="padding:12px 16px;text-align:center;font-size:12px;">${escHtml(p.marketplace||'—')}</td>
+      <td style="padding:12px 16px;text-align:center;font-size:12px;">${p.item_enxoval ? escHtml(p.item_enxoval) : '—'}</td>
+      <td style="padding:12px 16px;text-align:center;"><span class="badge ${p.ativo?'badge-ok':'badge-err'}">${p.ativo?'Ativo':'Inativo'}</span></td>
+      <td style="padding:12px 16px;"><div class="td-actions">
+        <button onclick="abrirModalRec(${p.id})" class="btn-sm btn-ghost">✏️</button>
+        <button onclick="deletarProdutoRec(${p.id},this)" class="btn-sm btn-danger">🗑</button>
+      </div></td>
+    </tr>`).join('')}</tbody></table></div>`;
+}
+
+async function abrirModalRec(id){
+  document.getElementById('rec-edit-id').value = id||'';
+  document.getElementById('modal-rec-titulo').textContent = id ? 'Editar Produto' : 'Novo Produto';
+  ['rec-nome','rec-url','rec-imagem','rec-marketplace','rec-descricao','rec-item-enxoval','rec-comissao','rec-import-url'].forEach(i=>{
+    const el = document.getElementById(i); if(el) el.value='';
+  });
+  document.getElementById('rec-ativo').checked = true;
+  document.getElementById('rec-import-status').textContent = '';
+  document.getElementById('rec-img-preview').style.display='none';
+  if(id){
+    const token = localStorage.getItem('nn_admin_token');
+    const p = await fetch(API_URL+'/api/admin/recomendacoes/'+id,{headers:{'Authorization':'Bearer '+token}}).then(r=>r.json()).catch(()=>null);
+    if(p){
+      document.getElementById('rec-nome').value = p.nome||'';
+      document.getElementById('rec-url').value = p.url_produto||'';
+      document.getElementById('rec-imagem').value = p.imagem_url||'';
+      document.getElementById('rec-marketplace').value = p.marketplace||'';
+      document.getElementById('rec-descricao').value = p.descricao||'';
+      document.getElementById('rec-item-enxoval').value = p.item_enxoval||'';
+      document.getElementById('rec-comissao').value = p.comissao_estimada||0;
+      document.getElementById('rec-ativo').checked = !!p.ativo;
+      const catSel = document.getElementById('rec-categoria');
+      for(let o of catSel.options){ if(o.value===p.categoria) o.selected=true; }
+      if(p.imagem_url){ document.getElementById('rec-img-preview-tag').src=p.imagem_url; document.getElementById('rec-img-preview').style.display=''; }
+    }
+  }
+  document.getElementById('modal-rec').classList.add('open');
+}
+function fecharModalRec(){ document.getElementById('modal-rec').classList.remove('open'); }
+
+async function importarProdutoRec(){
+  const url = document.getElementById('rec-import-url').value.trim();
+  if(!url){ showToastA('Cole a URL do produto.'); return; }
+  const btn = document.getElementById('rec-import-btn');
+  const status = document.getElementById('rec-import-status');
+  btn.disabled=true; btn.textContent='Importando...'; status.textContent='Buscando informações do produto...';
+  const token = localStorage.getItem('nn_admin_token');
+  const d = await fetch(API_URL+'/api/admin/recomendacoes/importar',{
+    method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({url})
+  }).then(r=>r.json()).catch(()=>({erro:'Erro de conexão'}));
+  btn.disabled=false; btn.textContent='🔍 Importar';
+  if(d.erro){ status.textContent='⚠️ '+d.erro+'. Preencha manualmente.'; status.style.color='var(--warn)'; return; }
+  if(d.nome) document.getElementById('rec-nome').value=d.nome;
+  if(d.imagem_url){ document.getElementById('rec-imagem').value=d.imagem_url; document.getElementById('rec-img-preview-tag').src=d.imagem_url; document.getElementById('rec-img-preview').style.display=''; }
+  if(d.descricao) document.getElementById('rec-descricao').value=d.descricao;
+  if(d.marketplace) document.getElementById('rec-marketplace').value=d.marketplace;
+  document.getElementById('rec-url').value=url;
+  status.textContent='✅ Importado! Confira e edite os campos se necessário.'; status.style.color='var(--ok)';
+}
+
+async function salvarProdutoRec(){
+  const id = document.getElementById('rec-edit-id').value;
+  const nome = document.getElementById('rec-nome').value.trim();
+  const url = document.getElementById('rec-url').value.trim();
+  if(!nome||!url){ showToastA('Nome e URL são obrigatórios.'); return; }
+  const body = {
+    nome, url_produto:url,
+    imagem_url: document.getElementById('rec-imagem').value.trim(),
+    descricao: document.getElementById('rec-descricao').value.trim(),
+    categoria: document.getElementById('rec-categoria').value,
+    marketplace: document.getElementById('rec-marketplace').value.trim(),
+    item_enxoval: document.getElementById('rec-item-enxoval').value.trim(),
+    comissao_estimada: parseFloat(document.getElementById('rec-comissao').value)||0,
+    ativo: document.getElementById('rec-ativo').checked ? 1 : 0
+  };
+  const token = localStorage.getItem('nn_admin_token');
+  const method = id ? 'PUT' : 'POST';
+  const path = id ? '/api/admin/recomendacoes/'+id : '/api/admin/recomendacoes';
+  const res = await fetch(API_URL+path,{method,headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json()).catch(()=>null);
+  if(res?.ok){ fecharModalRec(); showToastA('Produto salvo!'); renderRecProdutos(); }
+  else showToastA('Erro ao salvar produto.');
+}
+
+async function deletarProdutoRec(id,btn){
+  if(!confirm('Excluir este produto?')) return;
+  btn.disabled=true;
+  const token = localStorage.getItem('nn_admin_token');
+  await fetch(API_URL+'/api/admin/recomendacoes/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+token}});
+  renderRecProdutos();
+}
+
+async function renderRecStats(){
+  const periodo = document.getElementById('rec-stats-periodo').value;
+  const token = localStorage.getItem('nn_admin_token');
+  const data = await fetch(API_URL+'/api/admin/recomendacoes/stats?periodo='+periodo,{headers:{'Authorization':'Bearer '+token}}).then(r=>r.json()).catch(()=>null);
+  if(!data) return;
+  const t = data.totais||{};
+  const views = (t.banner_view||0)+(t.product_view||0);
+  const clicks = (t.product_click||0)+(t.banner_click||0);
+  const ctr = views>0 ? ((clicks/views)*100).toFixed(1) : '0.0';
+  const receita = (data.por_produto||[]).reduce((s,p)=>s+(p.cliques*(p.comissao_estimada||0)),0).toFixed(2);
+  document.getElementById('rec-stats-resumo').innerHTML = [
+    {sv:views,sl:'Visualizações',si:'👁'},
+    {sv:clicks,sl:'Cliques',si:'👆'},
+    {sv:ctr+'%',sl:'CTR',si:'📈'},
+    {sv:'R$'+receita,sl:'Receita Est.',si:'💰'},
+  ].map(c=>`<div class="stat-c"><span class="si">${c.si}</span><div class="sv">${c.sv}</div><div class="sl">${c.sl}</div></div>`).join('');
+  const tbl = document.getElementById('rec-stats-tabela');
+  if(!data.por_produto?.length){ tbl.innerHTML='<div style="text-align:center;padding:24px;color:#aaa;">Sem dados ainda.</div>'; return; }
+  tbl.innerHTML = `<table style="width:100%;border-collapse:collapse;min-width:480px;">
+    <thead><tr style="background:var(--bg);font-size:11px;color:var(--lite);text-transform:uppercase;letter-spacing:1px;">
+      <th style="padding:10px 16px;text-align:left;">Produto</th>
+      <th style="padding:10px 8px;text-align:center;">Views</th>
+      <th style="padding:10px 8px;text-align:center;">Cliques</th>
+      <th style="padding:10px 8px;text-align:center;">CTR</th>
+      <th style="padding:10px 8px;text-align:center;">Receita Est.</th>
+    </tr></thead>
+    <tbody>${data.por_produto.map((p,i)=>{
+      const v=p.views||0; const c=p.cliques||0; const pct=v>0?((c/v)*100).toFixed(1):'0.0';
+      const rec=(c*(p.comissao_estimada||0)).toFixed(2);
+      return `<tr style="border-top:1px solid var(--rose-p);">
+        <td style="padding:10px 16px;font-size:13px;font-weight:600;color:var(--dark);">${i<3?['🥇','🥈','🥉'][i]+' ':''}${escHtml(p.nome)}<div style="font-size:11px;color:var(--lite);">${escHtml(p.marketplace||'')}</div></td>
+        <td style="padding:10px 8px;text-align:center;font-size:13px;">${v}</td>
+        <td style="padding:10px 8px;text-align:center;font-size:13px;font-weight:600;color:var(--rose);">${c}</td>
+        <td style="padding:10px 8px;text-align:center;font-size:13px;">${pct}%</td>
+        <td style="padding:10px 8px;text-align:center;font-size:13px;color:var(--ok);font-weight:600;">R$${rec}</td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+async function carregarConfigRec(){
+  const token = localStorage.getItem('nn_admin_token');
+  const cfg = await fetch(API_URL+'/api/admin/config',{headers:{'Authorization':'Bearer '+token}}).then(r=>r.json()).catch(()=>({}));
+  const v = cfg.rec_cooldown_dias||'3';
+  const sel = document.getElementById('rec-cooldown-sel');
+  for(let o of sel.options){ if(o.value===String(v)) o.selected=true; }
+}
+
+async function salvarConfigRec(){
+  const v = document.getElementById('rec-cooldown-sel').value;
+  const token = localStorage.getItem('nn_admin_token');
+  await fetch(API_URL+'/api/admin/config',{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({rec_cooldown_dias:v})});
+  showToastA('Configuração salva!');
+}
+
 function openSidebar(){
   document.getElementById('admin-sidebar').classList.add('open');
   document.getElementById('sb-overlay').classList.add('open');
@@ -1166,7 +1479,7 @@ function goPage(id,el){
   document.getElementById('p-'+id).classList.add('active');
   el.classList.add('active');
   closeSidebar();
-  const renders={dashboard:renderDashboard,doulandas:renderDoulandas,ranking:renderRankingAdmin,videos:()=>renderConteudoTable('video'),ebooks:renderEbooksPage,meditacoes:()=>renderConteudoTable('meditacao'),dicas:renderDicas,notificacoes:renderNotificacoes,config:loadConfig,apk:renderApkPage,contracoes:renderContracoesAdmin};
+  const renders={dashboard:renderDashboard,doulandas:renderDoulandas,ranking:renderRankingAdmin,videos:()=>renderConteudoTable('video'),ebooks:renderEbooksPage,meditacoes:()=>renderConteudoTable('meditacao'),dicas:renderDicas,notificacoes:renderNotificacoes,config:loadConfig,apk:renderApkPage,contracoes:renderContracoesAdmin,recomendacoes:()=>recTab('produtos')};
   if(renders[id])renders[id]();
 }
 

@@ -1,5 +1,5 @@
 {
-  "versao": "1.5.30",
+  "versao": "1.5.31",
   "data": "2026-05-25",
   "notas": "Notificações push para iOS e Android PWA (Web Push VAPID)",
   "obrigatoria": false

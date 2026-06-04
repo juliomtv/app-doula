@@ -267,6 +267,33 @@ def init_db():
                 dispensado_em TIMESTAMP NOT NULL,
                 FOREIGN KEY (user_id) REFERENCES users(id)
             );
+            CREATE TABLE IF NOT EXISTS rec_produtos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                imagem_url TEXT,
+                descricao TEXT,
+                categoria TEXT DEFAULT 'Enxoval',
+                url_produto TEXT NOT NULL,
+                item_enxoval TEXT,
+                marketplace TEXT,
+                comissao_estimada REAL DEFAULT 0,
+                ativo INTEGER DEFAULT 1,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS rec_stats (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                produto_id INTEGER,
+                user_id INTEGER,
+                evento TEXT NOT NULL,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS rec_cooldowns (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                produto_id INTEGER NOT NULL,
+                oculto_ate TIMESTAMP NOT NULL,
+                UNIQUE(user_id, produto_id)
+            );
         """)
         db.commit()
 
@@ -1282,6 +1309,219 @@ def admin_dispensar_contracoes(user_id):
     """, (user_id,))
     db.commit()
     return jsonify({'ok': True})
+
+# ══════════════════════════════════════════════════════════════════════════════
+# RECOMENDAÇÕES DE PRODUTOS
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _scrape_produto(url):
+    try:
+        import urllib.request
+        from html.parser import HTMLParser
+        from urllib.parse import urlparse
+
+        class _MP(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.d = {}; self._t = False
+            def handle_starttag(self, tag, attrs):
+                if tag == 'meta':
+                    a = dict(attrs)
+                    p = a.get('property','') or a.get('name','')
+                    v = a.get('content','')
+                    if p == 'og:title': self.d['nome'] = v[:120]
+                    elif p == 'og:image': self.d['imagem_url'] = v
+                    elif p in ('og:description','description'): self.d.setdefault('descricao', v[:200])
+                    elif p == 'og:site_name': self.d['marketplace'] = v
+                elif tag == 'title': self._t = True
+            def handle_data(self, data):
+                if self._t: self.d.setdefault('nome', data.strip()[:120]); self._t = False
+            def handle_endtag(self, tag):
+                if tag == 'title': self._t = False
+
+        req = urllib.request.Request(url, headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept-Language': 'pt-BR,pt;q=0.9'
+        })
+        with urllib.request.urlopen(req, timeout=8) as r:
+            html = r.read(120000).decode('utf-8', errors='ignore')
+
+        p = _MP(); p.feed(html)
+        d = p.d
+
+        domain = urlparse(url).netloc.lower()
+        if 'mercadolivre' in domain or 'mercadolibre' in domain: d.setdefault('marketplace', 'Mercado Livre')
+        elif 'shopee' in domain: d.setdefault('marketplace', 'Shopee')
+        elif 'amazon' in domain: d.setdefault('marketplace', 'Amazon')
+        elif 'magazineluiza' in domain or 'magalu' in domain: d.setdefault('marketplace', 'Magalu')
+        elif 'americanas' in domain: d.setdefault('marketplace', 'Americanas')
+        return d
+    except Exception as e:
+        return {'erro': str(e)}
+
+@app.route('/api/admin/recomendacoes/importar', methods=['POST', 'OPTIONS'])
+@require_admin
+def rec_importar():
+    if request.method == 'OPTIONS': return '', 204
+    url = (request.json or {}).get('url', '').strip()
+    if not url: return jsonify({'erro': 'URL obrigatória'}), 400
+    return jsonify(_scrape_produto(url))
+
+@app.route('/api/admin/recomendacoes', methods=['GET', 'OPTIONS'])
+@require_admin
+def admin_rec_listar():
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    rows = db.execute("SELECT * FROM rec_produtos ORDER BY criado_em DESC").fetchall()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/admin/recomendacoes', methods=['POST'])
+@require_admin
+def admin_rec_criar():
+    d = request.json or {}
+    db = get_db()
+    cur = db.execute("""INSERT INTO rec_produtos
+        (nome,imagem_url,descricao,categoria,url_produto,item_enxoval,marketplace,comissao_estimada,ativo)
+        VALUES (?,?,?,?,?,?,?,?,?)""",
+        (d.get('nome','').strip(), d.get('imagem_url',''), d.get('descricao',''),
+         d.get('categoria','Enxoval'), d.get('url_produto','').strip(),
+         d.get('item_enxoval',''), d.get('marketplace',''),
+         float(d.get('comissao_estimada') or 0), int(d.get('ativo',1))))
+    db.commit()
+    return jsonify({'ok': True, 'id': cur.lastrowid})
+
+@app.route('/api/admin/recomendacoes/<int:pid>', methods=['GET', 'PUT', 'DELETE', 'OPTIONS'])
+@require_admin
+def admin_rec_item(pid):
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    if request.method == 'GET':
+        r = db.execute("SELECT * FROM rec_produtos WHERE id=?", (pid,)).fetchone()
+        return jsonify(dict(r)) if r else ('', 404)
+    if request.method == 'DELETE':
+        db.execute("DELETE FROM rec_produtos WHERE id=?", (pid,)); db.commit()
+        return jsonify({'ok': True})
+    d = request.json or {}
+    db.execute("""UPDATE rec_produtos SET nome=?,imagem_url=?,descricao=?,categoria=?,
+        url_produto=?,item_enxoval=?,marketplace=?,comissao_estimada=?,ativo=? WHERE id=?""",
+        (d.get('nome','').strip(), d.get('imagem_url',''), d.get('descricao',''),
+         d.get('categoria','Enxoval'), d.get('url_produto','').strip(),
+         d.get('item_enxoval',''), d.get('marketplace',''),
+         float(d.get('comissao_estimada') or 0), int(d.get('ativo',1)), pid))
+    db.commit()
+    return jsonify({'ok': True})
+
+@app.route('/api/recomendacoes', methods=['GET', 'OPTIONS'])
+def rec_listar():
+    if request.method == 'OPTIONS': return '', 204
+    user_id = request.args.get('user_id', 0, type=int)
+    db = get_db()
+    produtos = db.execute("SELECT * FROM rec_produtos WHERE ativo=1 ORDER BY criado_em DESC").fetchall()
+    # Itens do enxoval já comprados para este usuário
+    comprados = set()
+    if user_id:
+        rows = db.execute("SELECT item FROM enxoval WHERE user_id=? AND comprado=1", (user_id,)).fetchall()
+        comprados = {r['item'].lower().strip() for r in rows}
+    result = []
+    for p in produtos:
+        d = dict(p)
+        item_rel = (p['item_enxoval'] or '').lower().strip()
+        d['item_comprado'] = bool(item_rel and item_rel in comprados)
+        result.append(d)
+    return jsonify({'produtos': result})
+
+@app.route('/api/recomendacoes/banner', methods=['GET', 'OPTIONS'])
+def rec_banner():
+    if request.method == 'OPTIONS': return '', 204
+    user_id = request.args.get('user_id', 0, type=int)
+    if not user_id: return jsonify({'produto': None})
+    db = get_db()
+    cooldown_dias = 3
+    try:
+        cfg = db.execute("SELECT valor FROM config_global WHERE chave='rec_cooldown_dias'").fetchone()
+        if cfg: cooldown_dias = int(cfg['valor'])
+    except: pass
+    # Itens não comprados no enxoval
+    nao_comprados = db.execute(
+        "SELECT item FROM enxoval WHERE user_id=? AND comprado=0", (user_id,)
+    ).fetchall()
+    nao_comprados_set = {r['item'].lower().strip() for r in nao_comprados}
+    # Produtos ativos com item relacionado ainda não comprado, sem cooldown ativo
+    produtos = db.execute("""
+        SELECT p.* FROM rec_produtos p
+        WHERE p.ativo=1
+        AND NOT EXISTS (
+            SELECT 1 FROM rec_cooldowns c
+            WHERE c.user_id=? AND c.produto_id=p.id AND c.oculto_ate > datetime('now')
+        )
+        ORDER BY RANDOM() LIMIT 20
+    """, (user_id,)).fetchall()
+    # Prefere produto relacionado a item não comprado
+    escolhido = None
+    for p in produtos:
+        item_rel = (p['item_enxoval'] or '').lower().strip()
+        if item_rel and item_rel in nao_comprados_set:
+            escolhido = p; break
+    if not escolhido and produtos:
+        escolhido = produtos[0]
+    if not escolhido: return jsonify({'produto': None})
+    d = dict(escolhido)
+    item_rel = (escolhido['item_enxoval'] or '').lower().strip()
+    d['item_nao_comprado'] = bool(item_rel and item_rel in nao_comprados_set)
+    # Registra visualização
+    db.execute("INSERT INTO rec_stats (produto_id,user_id,evento) VALUES (?,?,'banner_view')", (escolhido['id'], user_id))
+    db.commit()
+    return jsonify({'produto': d})
+
+@app.route('/api/recomendacoes/evento', methods=['POST', 'OPTIONS'])
+def rec_evento():
+    if request.method == 'OPTIONS': return '', 204
+    d = request.json or {}
+    user_id = d.get('user_id', 0)
+    produto_id = d.get('produto_id')
+    evento = d.get('evento', '')
+    if not evento: return jsonify({'ok': False}), 400
+    db = get_db()
+    if produto_id:
+        db.execute("INSERT INTO rec_stats (produto_id,user_id,evento) VALUES (?,?,?)", (produto_id, user_id or None, evento))
+    if evento == 'banner_close' and user_id and produto_id:
+        cooldown_dias = 3
+        try:
+            cfg = db.execute("SELECT valor FROM config_global WHERE chave='rec_cooldown_dias'").fetchone()
+            if cfg: cooldown_dias = int(cfg['valor'])
+        except: pass
+        db.execute("""INSERT INTO rec_cooldowns (user_id,produto_id,oculto_ate)
+            VALUES (?,?,datetime('now','+'||?||' days'))
+            ON CONFLICT(user_id,produto_id) DO UPDATE SET oculto_ate=excluded.oculto_ate""",
+            (user_id, produto_id, cooldown_dias))
+    db.commit()
+    return jsonify({'ok': True})
+
+@app.route('/api/admin/recomendacoes/stats', methods=['GET', 'OPTIONS'])
+@require_admin
+def admin_rec_stats():
+    if request.method == 'OPTIONS': return '', 204
+    periodo = request.args.get('periodo', '30')
+    db = get_db()
+    filtro = f"AND criado_em >= datetime('now','-{periodo} days')" if periodo != 'all' else ''
+    totais = db.execute(f"""
+        SELECT evento, COUNT(*) as total FROM rec_stats WHERE 1=1 {filtro} GROUP BY evento
+    """).fetchall()
+    totais_d = {r['evento']: r['total'] for r in totais}
+    por_produto = db.execute(f"""
+        SELECT p.id, p.nome, p.marketplace, p.categoria,
+               SUM(CASE WHEN s.evento='product_click' THEN 1 ELSE 0 END) as cliques,
+               SUM(CASE WHEN s.evento='product_view' THEN 1 ELSE 0 END) as views,
+               SUM(CASE WHEN s.evento='banner_click' THEN 1 ELSE 0 END) as banner_clicks,
+               p.comissao_estimada
+        FROM rec_produtos p
+        LEFT JOIN rec_stats s ON s.produto_id=p.id {filtro.replace('AND','AND s.')}
+        GROUP BY p.id ORDER BY cliques DESC LIMIT 20
+    """).fetchall()
+    return jsonify({
+        'totais': totais_d,
+        'por_produto': [dict(r) for r in por_produto]
+    })
 
 @app.route('/api/admin/contracoes/monitoramento', methods=['GET', 'OPTIONS'])
 @require_admin
