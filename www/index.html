@@ -3562,19 +3562,20 @@ async function registrarPushNotifications() {
     await PN.addListener('pushNotificationActionPerformed', async (action) => {
       const tipo = action?.notification?.data?.type || '';
       if (tipo === 'apk_update') {
-        // URL vem direto no payload da notificação — não precisa de fetch
+        // Tenta usar URL direto do payload
         const apkUrl = action?.notification?.data?.apk_url || '';
         const apkVer = action?.notification?.data?.apk_version_name || '';
         const notas  = action?.notification?.body || '';
         if (apkUrl) {
           mostrarModalAPK(apkVer, apkUrl, notas);
         } else {
-          // Fallback: busca no servidor
-          const temApk = await _verificarApkUpdate();
-          if (!temApk) abrirNotificacoes();
+          // Fallback: busca no servidor (nunca abre modal de notificações para APK)
+          await _verificarApkUpdate();
         }
       } else {
-        abrirNotificacoes();
+        // Verifica APK primeiro — se não tiver update pendente, abre notificações
+        const temApk = await _verificarApkUpdate();
+        if (!temApk) abrirNotificacoes();
       }
     });
   } catch(e) { console.error('[PUSH]', e); }
@@ -3702,7 +3703,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.5.32';
+const APP_BUNDLE_VERSION = '1.5.33';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")

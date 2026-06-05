@@ -1,6 +1,6 @@
 {
-  "versao": "1.5.32",
+  "versao": "1.5.33",
   "data": "2026-06-05",
-  "notas": "Contador de contrações: correção de bugs em segundo plano e persistência",
+  "notas": "Correção: notificação de APK abre download direto",
   "obrigatoria": false
 }
