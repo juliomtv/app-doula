@@ -3439,11 +3439,10 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // ── BOTÕES DE VOLUME PARA CONTRAÇÕES (Android nativo) ──
-function _volumeBtnHandler(e) {
-  // 24 = VolumeUp, 25 = VolumeDown
-  if (e.keyCode !== 24 && e.keyCode !== 25) return;
-  e.preventDefault();
-  e.stopImmediatePropagation();
+// Chamada diretamente pelo MainActivity.java via evaluateJavascript
+function _volumeBtnFromNative() {
+  const modal = document.getElementById('modal-contracoes');
+  if (!modal || !modal.classList.contains('active')) return;
   if (cntStartTime) {
     stopContraction();
   } else {
@@ -3453,13 +3452,11 @@ function _volumeBtnHandler(e) {
 
 function _iniciarListenerVolumeBotao() {
   if (!window.Capacitor || !Capacitor.isNativePlatform()) return;
-  document.addEventListener('keydown', _volumeBtnHandler, true);
   const hint = document.getElementById('cnt-volume-hint');
   if (hint) hint.style.display = 'flex';
 }
 
 function _pararListenerVolumeBotao() {
-  document.removeEventListener('keydown', _volumeBtnHandler, true);
   const hint = document.getElementById('cnt-volume-hint');
   if (hint) hint.style.display = 'none';
 }
