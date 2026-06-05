@@ -8,11 +8,26 @@ import threading
 import re
 import hashlib
 import json
+import logging
+import traceback
+from logging.handlers import RotatingFileHandler
 from werkzeug.utils import secure_filename
 import bcrypt
 import jwt
 from datetime import datetime, timezone, timedelta
 from functools import wraps
+
+# ── LOGGING EM ARQUIVO ───────────────────────────────────────────────────────
+_LOG_FILE = os.environ.get('NALIN_LOG', os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), '..', 'logs', 'nalin.log'
+))
+os.makedirs(os.path.dirname(_LOG_FILE), exist_ok=True)
+_log_fh = RotatingFileHandler(_LOG_FILE, maxBytes=2*1024*1024, backupCount=5, encoding='utf-8')
+_log_fh.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s', '%Y-%m-%d %H:%M:%S'))
+_nalin_log = logging.getLogger('nalin')
+_nalin_log.setLevel(logging.DEBUG)
+_nalin_log.addHandler(_log_fh)
+_nalin_log.propagate = False
 
 # ── WEB PUSH (VAPID) ──────────────────────────────────────────────────────────
 _VAPID_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'vapid_keys.json')
@@ -184,9 +199,6 @@ def get_db():
 
 @app.before_request
 def handle_preflight():
-    if request.method != 'OPTIONS':
-        import sys
-        print(f">> REQUEST: {request.method} {request.path}", flush=True, file=sys.stderr)
     if request.method == 'OPTIONS':
         r = app.make_default_options_response()
         r.headers['Access-Control-Allow-Origin'] = '*'
@@ -199,7 +211,17 @@ def add_cors_headers(response):
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    if response.status_code >= 500:
+        _nalin_log.error(f'{request.method} {request.path} → {response.status_code}')
+    elif response.status_code >= 400:
+        _nalin_log.warning(f'{request.method} {request.path} → {response.status_code}')
     return response
+
+@app.errorhandler(Exception)
+def handle_unhandled_exception(e):
+    tb = traceback.format_exc()
+    _nalin_log.error(f'Exceção em {request.method} {request.path}: {e}\n{tb}')
+    return jsonify({'status': 'error', 'message': 'Erro interno no servidor.'}), 500
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -580,6 +602,39 @@ def list_logs():
     db = get_db()
     logs = db.execute('SELECT l.*,u.nome as user_nome FROM logs_atividade l JOIN users u ON l.user_id=u.id ORDER BY l.criado_em DESC LIMIT 50').fetchall()
     return jsonify([dict(l) for l in logs])
+
+@app.route('/api/admin/server-logs', methods=['GET','OPTIONS'])
+@require_admin
+def admin_server_logs_get():
+    if request.method == 'OPTIONS': return '', 204
+    nivel = request.args.get('nivel', 'all')
+    n = min(int(request.args.get('n', 500)), 2000)
+    try:
+        with open(_LOG_FILE, 'r', encoding='utf-8', errors='replace') as f:
+            linhas = f.readlines()
+        if nivel == 'error':
+            linhas = [l for l in linhas if '[ERROR]' in l]
+        elif nivel == 'warning':
+            linhas = [l for l in linhas if '[WARNING]' in l]
+        elif nivel == 'info':
+            linhas = [l for l in linhas if '[INFO]' in l or '[DEBUG]' in l]
+        resultado = linhas[-n:]
+        resultado.reverse()
+        return jsonify({'logs': resultado, 'total': len(linhas), 'arquivo': _LOG_FILE})
+    except FileNotFoundError:
+        return jsonify({'logs': [], 'total': 0, 'arquivo': _LOG_FILE})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/server-logs', methods=['DELETE'])
+@require_admin
+def admin_server_logs_clear():
+    try:
+        open(_LOG_FILE, 'w').close()
+        _nalin_log.info('Arquivo de log limpo pelo administrador.')
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/login', methods=['POST'])
 def login():

@@ -262,6 +262,7 @@ tr:hover td{background:rgba(247,237,232,.5);}
       <div class="sb-item" onclick="goPage('apk',this)"><span class="si">📦</span><span>Atualização APK</span></div>
       <div class="sb-item" onclick="goPage('contracoes',this)"><span class="si">⏱</span><span>Contrações</span></div>
       <div class="sb-item" onclick="goPage('recomendacoes',this)"><span class="si">💜</span><span>Recomendações</span></div>
+      <div class="sb-item" onclick="goPage('serverlogs',this)"><span class="si">📋</span><span>Logs do Servidor</span></div>
     </div>
     <div class="sb-footer">
       <div class="sb-user">
@@ -700,6 +701,37 @@ tr:hover td{background:rgba(247,237,232,.5);}
             <button class="btn-sm btn-rose-sm" style="padding:10px 24px;font-size:14px;" onclick="notificarAndroidApk()">Enviar notificação</button>
             <div id="apk-notif-msg" style="font-size:13px;min-height:16px;"></div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ LOGS DO SERVIDOR ══ -->
+    <div class="page" id="p-serverlogs">
+      <div class="page-hdr" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div><h1>📋 Logs do Servidor</h1><p>Erros e avisos registrados pelo backend</p></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mid);cursor:pointer;">
+            <input type="checkbox" id="slog-autorefresh" onchange="toggleSlogAutoRefresh()" style="cursor:pointer;">
+            Auto-refresh 30s
+          </label>
+          <button class="btn-sm" onclick="renderServerLogs()" style="background:var(--rose-pale);color:var(--rose);border:1px solid var(--rose);">↻ Atualizar</button>
+          <button class="btn-sm" onclick="limparServerLogs()" style="background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;">🗑 Limpar</button>
+        </div>
+      </div>
+
+      <!-- Filtros de nível -->
+      <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
+        <button id="slog-f-all" onclick="setSlogFiltro('all')" style="border:none;border-radius:50px;padding:6px 16px;font-size:12px;font-weight:600;cursor:pointer;background:var(--dark);color:white;">Todos</button>
+        <button id="slog-f-error" onclick="setSlogFiltro('error')" style="border:none;border-radius:50px;padding:6px 16px;font-size:12px;font-weight:600;cursor:pointer;background:white;color:#b91c1c;border:1.5px solid #fca5a5;">Erros</button>
+        <button id="slog-f-warning" onclick="setSlogFiltro('warning')" style="border:none;border-radius:50px;padding:6px 16px;font-size:12px;font-weight:600;cursor:pointer;background:white;color:#92400e;border:1.5px solid #fde68a;">Avisos</button>
+        <button id="slog-f-info" onclick="setSlogFiltro('info')" style="border:none;border-radius:50px;padding:6px 16px;font-size:12px;font-weight:600;cursor:pointer;background:white;color:#1d4ed8;border:1.5px solid #bfdbfe;">Info</button>
+        <span id="slog-total" style="margin-left:auto;font-size:12px;color:var(--mid);align-self:center;"></span>
+      </div>
+
+      <!-- Área de logs -->
+      <div style="background:#0f172a;border-radius:12px;padding:16px;overflow:auto;max-height:65vh;">
+        <div id="slog-output" style="font-family:monospace;font-size:12px;line-height:1.7;white-space:pre-wrap;word-break:break-all;">
+          <span style="color:#64748b;">Carregando logs...</span>
         </div>
       </div>
     </div>
@@ -1479,7 +1511,8 @@ function goPage(id,el){
   document.getElementById('p-'+id).classList.add('active');
   el.classList.add('active');
   closeSidebar();
-  const renders={dashboard:renderDashboard,doulandas:renderDoulandas,ranking:renderRankingAdmin,videos:()=>renderConteudoTable('video'),ebooks:renderEbooksPage,meditacoes:()=>renderConteudoTable('meditacao'),dicas:renderDicas,notificacoes:renderNotificacoes,config:loadConfig,apk:renderApkPage,contracoes:renderContracoesAdmin,recomendacoes:()=>recTab('produtos')};
+  if(id !== 'serverlogs') _pararSlogAutoRefresh();
+  const renders={dashboard:renderDashboard,doulandas:renderDoulandas,ranking:renderRankingAdmin,videos:()=>renderConteudoTable('video'),ebooks:renderEbooksPage,meditacoes:()=>renderConteudoTable('meditacao'),dicas:renderDicas,notificacoes:renderNotificacoes,config:loadConfig,apk:renderApkPage,contracoes:renderContracoesAdmin,recomendacoes:()=>recTab('produtos'),serverlogs:renderServerLogs};
   if(renders[id])renders[id]();
 }
 
@@ -2729,6 +2762,77 @@ async function registrarWebPushAdmin(){
     setTimeout(registrarWebPushAdmin, 2000);
   }
 })();
+
+// ══ LOGS DO SERVIDOR ══
+let _slogFiltro = 'all', _slogAutoRefreshTimer = null;
+
+function setSlogFiltro(nivel) {
+  _slogFiltro = nivel;
+  ['all','error','warning','info'].forEach(f => {
+    const btn = document.getElementById('slog-f-' + f);
+    if (!btn) return;
+    if (f === nivel) {
+      btn.style.background = f === 'error' ? '#b91c1c' : f === 'warning' ? '#92400e' : f === 'info' ? '#1d4ed8' : 'var(--dark)';
+      btn.style.color = 'white';
+      btn.style.border = 'none';
+    } else {
+      btn.style.background = 'white';
+      btn.style.color = f === 'error' ? '#b91c1c' : f === 'warning' ? '#92400e' : f === 'info' ? '#1d4ed8' : 'var(--mid)';
+      btn.style.border = f === 'error' ? '1.5px solid #fca5a5' : f === 'warning' ? '1.5px solid #fde68a' : f === 'info' ? '1.5px solid #bfdbfe' : '1.5px solid #e2e8f0';
+    }
+  });
+  renderServerLogs();
+}
+
+async function renderServerLogs() {
+  const out = document.getElementById('slog-output');
+  if (!out) return;
+  out.innerHTML = '<span style="color:#64748b;">Buscando logs...</span>';
+  try {
+    const data = await apiFetch(`/api/admin/server-logs?nivel=${_slogFiltro}&n=500`);
+    if (!data) { out.innerHTML = '<span style="color:#ef4444;">Erro ao carregar logs.</span>'; return; }
+    const totalEl = document.getElementById('slog-total');
+    if (totalEl) totalEl.textContent = `${data.logs.length} linhas${data.total !== data.logs.length ? ` de ${data.total} total` : ''} — ${data.arquivo || ''}`;
+    if (!data.logs || data.logs.length === 0) {
+      out.innerHTML = '<span style="color:#64748b;">Nenhum registro encontrado.</span>';
+      return;
+    }
+    out.innerHTML = data.logs.map(linha => {
+      const l = linha.trimEnd();
+      let cor = '#94a3b8';
+      if (l.includes('[ERROR]')) cor = '#f87171';
+      else if (l.includes('[WARNING]')) cor = '#fbbf24';
+      else if (l.includes('[INFO]')) cor = '#86efac';
+      else if (l.includes('[DEBUG]')) cor = '#7dd3fc';
+      const safe = l.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      return `<span style="color:${cor};">${safe}</span>`;
+    }).join('\n');
+  } catch(e) {
+    out.innerHTML = `<span style="color:#ef4444;">Erro: ${e.message}</span>`;
+  }
+}
+
+async function limparServerLogs() {
+  if (!confirm('Limpar todos os logs do servidor?')) return;
+  await apiFetch('/api/admin/server-logs', {method:'DELETE'});
+  renderServerLogs();
+}
+
+function toggleSlogAutoRefresh() {
+  const on = document.getElementById('slog-autorefresh').checked;
+  if (on) {
+    renderServerLogs();
+    _slogAutoRefreshTimer = setInterval(renderServerLogs, 30000);
+  } else {
+    _pararSlogAutoRefresh();
+  }
+}
+
+function _pararSlogAutoRefresh() {
+  if (_slogAutoRefreshTimer) { clearInterval(_slogAutoRefreshTimer); _slogAutoRefreshTimer = null; }
+  const cb = document.getElementById('slog-autorefresh');
+  if (cb) cb.checked = false;
+}
 
 </script>
 <script>
