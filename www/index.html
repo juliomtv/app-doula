@@ -3316,10 +3316,13 @@ function startContraction() {
 
 async function stopContraction() {
   clearInterval(cntTimer);
+  cntTimer = null;
   localStorage.removeItem('nn_cnt_start');
   _esconderBannerContracaoAtiva();
+  const _startCapturado = cntStartTime;
+  cntStartTime = null;
   const endTime = new Date();
-  const duration = Math.floor((endTime - cntStartTime) / 1000);
+  const duration = Math.floor((endTime - _startCapturado) / 1000);
 
   // Calcula intervalo desde a última contração
   let interval_min = 0;
@@ -3328,7 +3331,7 @@ async function stopContraction() {
       const hist = await apiFetch(`/api/contracoes?user_id=${currentUser.id}`) || [];
       if(hist.length > 0){
         const lastStart = new Date(hist[0].start_time);
-        interval_min = Math.round((cntStartTime - lastStart) / 60000);
+        interval_min = Math.round((_startCapturado - lastStart) / 60000);
       }
     }catch(e){}
   }
@@ -3341,7 +3344,7 @@ async function stopContraction() {
     try{
       await fetch(`${API_URL}/api/contracoes`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
         user_id:currentUser.id,
-        start_time:cntStartTime.toISOString(),
+        start_time:_startCapturado.toISOString(),
         end_time:endTime.toISOString(),
         duration_sec:duration,
         interval_min
@@ -3705,7 +3708,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.5.33';
+const APP_BUNDLE_VERSION = '1.5.34';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")

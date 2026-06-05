@@ -1,6 +1,6 @@
 {
-  "versao": "1.5.33",
+  "versao": "1.5.34",
   "data": "2026-06-05",
-  "notas": "Correção: notificação de APK abre download direto",
+  "notas": "Correção: timer do contador zera ao finalizar contração",
   "obrigatoria": false
 }
