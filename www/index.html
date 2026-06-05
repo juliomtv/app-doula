@@ -3562,11 +3562,18 @@ async function registrarPushNotifications() {
     await PN.addListener('pushNotificationActionPerformed', async (action) => {
       const tipo = action?.notification?.data?.type || '';
       if (tipo === 'apk_update') {
-        // Notificação específica de APK — verifica e mostra modal de download
-        const temApk = await _verificarApkUpdate();
-        if (!temApk) abrirNotificacoes();
+        // URL vem direto no payload da notificação — não precisa de fetch
+        const apkUrl = action?.notification?.data?.apk_url || '';
+        const apkVer = action?.notification?.data?.apk_version_name || '';
+        const notas  = action?.notification?.body || '';
+        if (apkUrl) {
+          mostrarModalAPK(apkVer, apkUrl, notas);
+        } else {
+          // Fallback: busca no servidor
+          const temApk = await _verificarApkUpdate();
+          if (!temApk) abrirNotificacoes();
+        }
       } else {
-        // Qualquer outra notificação (comunidade, aviso da Nalin, etc.) — abre a lista
         abrirNotificacoes();
       }
     });
