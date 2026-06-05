@@ -3452,11 +3452,13 @@ function _volumeBtnFromNative() {
 
 function _iniciarListenerVolumeBotao() {
   if (!window.Capacitor || !Capacitor.isNativePlatform()) return;
+  if (window._VolumeCtrl) window._VolumeCtrl.enable();
   const hint = document.getElementById('cnt-volume-hint');
   if (hint) hint.style.display = 'flex';
 }
 
 function _pararListenerVolumeBotao() {
+  if (window._VolumeCtrl) window._VolumeCtrl.disable();
   const hint = document.getElementById('cnt-volume-hint');
   if (hint) hint.style.display = 'none';
 }
