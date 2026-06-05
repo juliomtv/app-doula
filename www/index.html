@@ -795,6 +795,18 @@ textarea.dta:focus{border-color:var(--rose);}
   </div>
 </div>
 
+<!-- BANNER CONTRAÇÃO ATIVA (exibido em qualquer tela enquanto timer roda) -->
+<div id="cnt-ativo-banner" onclick="openModal('modal-contracoes')" style="display:none;position:fixed;top:0;left:0;right:0;z-index:200;background:var(--err, #e53e3e);color:white;padding:10px 16px;display:none;align-items:center;justify-content:space-between;cursor:pointer;gap:10px;">
+  <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;">
+    <span style="animation:pulseRed 1s infinite;">⏱</span>
+    <span>Contração em andamento</span>
+  </div>
+  <span style="font-size:12px;opacity:.85;">Toque para finalizar →</span>
+</div>
+<style>
+@keyframes pulseRed{0%,100%{opacity:1;}50%{opacity:.4;}}
+</style>
+
 <!-- BANNER RECOMENDAÇÃO (exibido na home) -->
 <div id="rec-banner" style="display:none;position:fixed;bottom:72px;left:12px;right:12px;background:white;border-radius:16px;padding:12px 14px;box-shadow:0 4px 20px rgba(0,0,0,.14);z-index:50;border-left:4px solid #9b59b6;max-width:480px;margin:0 auto;">
   <div style="display:flex;align-items:flex-start;gap:10px;">
@@ -1803,8 +1815,20 @@ async function _renderRanking(){
 }
 
 // ════ APP INIT ════
+function _restaurarContracaoEmAndamento() {
+  const saved = localStorage.getItem('nn_cnt_start');
+  if (!saved) return;
+  const d = new Date(saved);
+  // Ignora se passou mais de 3 horas (estado antigo/esquecido)
+  if ((new Date() - d) > 3 * 60 * 60 * 1000) { localStorage.removeItem('nn_cnt_start'); return; }
+  cntStartTime = d;
+  _iniciarTimerContracoes();
+  _mostrarBannerContracaoAtiva();
+}
+
 function goApp(){
   navTo('home');
+  _restaurarContracaoEmAndamento();
   apiFetch('/api/config').then(cfg => {
     if (!cfg) return;
     if (cfg.plano_valor) _planoValor = String(cfg.plano_valor).replace('.', ',');
@@ -3193,9 +3217,16 @@ function openModal(id){
   if(el&&el.style.display==='none'&&!el.classList.contains('modal-overlay')){el.style.display='flex';return;}
   if(id==='modal-plano-parto'||id==='modal-enxoval'||id==='modal-maternidade')loadPlanejamento();
   if(id==='modal-contracoes') {
-    document.getElementById('btn-start-cnt').style.display = 'block';
-    document.getElementById('btn-stop-cnt').style.display = 'none';
-    document.getElementById('cnt-timer').textContent = '00:00';
+    if (cntStartTime) {
+      // Contração em andamento: restaurar UI correta
+      document.getElementById('btn-start-cnt').style.display = 'none';
+      document.getElementById('btn-stop-cnt').style.display = 'block';
+      _iniciarTimerContracoes();
+    } else {
+      document.getElementById('btn-start-cnt').style.display = 'block';
+      document.getElementById('btn-stop-cnt').style.display = 'none';
+      document.getElementById('cnt-timer').textContent = '00:00';
+    }
     renderContractions();
   }
   if(id === 'modal-agenda' && editingAgendaId === null) {
@@ -3243,22 +3274,44 @@ function uploadAvatar(event) {
 }
 
 // ════ CONTADOR DE CONTRAÇÕES ════
+function _atualizarDisplayTimer() {
+  const el = document.getElementById('cnt-timer');
+  if (!el || !cntStartTime) return;
+  const diff = Math.floor((new Date() - cntStartTime) / 1000);
+  const m = String(Math.floor(diff / 60)).padStart(2, '0');
+  const s = String(diff % 60).padStart(2, '0');
+  el.textContent = `${m}:${s}`;
+}
+
+function _iniciarTimerContracoes() {
+  clearInterval(cntTimer);
+  _atualizarDisplayTimer();
+  cntTimer = setInterval(_atualizarDisplayTimer, 1000);
+}
+
+function _mostrarBannerContracaoAtiva() {
+  let banner = document.getElementById('cnt-ativo-banner');
+  if (!banner) return;
+  banner.style.display = 'flex';
+}
+function _esconderBannerContracaoAtiva() {
+  const banner = document.getElementById('cnt-ativo-banner');
+  if (banner) banner.style.display = 'none';
+}
+
 function startContraction() {
   cntStartTime = new Date();
+  localStorage.setItem('nn_cnt_start', cntStartTime.toISOString());
   document.getElementById('btn-start-cnt').style.display = 'none';
   document.getElementById('btn-stop-cnt').style.display = 'block';
-  
-  cntTimer = setInterval(() => {
-    const now = new Date();
-    const diff = Math.floor((now - cntStartTime) / 1000);
-    const m = String(Math.floor(diff / 60)).padStart(2, '0');
-    const s = String(diff % 60).padStart(2, '0');
-    document.getElementById('cnt-timer').textContent = `${m}:${s}`;
-  }, 1000);
+  _iniciarTimerContracoes();
+  _mostrarBannerContracaoAtiva();
 }
 
 async function stopContraction() {
   clearInterval(cntTimer);
+  localStorage.removeItem('nn_cnt_start');
+  _esconderBannerContracaoAtiva();
   const endTime = new Date();
   const duration = Math.floor((endTime - cntStartTime) / 1000);
 
@@ -3371,6 +3424,13 @@ async function clearContractions() {
     renderContractions();
   }catch(e){showToast('Erro ao limpar contrações.');}
 }
+
+// Ao voltar do background, re-sincroniza o display do timer de contrações
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && cntStartTime) {
+    _iniciarTimerContracoes();
+  }
+});
 
 // ════ PUSH NOTIFICATIONS (Firebase FCM) ════
 function _PN() {
@@ -3606,7 +3666,7 @@ const OTA_VERSION_KEY  = 'ota_versao_instalada';
 const OTA_SKIP_KEY     = 'ota_skip_versao';
 const OTA_HASH_KEY     = 'ota_hash_local';
 // Versão embutida neste bundle — usada para detectar reversão de OTA
-const APP_BUNDLE_VERSION = '1.5.31';
+const APP_BUNDLE_VERSION = '1.5.32';
 
 function compararVersao(a, b) {
   // Retorna true se versão a > versão b (ex: "1.0.3" > "1.0.2")
