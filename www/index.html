@@ -951,6 +951,10 @@ textarea.dta:focus{border-color:var(--rose);}
           <button id="btn-start-cnt" onclick="startContraction()" style="width:100%; background:var(--ok); color:black; border:3px solid white; border-radius:50px; padding:18px; font-size:18px; font-weight:700; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.2);">Iniciar Contração</button>
           <button id="btn-stop-cnt" onclick="stopContraction()" style="display:none; width:100%; background:var(--err); color:black; border:3px solid white; border-radius:50px; padding:18px; font-size:18px; font-weight:700; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.2);">Finalizar Contração</button>
         </div>
+        <div id="cnt-volume-hint" style="display:none; margin-top:14px; background:rgba(201,144,122,0.13); border-radius:12px; padding:9px 14px; align-items:center; gap:8px;">
+          <span style="font-size:18px;">🔊</span>
+          <span style="font-size:12px; color:var(--mid); line-height:1.4;">Pressione qualquer botão de volume para iniciar ou finalizar a contração</span>
+        </div>
       </div>
 
       <div style="display:flex; gap:10px; margin-bottom:25px;">
@@ -3228,6 +3232,7 @@ function openModal(id){
       document.getElementById('cnt-timer').textContent = '00:00';
     }
     renderContractions();
+    _iniciarListenerVolumeBotao();
   }
   if(id === 'modal-agenda' && editingAgendaId === null) {
     document.querySelector('#modal-agenda h3').textContent = 'Adicionar Compromisso';
@@ -3241,6 +3246,7 @@ function openModal(id){
 }
 function closeModal(id){
   if(id === 'modal-agenda') editingAgendaId = null;
+  if(id === 'modal-contracoes') _pararListenerVolumeBotao();
   const el=document.getElementById(id);
   if(!el) return;
   if(el.style.display==='flex'&&!el.classList.contains('modal-overlay')){el.style.display='none';return;}
@@ -3431,6 +3437,32 @@ document.addEventListener('visibilitychange', () => {
     _iniciarTimerContracoes();
   }
 });
+
+// ── BOTÕES DE VOLUME PARA CONTRAÇÕES (Android nativo) ──
+function _volumeBtnHandler(e) {
+  // 24 = VolumeUp, 25 = VolumeDown
+  if (e.keyCode !== 24 && e.keyCode !== 25) return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  if (cntStartTime) {
+    stopContraction();
+  } else {
+    startContraction();
+  }
+}
+
+function _iniciarListenerVolumeBotao() {
+  if (!window.Capacitor || !Capacitor.isNativePlatform()) return;
+  document.addEventListener('keydown', _volumeBtnHandler, true);
+  const hint = document.getElementById('cnt-volume-hint');
+  if (hint) hint.style.display = 'flex';
+}
+
+function _pararListenerVolumeBotao() {
+  document.removeEventListener('keydown', _volumeBtnHandler, true);
+  const hint = document.getElementById('cnt-volume-hint');
+  if (hint) hint.style.display = 'none';
+}
 
 // ════ PUSH NOTIFICATIONS (Firebase FCM) ════
 function _PN() {
