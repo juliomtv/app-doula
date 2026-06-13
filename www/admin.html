@@ -255,6 +255,7 @@ tr:hover td{background:rgba(247,237,232,.5);}
       <div class="sb-item" onclick="goPage('meditacoes',this)"><span class="si">🎵</span><span>Meditações</span></div>
       <div class="sb-sect">Educação</div>
       <div class="sb-item" onclick="goPage('dicas',this)"><span class="si">💡</span><span>Dicas Semanais</span></div>
+      <div class="sb-item" onclick="goPage('dicas-pos-parto',this)"><span class="si">👶</span><span>Dicas Pós-Parto</span></div>
       <div class="sb-sect">Comunicação</div>
       <div class="sb-item" onclick="goPage('notificacoes',this)"><span class="si">🔔</span><span>Notificações</span></div>
       <div class="sb-sect">Sistema</div>
@@ -296,7 +297,7 @@ tr:hover td{background:rgba(247,237,232,.5);}
         <button class="btn-sm btn-rose-sm" onclick="openAddDoula()">+ Nova Doulânda</button>
       </div>
       <div class="search-bar"><input type="text" id="search-doula" placeholder="🔍 Buscar por nome ou e-mail..." oninput="renderDoulandas()"></div>
-      <div class="table-card"><table><thead><tr><th>Nome</th><th>Semanas</th><th>Bebê</th><th>Parto Previsto</th><th>Status</th><th>Acesso</th><th>Ações</th></tr></thead><tbody id="doulandas-tbody"></tbody></table></div>
+      <div class="table-card"><table><thead><tr><th>Nome</th><th>Semanas</th><th>Bebê</th><th>Parto / Nascimento</th><th>Status</th><th>Acesso</th><th>Ações</th></tr></thead><tbody id="doulandas-tbody"></tbody></table></div>
     </div>
 
     <div class="page" id="p-ranking">
@@ -390,6 +391,14 @@ tr:hover td{background:rgba(247,237,232,.5);}
         <button class="btn-sm btn-rose-sm" onclick="abrirModalNovaDica()">+ Adicionar Dica</button>
       </div>
       <div class="table-card"><table><thead><tr><th>Semana</th><th>Título</th><th>Dica</th><th>Ações</th></tr></thead><tbody id="dicas-tbody"></tbody></table></div>
+    </div>
+
+    <div class="page" id="p-dicas-pos-parto">
+      <div class="page-hdr" style="display:flex;align-items:flex-start;justify-content:space-between;">
+        <div><h1>Dicas Pós-Parto</h1><p>Dicas exibidas após o nascimento do bebê (semanas 0–12)</p></div>
+        <button class="btn-sm btn-rose-sm" onclick="abrirModalNovaDicaPosParto()">+ Adicionar Dica</button>
+      </div>
+      <div class="table-card"><table><thead><tr><th>Semana</th><th>Título</th><th>Dica</th><th>Ações</th></tr></thead><tbody id="dicas-pp-tbody"></tbody></table></div>
     </div>
 
     <div class="page" id="p-notificacoes">
@@ -748,6 +757,7 @@ tr:hover td{background:rgba(247,237,232,.5);}
       <div class="mrow"><div class="mfield"><label>Nome completo</label><input type="text" id="md-nome"></div><div class="mfield"><label>E-mail</label><input type="email" id="md-email"></div></div>
       <div class="mrow"><div class="mfield"><label>Senha</label><input type="password" id="md-senha"></div><div class="mfield"><label>Bebê</label><input type="text" id="md-bebe"></div></div>
       <div class="mrow"><div class="mfield"><label>Semanas</label><input type="number" id="md-sem" placeholder="Preenchido automaticamente pela DPP"></div><div class="mfield"><label>DPP (Data Provável do Parto)</label><input type="date" id="md-dpp" oninput="calcSemanasFromDPP()"></div></div>
+      <div class="mfield"><label>Data de Nascimento do Bebê</label><input type="date" id="md-nasc-bebe"><span style="font-size:12px;color:var(--lite);margin-top:4px;display:block;">Preencha quando o bebê nascer. O app entra em modo pós-parto automaticamente.</span></div>
       <div class="mrow"><div class="mfield"><label>Parto</label><select id="md-parto"><option value="normal">Normal</option><option value="cesarea">Cesárea</option></select></div><div class="mfield"><label>RG + Órgão Emissor</label><input type="text" id="md-rg"></div></div>
       <div class="mrow"><div class="mfield"><label>CPF</label><input type="text" id="md-cpf"></div><div class="mfield"><label>Estado Civil</label><select id="md-civil"><option value="solteira">Solteira</option><option value="casada">Casada</option><option value="viuva">Viúva</option><option value="divorciada">Divorciada</option><option value="separada">Separada Judicialmente</option></select></div></div>
       <div class="mrow"><div class="mfield"><label>Endereço com CEP</label><input type="text" id="md-endereco"></div><div class="mfield"><label>Nacionalidade</label><input type="text" id="md-nacionalidade"></div></div>
@@ -878,6 +888,21 @@ tr:hover td{background:rgba(247,237,232,.5);}
       <div id="md-err" style="color:var(--err);font-size:13px;min-height:16px;"></div>
     </div>
     <div class="modal-footer"><button class="btn-full btn-cancel" onclick="closeModal('modal-dica')">Cancelar</button><button class="btn-full btn-save" id="btn-salvar-dica" onclick="saveDica()">Salvar Dica</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-dica-pp">
+  <div class="modal">
+    <div class="modal-hdr"><h3 id="modal-dica-pp-titulo">Adicionar Dica Pós-Parto</h3><button class="modal-close" onclick="closeModal('modal-dica-pp')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="mdpp-id" value="">
+      <div class="mfield"><label>Semana do bebê (0 = recém-nascido, máx 12)</label><input type="number" id="mdpp-semana" min="0" max="12" placeholder="Ex: 0"></div>
+      <div class="mfield"><label>Título da Dica</label><input type="text" id="mdpp-titulo" placeholder="Ex: Primeira Semana"></div>
+      <div class="mfield"><label>Dica</label><textarea id="mdpp-dica" placeholder="Digite a dica de pós-parto para esta semana..." style="height:100px;"></textarea></div>
+      <div class="mfield"><label>Emoji (Opcional)</label><input type="text" id="mdpp-emoji" placeholder="Ex: 🤱" maxlength="4"></div>
+      <div id="mdpp-err" style="color:var(--err);font-size:13px;min-height:16px;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-full btn-cancel" onclick="closeModal('modal-dica-pp')">Cancelar</button><button class="btn-full btn-save" id="btn-salvar-dica-pp" onclick="saveDicaPosParto()">Salvar Dica</button></div>
   </div>
 </div>
 
@@ -1512,7 +1537,7 @@ function goPage(id,el){
   el.classList.add('active');
   closeSidebar();
   if(id !== 'serverlogs') _pararSlogAutoRefresh();
-  const renders={dashboard:renderDashboard,doulandas:renderDoulandas,ranking:renderRankingAdmin,videos:()=>renderConteudoTable('video'),ebooks:renderEbooksPage,meditacoes:()=>renderConteudoTable('meditacao'),dicas:renderDicas,notificacoes:renderNotificacoes,config:loadConfig,apk:renderApkPage,contracoes:renderContracoesAdmin,recomendacoes:()=>recTab('produtos'),serverlogs:renderServerLogs};
+  const renders={dashboard:renderDashboard,doulandas:renderDoulandas,ranking:renderRankingAdmin,videos:()=>renderConteudoTable('video'),ebooks:renderEbooksPage,meditacoes:()=>renderConteudoTable('meditacao'),dicas:renderDicas,'dicas-pos-parto':renderDicasPosParto,notificacoes:renderNotificacoes,config:loadConfig,apk:renderApkPage,contracoes:renderContracoesAdmin,recomendacoes:()=>recTab('produtos'),serverlogs:renderServerLogs};
   if(renders[id])renders[id]();
 }
 
@@ -1707,9 +1732,9 @@ async function renderDoulandas(){
   document.getElementById('doulandas-tbody').innerHTML=users.map(u=>`
     <tr>
       <td><div class="td-name">${u.nome} <span style="font-size:10px;padding:2px 6px;border-radius:8px;font-weight:600;background:${u.tipo==='publico'?'#e3f2fd':'#fce4ec'};color:${u.tipo==='publico'?'#1565c0':'#880e4f'}">${u.tipo==='publico'?'Pública':'Doulanda'}</span> <span title="${u.plataforma==='android'?'Android (recebe push)':'PWA — iOS ou navegador (não recebe push no celular)'}" style="font-size:13px;cursor:default;">${u.plataforma==='android'?'📱':'🌐'}</span></div><div style="font-size:11px;color:var(--lite);">${u.email}</div></td>
-      <td>${(()=>{const {semanas,dias}=getSemanasDias(u);return dias>0?`${semanas}s + ${dias}d`:`${semanas} sem`;})()}</td>
+      <td>${u.data_nascimento_bebe?'👶 Nasceu':'🤰 '+((()=>{const {semanas,dias}=getSemanasDias(u);return dias>0?`${semanas}s + ${dias}d`:`${semanas} sem`;})())}</td>
       <td>${u.bebe||'—'}</td>
-      <td>${u.dpp?new Date(u.dpp).toLocaleDateString('pt-BR'):'—'}</td>
+      <td>${u.data_nascimento_bebe?'<span class="badge badge-ok">👶 '+new Date(u.data_nascimento_bebe+'T12:00:00').toLocaleDateString('pt-BR')+'</span>':u.dpp?new Date(u.dpp).toLocaleDateString('pt-BR'):'—'}</td>
       <td><span class="badge ${u.ativo?'badge-ok':'badge-err'}">${u.ativo?'Ativa':'Inativa'}</span></td>
       <td style="white-space:nowrap;">
         <span class="badge ${u.acesso_videos!==0?'badge-ok':'badge-err'}" style="cursor:pointer;display:inline-block;margin-bottom:4px;" onclick="toggleAcesso(${u.id},'acesso_videos',${u.acesso_videos!==0?1:0})">🎬 Vídeos</span><br>
@@ -1804,7 +1829,7 @@ function openAddDoula(){
   document.getElementById('mdoula-title').textContent='Nova Doulânda';
   document.getElementById('mdoula-id').value='';
   document.getElementById('md-err').textContent='';
-  ['md-nome','md-email','md-senha','md-bebe','md-sem','md-dpp','md-rg','md-cpf','md-endereco','md-nacionalidade','md-email-acomp','md-local-pre','md-idade','md-nasc','md-acomp-parent','md-alergias','md-quais-inter','md-relato-parto','md-medicacao','md-vacina','md-sentimento','md-religiao','md-expectativas'].forEach(id=>{
+  ['md-nome','md-email','md-senha','md-bebe','md-sem','md-dpp','md-nasc-bebe','md-rg','md-cpf','md-endereco','md-nacionalidade','md-email-acomp','md-local-pre','md-idade','md-nasc','md-acomp-parent','md-alergias','md-quais-inter','md-relato-parto','md-medicacao','md-vacina','md-sentimento','md-religiao','md-expectativas'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.value='';
   });
@@ -1832,6 +1857,7 @@ async function editDoula(id){
   document.getElementById('md-bebe').value=u.bebe||'';
   document.getElementById('md-sem').value=u.semanas||'';
   document.getElementById('md-dpp').value=u.dpp||'';
+  document.getElementById('md-nasc-bebe').value=u.data_nascimento_bebe||'';
   document.getElementById('md-parto').value=u.parto||'normal';
   document.getElementById('md-rg').value=u.rg_orgao||'';
   document.getElementById('md-cpf').value=u.cpf||'';
@@ -1881,6 +1907,7 @@ async function saveDoula(){
   const bebe=document.getElementById('md-bebe').value.trim();
   const sem=parseInt(document.getElementById('md-sem').value)||0;
   const dpp=document.getElementById('md-dpp').value;
+  const data_nascimento_bebe=document.getElementById('md-nasc-bebe').value||null;
   const parto=document.getElementById('md-parto').value;
   const rg_orgao=document.getElementById('md-rg').value;
   const cpf=document.getElementById('md-cpf').value;
@@ -1925,7 +1952,7 @@ async function saveDoula(){
   const res = await apiFetch('/api/users', {
     method: 'POST',
     body: JSON.stringify({ 
-      id: editId, nome, email, senha, bebe, semanas: sem, dpp, parto,
+      id: editId, nome, email, senha, bebe, semanas: sem, dpp, data_nascimento_bebe, parto,
       rg_orgao, cpf, estado_civil, endereco_cep, nacionalidade, 
       pacote_escolhido, servicos_extras, forma_pagamento, melhor_data_pagamento,
       email_acompanhante, ja_iniciou_pre_natal, local_pre_natal, idade, data_nascimento,
@@ -2722,6 +2749,92 @@ async function deleteDica(id) {
   }
 }
 
+// ── DICAS PÓS-PARTO ──────────────────────────────────────────────────────────
+async function renderDicasPosParto() {
+  const dicas = await apiFetch('/api/admin/dicas-pos-parto') || [];
+  const tbody = document.getElementById('dicas-pp-tbody');
+  tbody.innerHTML = '';
+  if (dicas.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--lite);padding:24px;">Nenhuma dica pós-parto cadastrada ainda.</td></tr>';
+    return;
+  }
+  dicas.forEach(d => {
+    const preview = (d.dica || '').length > 60 ? d.dica.substring(0, 60) + '...' : (d.dica || '');
+    const emoji = d.emoji ? `${d.emoji} ` : '';
+    const semLabel = d.semana === 0 ? 'Recém-nascido' : `Semana ${d.semana}`;
+    tbody.innerHTML += `<tr>
+      <td style="font-weight:600;text-align:center;">${semLabel}</td>
+      <td>${emoji}${d.titulo || '<em style="color:var(--lite)">Sem título</em>'}</td>
+      <td style="font-size:12px;color:var(--lite);">${preview}</td>
+      <td class="td-actions">
+        <button class="btn-sm btn-ghost" onclick="editDicaPosParto(${d.id})">✏️ Editar</button>
+        <button class="btn-sm btn-danger" onclick="deleteDicaPosParto(${d.id})">🗑️ Excluir</button>
+      </td>
+    </tr>`;
+  });
+}
+
+function limparModalDicaPosParto() {
+  document.getElementById('mdpp-id').value = '';
+  document.getElementById('mdpp-semana').value = '';
+  document.getElementById('mdpp-titulo').value = '';
+  document.getElementById('mdpp-dica').value = '';
+  document.getElementById('mdpp-emoji').value = '';
+  document.getElementById('mdpp-err').textContent = '';
+  document.getElementById('modal-dica-pp-titulo').textContent = 'Adicionar Dica Pós-Parto';
+  document.getElementById('btn-salvar-dica-pp').textContent = 'Salvar Dica';
+}
+
+function abrirModalNovaDicaPosParto() {
+  limparModalDicaPosParto();
+  openModal('modal-dica-pp');
+}
+
+async function editDicaPosParto(id) {
+  const dica = await apiFetch(`/api/admin/dicas-pos-parto/${id}`);
+  if (!dica) { alert('Erro ao carregar dica.'); return; }
+  document.getElementById('mdpp-id').value = dica.id;
+  document.getElementById('mdpp-semana').value = dica.semana;
+  document.getElementById('mdpp-titulo').value = dica.titulo || '';
+  document.getElementById('mdpp-dica').value = dica.dica || '';
+  document.getElementById('mdpp-emoji').value = dica.emoji || '';
+  document.getElementById('mdpp-err').textContent = '';
+  document.getElementById('modal-dica-pp-titulo').textContent = 'Editar Dica Pós-Parto';
+  document.getElementById('btn-salvar-dica-pp').textContent = 'Atualizar Dica';
+  openModal('modal-dica-pp');
+}
+
+async function saveDicaPosParto() {
+  const id     = document.getElementById('mdpp-id').value;
+  const semana = document.getElementById('mdpp-semana').value;
+  const titulo = document.getElementById('mdpp-titulo').value.trim();
+  const dica   = document.getElementById('mdpp-dica').value.trim();
+  const emoji  = document.getElementById('mdpp-emoji').value.trim();
+  const errEl  = document.getElementById('mdpp-err');
+  if (semana === '' || !dica) { errEl.textContent = 'Semana e dica são obrigatórios.'; return; }
+  errEl.textContent = '';
+  const payload = { semana: parseInt(semana), titulo, dica, emoji };
+  let res;
+  if (id) {
+    res = await apiFetch(`/api/admin/dicas-pos-parto/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+  } else {
+    res = await apiFetch('/api/admin/dicas-pos-parto', { method: 'POST', body: JSON.stringify(payload) });
+  }
+  if (res && res.status === 'success') {
+    closeModal('modal-dica-pp');
+    limparModalDicaPosParto();
+    renderDicasPosParto();
+  } else {
+    errEl.textContent = (res && res.message) ? res.message : 'Erro ao salvar dica. Tente novamente.';
+  }
+}
+
+async function deleteDicaPosParto(id) {
+  if (!confirm('Excluir esta dica pós-parto?')) return;
+  const res = await apiFetch(`/api/admin/dicas-pos-parto/${id}`, { method: 'DELETE' });
+  if (res && res.status === 'success') { renderDicasPosParto(); }
+  else { alert('Erro ao excluir dica.'); }
+}
 
 function _urlB64ToUint8Array(b64){
   const pad='='.repeat((4-b64.length%4)%4);

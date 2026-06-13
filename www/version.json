@@ -1,6 +1,6 @@
 {
-  "versao": "1.6.0",
+  "versao": "1.6.1",
   "data": "2026-06-13",
-  "notas": "Novo: registrar nascimento do bebê — modo pós-parto com dicas de amamentação, vacinas e desenvolvimento semanal",
+  "notas": "Admin: seção Dicas Pós-Parto e campo de nascimento do bebê no cadastro da doulanda",
   "obrigatoria": false
 }
