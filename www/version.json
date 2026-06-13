@@ -1,6 +1,6 @@
 {
-  "versao": "1.6.2",
+  "versao": "1.6.3",
   "data": "2026-06-13",
-  "notas": "Novo: registrar nascimento do bebê — modo pós-parto com dicas de amamentação, vacinas e desenvolvimento semanal",
+  "notas": "Fix: cards de recomendações com tamanho correto",
   "obrigatoria": false
 }
