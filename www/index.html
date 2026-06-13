@@ -443,7 +443,7 @@ textarea.dta:focus{border-color:var(--rose);}
         <button class="notif" id="btn-notif" onclick="abrirNotificacoes()">🔔<span id="notif-badge" style="display:none;position:absolute;top:5px;right:5px;background:var(--rose);color:white;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;line-height:16px;text-align:center;border:2px solid white;"></span></button>
       </div>
       <div class="preg-card">
-        <div class="pc-label">Semana da gestação</div>
+        <div class="pc-label" id="h-preg-label">Semana da gestação</div>
         <div class="pc-week"><span id="h-sem">—</span> <small>semanas</small><span id="h-dias" style="font-size:14px;color:var(--mid);margin-left:4px;"></span></div>
         <div class="pc-bebe" id="h-bebe">Bebê...</div>
         <div class="prog-lbl"><span>Progresso</span><span id="h-pct">—%</span></div>
@@ -455,7 +455,7 @@ textarea.dta:focus{border-color:var(--rose);}
     <div class="size-box">
       <div class="se" id="h-emoji">🌱</div>
       <div>
-        <p>Tamanho do bebê esta semana</p>
+        <p id="h-size-label">Tamanho do bebê esta semana</p>
         <p id="h-size">Carregando...</p>
       </div>
     </div>
@@ -646,9 +646,14 @@ textarea.dta:focus{border-color:var(--rose);}
       <div class="perf-badge"><span>🌸</span><span id="p-tri">—</span></div>
     </div>
     <div class="stats-g">
-      <div class="scard"><div class="sval" id="p-dias">—</div><div class="slbl">dias restantes</div></div>
-      <div class="scard"><div class="sval" id="p-sem">—</div><div class="slbl">semanas gestadas</div></div>
+      <div class="scard"><div class="sval" id="p-dias">—</div><div class="slbl" id="p-dias-lbl">dias restantes</div></div>
+      <div class="scard"><div class="sval" id="p-sem">—</div><div class="slbl" id="p-sem-lbl">semanas gestadas</div></div>
       <div class="scard"><div class="sval" id="p-entradas">0</div><div class="slbl">entradas no diário</div></div>
+    </div>
+    <div id="nascimento-section" style="margin:16px 22px 8px;display:none;">
+      <button onclick="openModal('modal-nascimento')" style="width:100%;background:linear-gradient(135deg,var(--rose),#c97a5e);color:white;border:none;border-radius:16px;padding:16px;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px rgba(169,107,85,.3);">
+        <span style="font-size:22px;">👶</span><span>Meu bebê nasceu!</span>
+      </button>
     </div>
     <div class="menu-list">
       <div class="mitem" onclick="openModal('modal-plano-parto')"><div class="mico">📋</div><div class="mtext"><span>Plano de Parto</span><span>Crie seu plano personalizado</span></div><span class="marr">›</span></div>
@@ -1175,6 +1180,85 @@ function getTip(w){
 
 async function loadDicas(){
   dicasCache = await apiFetch('/api/dicas') || [];
+}
+
+// ════ PÓS-PARTO ════
+const weeklyInfoPosParto={
+  0:{t:'Recém-nascido',d:'Seu bebê chegou! O contato pele a pele fortalece o vínculo e ajuda na amamentação.',e:'👶'},
+  1:{t:'Primeira Semana',d:'O bebê dorme até 18h por dia. A amamentação em livre demanda estabelece a produção de leite.',e:'🤱'},
+  2:{t:'Segunda Semana',d:'O bebê recupera o peso de nascimento. Já foca em objetos a 30cm — o seu rosto!',e:'👁️'},
+  3:{t:'Terceira Semana',d:'Surtos de crescimento são normais. O bebê pode querer mamar mais — o leite está chegando!',e:'📈'},
+  4:{t:'Um Mês',d:'Com 1 mês o bebê começa a sorrir socialmente. Converse e cante para estimular a linguagem.',e:'😊'},
+  5:{t:'5 Semanas',d:'A cólica tende a ser mais intensa nessa fase. Massagem abdominal e colo ajudam muito.',e:'🫂'},
+  6:{t:'Seis Semanas',d:'Semana importante: consulta de puericultura e vacinas do 2º mês. Leve a caderneta!',e:'💉'},
+  7:{t:'7 Semanas',d:'O bebê vocaliza e faz sons. Responda como se fosse uma conversa — é aprendizado!',e:'💬'},
+  8:{t:'Dois Meses',d:'Com 2 meses chegam várias vacinas. O bebê segura objetos brevemente e levanta a cabeça.',e:'💪'},
+  9:{t:'9 Semanas',d:'Boa hora para uma rotina de sono: luz baixa e ambiente calmo antes de dormir.',e:'🌙'},
+  10:{t:'10 Semanas',d:'O bebê reconhece rostos familiares e demonstra preferência pela mamãe. Que amor!',e:'❤️'},
+  11:{t:'11 Semanas',d:'O tummy time supervisionado fortalece o pescoço e prepara para o rolar.',e:'🏋️'},
+  12:{t:'Três Meses',d:'Com 3 meses o bebê ri em voz alta e reconhece o nome. Cada dia é uma descoberta!',e:'🎉'}
+};
+const tipsPosParto={
+  0:'Parabéns, mamãe! Descanse sempre que puder e aceite toda ajuda. Você foi incrível! 💕',
+  1:'A amamentação pode ser desafiadora no início. Se precisar de apoio, fale comigo! 🤱',
+  2:'O bebê pode perder peso nos primeiros dias — isso é normal. Volta ao peso de nascimento em até 2 semanas. ⚖️',
+  3:'Surtos de crescimento fazem o bebê mamar mais. Não é falta de leite, é estímulo de produção! 🌱',
+  4:'Com 1 mês já é hora da consulta de puericultura. Leve a caderneta de vacinação! 📋',
+  5:'A cólica costuma ser mais intensa entre 5–8 semanas. Massagem e colo são os melhores remédios. 🫂',
+  6:'Semana das vacinas: Pentavalente, VIP, Pneumo 10, Meningocócica C e Rotavírus. Não esqueça! 💉',
+  7:'Converse, cante e leia para o bebê. Cada palavra que ele ouve é aprendizado. 🎵',
+  8:'Com 2 meses o bebê sorri, vocaliza e segue objetos com os olhos. Uma descoberta por dia! 😊',
+  9:'Estabeleça uma rotina suave de sono. Banho, amamentação e canção funcionam muito bem. 🌙',
+  10:'O bebê já reconhece seu cheiro, sua voz e seu rosto. Você é o mundo dele! ❤️',
+  11:'Tummy time (barriga para baixo) por alguns minutos ao dia fortalece o pescoço do bebê. 💪',
+  12:'Com 3 meses chegam as vacinas DTP + Hib + Polio e Pneumo 10. Verifique a caderneta! 💉'
+};
+let dicasPosPartoCache = null;
+
+function getSemanasPosParto(u){
+  if(!u||!u.data_nascimento_bebe) return 0;
+  const nasc=new Date(u.data_nascimento_bebe+'T12:00:00');
+  const dias=Math.floor((new Date()-nasc)/(24*60*60*1000));
+  return Math.max(0,Math.floor(dias/7));
+}
+function getDiasPosParto(u){
+  if(!u||!u.data_nascimento_bebe) return 0;
+  const nasc=new Date(u.data_nascimento_bebe+'T12:00:00');
+  const totalDias=Math.floor((new Date()-nasc)/(24*60*60*1000));
+  return Math.max(0,totalDias%7);
+}
+function getTipPosParto(w){
+  if(dicasPosPartoCache&&dicasPosPartoCache.length>0){
+    const dica=dicasPosPartoCache.find(d=>d.semana==w);
+    if(dica) return {titulo:dica.titulo||'',dica:dica.dica};
+  }
+  const ks=Object.keys(tipsPosParto).map(Number).sort((a,b)=>a-b);let b=ks[0];
+  for(const k of ks){if(k<=w)b=k;}
+  return {titulo:'',dica:tipsPosParto[b]};
+}
+async function loadDicasPosParto(){
+  dicasPosPartoCache = await apiFetch('/api/dicas-pos-parto') || [];
+}
+async function confirmarNascimento(){
+  const data=document.getElementById('nasc-data').value;
+  const errEl=document.getElementById('nasc-err');
+  errEl.style.display='none';
+  if(!data){errEl.textContent='Informe a data de nascimento.';errEl.style.display='block';return;}
+  const res=await apiFetch('/api/users/registrar-nascimento',{
+    method:'POST',
+    body:JSON.stringify({user_id:currentUser.id,data_nascimento_bebe:data})
+  });
+  if(res&&res.status==='success'){
+    currentUser=res.user;
+    DB.set('nn_user_cache',currentUser);
+    closeModal('modal-nascimento');
+    showToast('Nascimento registrado! Bem-vindo ao mundo, bebê! 👶🎉');
+    renderHome();
+    renderPerfil();
+  } else {
+    errEl.textContent=res?.message||'Erro ao registrar. Tente novamente.';
+    errEl.style.display='block';
+  }
 }
 
 // ════ STATE ════
@@ -1857,31 +1941,58 @@ async function renderHome(){
   if(!currentUser)return;
   setTimeout(_carregarBannerRec, 3000); // Banner aparece 3s após abrir a home
   const u=currentUser;
-  const {semanas,dias}=getSemanasDias(u);
   document.getElementById('h-nome').textContent=(u.nome||'').split(' ')[0];
-  document.getElementById('h-sem').textContent=semanas;
-  const diasEl=document.getElementById('h-dias');
-  if(diasEl) diasEl.textContent=dias>0?`+ ${dias} d`:'';
-  document.getElementById('h-bebe').textContent=`Bebê ${u.bebe} 💕`;
-  const pct=Math.round((semanas/40)*100);
-  document.getElementById('h-pct').textContent=pct+'%';
-  document.getElementById('h-bar').style.width=pct+'%';
-  const tri=getTri(semanas);
-  const rem=40-semanas;
-  document.getElementById('h-tri').textContent=`${tri.l} · ${rem} sem. restantes 🌟`;
-  const td=document.getElementById('h-tdots');td.innerHTML='';
-  for(let i=1;i<=3;i++){const d=document.createElement('div');d.className='tdot'+(i<=tri.n?' f':'');td.appendChild(d);}
-  const baby=getBaby(semanas);
-  document.getElementById('h-emoji').textContent=baby.e;
-  document.getElementById('h-size').textContent=baby.s.charAt(0).toUpperCase()+baby.s.slice(1);
-  document.getElementById('h-tip-tag').textContent=`💡 Dica da Nalin — Semana ${semanas}`;
-  const tipObj = getTip(semanas);
-  const tituloEl = document.getElementById('h-tip-titulo');
-  if(tituloEl){
-    tituloEl.textContent = tipObj.titulo || '';
-    tituloEl.style.display = tipObj.titulo ? 'block' : 'none';
+  if(u.data_nascimento_bebe){
+    // ── MODO PÓS-PARTO ──
+    const semanasPos=getSemanasPosParto(u);
+    const diasPos=getDiasPosParto(u);
+    const pregLbl=document.getElementById('h-preg-label');if(pregLbl)pregLbl.textContent='Semana do bebê';
+    document.getElementById('h-sem').textContent=semanasPos;
+    const diasEl=document.getElementById('h-dias');
+    if(diasEl) diasEl.textContent=diasPos>0?`+ ${diasPos} d`:'';
+    document.getElementById('h-bebe').textContent=`Bebê ${u.bebe} 👶`;
+    const pct=Math.min(100,Math.round((semanasPos/12)*100));
+    document.getElementById('h-pct').textContent=pct+'%';
+    document.getElementById('h-bar').style.width=pct+'%';
+    const fasePos=semanasPos<=4?1:semanasPos<=8?2:3;
+    const td=document.getElementById('h-tdots');td.innerHTML='';
+    for(let i=1;i<=3;i++){const d=document.createElement('div');d.className='tdot'+(i<=fasePos?' f':'');td.appendChild(d);}
+    document.getElementById('h-tri').textContent=`Pós-parto · Semana ${semanasPos} de vida 🌟`;
+    const wiPos=weeklyInfoPosParto[Math.min(semanasPos,12)]||weeklyInfoPosParto[0];
+    document.getElementById('h-emoji').textContent=wiPos.e;
+    const slEl=document.getElementById('h-size-label');if(slEl)slEl.textContent='Desenvolvimento do bebê';
+    document.getElementById('h-size').textContent=wiPos.d;
+    document.getElementById('h-tip-tag').textContent=`💡 Dica da Nalin — Bebê semana ${semanasPos}`;
+    const tipObj=getTipPosParto(semanasPos);
+    const tituloEl=document.getElementById('h-tip-titulo');
+    if(tituloEl){tituloEl.textContent=tipObj.titulo||'';tituloEl.style.display=tipObj.titulo?'block':'none';}
+    document.getElementById('h-tip').textContent=tipObj.dica||tipObj;
+  } else {
+    // ── MODO GESTAÇÃO ──
+    const {semanas,dias}=getSemanasDias(u);
+    const pregLbl=document.getElementById('h-preg-label');if(pregLbl)pregLbl.textContent='Semana da gestação';
+    document.getElementById('h-sem').textContent=semanas;
+    const diasEl=document.getElementById('h-dias');
+    if(diasEl) diasEl.textContent=dias>0?`+ ${dias} d`:'';
+    document.getElementById('h-bebe').textContent=`Bebê ${u.bebe} 💕`;
+    const pct=Math.round((semanas/40)*100);
+    document.getElementById('h-pct').textContent=pct+'%';
+    document.getElementById('h-bar').style.width=pct+'%';
+    const tri=getTri(semanas);
+    const rem=40-semanas;
+    document.getElementById('h-tri').textContent=`${tri.l} · ${rem} sem. restantes 🌟`;
+    const td=document.getElementById('h-tdots');td.innerHTML='';
+    for(let i=1;i<=3;i++){const d=document.createElement('div');d.className='tdot'+(i<=tri.n?' f':'');td.appendChild(d);}
+    const baby=getBaby(semanas);
+    document.getElementById('h-emoji').textContent=baby.e;
+    const slEl=document.getElementById('h-size-label');if(slEl)slEl.textContent='Tamanho do bebê esta semana';
+    document.getElementById('h-size').textContent=baby.s.charAt(0).toUpperCase()+baby.s.slice(1);
+    document.getElementById('h-tip-tag').textContent=`💡 Dica da Nalin — Semana ${semanas}`;
+    const tipObj=getTip(semanas);
+    const tituloEl=document.getElementById('h-tip-titulo');
+    if(tituloEl){tituloEl.textContent=tipObj.titulo||'';tituloEl.style.display=tipObj.titulo?'block':'none';}
+    document.getElementById('h-tip').textContent=tipObj.dica||tipObj;
   }
-  document.getElementById('h-tip').textContent = tipObj.dica || tipObj;
   
   // Buscar dados atualizados da API para os contadores
   const apiCont = await apiFetch('/api/conteudos') || [];
@@ -2948,26 +3059,43 @@ async function deleteAgenda(id){
 function renderPerfil(){
   if(!currentUser)return;
   const u=currentUser;
-  const {semanas,dias}=getSemanasDias(u);
   document.getElementById('p-nome').textContent=u.nome;
-  document.getElementById('p-sem').textContent=dias>0?`${semanas} + ${dias}d`:semanas;
-
-  // Carregar foto de perfil
-  const savedAvatar = DB.get(`nn_avatar_${u.id}`);
-  const avatarDiv = document.getElementById('p-avatar');
-  if(savedAvatar) {
-    avatarDiv.innerHTML = `<img src="${savedAvatar}" style="width:100%; height:100%; object-fit:cover;">`;
+  const savedAvatar=DB.get(`nn_avatar_${u.id}`);
+  const avatarDiv=document.getElementById('p-avatar');
+  if(savedAvatar){
+    avatarDiv.innerHTML=`<img src="${savedAvatar}" style="width:100%;height:100%;object-fit:cover;">`;
   } else {
-    avatarDiv.innerHTML = '🤰';
+    avatarDiv.innerHTML=u.data_nascimento_bebe?'👶':'🤰';
   }
+  const nascSection=document.getElementById('nascimento-section');
+  if(nascSection) nascSection.style.display=u.data_nascimento_bebe?'none':'block';
 
-  const tri=getTri(semanas);
-  document.getElementById('p-tri').textContent=dias>0?`${tri.l} · ${semanas}s + ${dias}d`:`${tri.l} · Semana ${semanas}`;
-  if(u.dpp){
-    const dpp=new Date(u.dpp),now=new Date();
-    const diff=Math.max(0,Math.round((dpp-now)/(86400000)));
-    document.getElementById('p-dias').textContent=diff;
-    document.getElementById('p-due').textContent='Parto previsto: '+dpp.toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
+  if(u.data_nascimento_bebe){
+    // ── MODO PÓS-PARTO ──
+    const semanasPos=getSemanasPosParto(u);
+    const diasPos=getDiasPosParto(u);
+    const totalDias=semanasPos*7+diasPos;
+    document.getElementById('p-sem').textContent=diasPos>0?`${semanasPos} + ${diasPos}d`:semanasPos;
+    document.getElementById('p-dias').textContent=totalDias;
+    const diasLbl=document.getElementById('p-dias-lbl');if(diasLbl)diasLbl.textContent='dias de vida';
+    const semLbl=document.getElementById('p-sem-lbl');if(semLbl)semLbl.textContent='semanas de vida';
+    document.getElementById('p-tri').textContent=`Bebê com ${semanasPos} semana${semanasPos!==1?'s':''} ✨`;
+    const nasc=new Date(u.data_nascimento_bebe+'T12:00:00');
+    document.getElementById('p-due').textContent='Nasceu em: '+nasc.toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
+  } else {
+    // ── MODO GESTAÇÃO ──
+    const {semanas,dias}=getSemanasDias(u);
+    document.getElementById('p-sem').textContent=dias>0?`${semanas} + ${dias}d`:semanas;
+    const diasLbl=document.getElementById('p-dias-lbl');if(diasLbl)diasLbl.textContent='dias restantes';
+    const semLbl=document.getElementById('p-sem-lbl');if(semLbl)semLbl.textContent='semanas gestadas';
+    const tri=getTri(semanas);
+    document.getElementById('p-tri').textContent=dias>0?`${tri.l} · ${semanas}s + ${dias}d`:`${tri.l} · Semana ${semanas}`;
+    if(u.dpp){
+      const dpp=new Date(u.dpp),now=new Date();
+      const diff=Math.max(0,Math.round((dpp-now)/(86400000)));
+      document.getElementById('p-dias').textContent=diff;
+      document.getElementById('p-due').textContent='Parto previsto: '+dpp.toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
+    }
   }
   apiFetch(`/api/diario?user_id=${u.id}`).then(entries=>{
     document.getElementById('p-entradas').textContent=(entries||[]).length;
@@ -4027,6 +4155,7 @@ const _safetyTimer = setTimeout(() => _hideLoading(), 6000);
   try {
     await new Promise(r => setTimeout(r, 0));
     loadDicas();
+    loadDicasPosParto();
     setTimeout(verificarAtualizacao, 1000);
 
     const savedSession = DB.get('nn_session');
@@ -4104,6 +4233,26 @@ setInterval(loadDicas, 60000);
     </div>
     <div class="login-err" id="troca-err" style="margin-top:10px;"></div>
     <button class="btn-rose" onclick="salvarNovaSenha()">Salvar minha senha</button>
+  </div>
+</div>
+
+<!-- ── MODAL NASCIMENTO ── -->
+<div class="modal-overlay" id="modal-nascimento">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-hdr"><h3>🎉 Bebê nasceu!</h3><button class="modal-close" onclick="closeModal('modal-nascimento')">✕</button></div>
+    <div class="modal-body">
+      <div style="text-align:center;font-size:48px;margin-bottom:10px;">👶</div>
+      <p style="text-align:center;font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--dark);line-height:1.5;margin-bottom:18px;">Que momento lindo! Registre o nascimento para acompanharmos o desenvolvimento do bebê juntas.</p>
+      <div class="mfield">
+        <label>Data de nascimento</label>
+        <input type="date" id="nasc-data" style="width:100%;padding:10px;border:1.5px solid var(--rose-pale);border-radius:12px;font-size:15px;color:var(--dark);">
+      </div>
+      <div id="nasc-err" style="color:#e53e3e;font-size:13px;margin-top:8px;display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-full btn-cancel" onclick="closeModal('modal-nascimento')">Cancelar</button>
+      <button class="btn-full btn-save" onclick="confirmarNascimento()">Confirmar 🎉</button>
+    </div>
   </div>
 </div>
 

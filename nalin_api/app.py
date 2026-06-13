@@ -316,8 +316,21 @@ def init_db():
                 oculto_ate TIMESTAMP NOT NULL,
                 UNIQUE(user_id, produto_id)
             );
+            CREATE TABLE IF NOT EXISTS dicas_pos_parto (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                semana INTEGER NOT NULL UNIQUE,
+                titulo TEXT,
+                dica TEXT NOT NULL,
+                emoji TEXT,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
         """)
         db.commit()
+        # Migration: campo data_nascimento_bebe
+        try:
+            db.execute('ALTER TABLE users ADD COLUMN data_nascimento_bebe TEXT')
+            db.commit()
+        except: pass
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -698,7 +711,7 @@ def save_user():
               'historico_doencas_familiares','doencas_gravidez','ja_esteve_gravida_antes',
               'intercorrencias_gestacoes_anteriores','quais_intercorrencias','experiencia_partos_anteriores',
               'relato_experiencia_parto','medicacao_suplemento','vacinacao_em_dia','sentimento_gravidez',
-              'questao_religiosa_cultural','expectativas_desejos_parto']
+              'questao_religiosa_cultural','expectativas_desejos_parto','data_nascimento_bebe']
     if 'id' in data and data['id']:
         if data.get('senha') and not str(data['senha']).startswith('$2b$'):
             data['senha'] = hash_password(data['senha'])
@@ -1164,6 +1177,57 @@ def admin_dica_detail(dica_id):
                    (int(semana),data.get('titulo',''),dica,data.get('emoji',''),dica_id))
         db.commit(); return jsonify({"status":"success"})
     db.execute('DELETE FROM dicas_personalizadas WHERE id=?',(dica_id,)); db.commit()
+    return jsonify({"status":"success"})
+
+@app.route('/api/users/registrar-nascimento', methods=['POST', 'OPTIONS'])
+def registrar_nascimento():
+    if request.method == 'OPTIONS': return '', 204
+    data = request.json or {}
+    user_id = data.get('user_id')
+    data_nasc = data.get('data_nascimento_bebe')
+    if not user_id or not data_nasc:
+        return jsonify({'status': 'error', 'message': 'Dados incompletos.'}), 400
+    db = get_db()
+    db.execute('UPDATE users SET data_nascimento_bebe=? WHERE id=?', (data_nasc, int(user_id)))
+    db.commit()
+    user = dict(db.execute('SELECT * FROM users WHERE id=?', (int(user_id),)).fetchone())
+    log_activity(int(user_id), 'Registrou nascimento do bebê', data_nasc)
+    return jsonify({'status': 'success', 'user': user})
+
+@app.route('/api/dicas-pos-parto', methods=['GET','OPTIONS'])
+def dicas_pos_parto_publicas():
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    return jsonify([dict(d) for d in db.execute('SELECT * FROM dicas_pos_parto ORDER BY semana ASC').fetchall()])
+
+@app.route('/api/admin/dicas-pos-parto', methods=['GET','POST','OPTIONS'])
+@require_admin
+def admin_dicas_pos_parto():
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    if request.method == 'GET':
+        return jsonify([dict(d) for d in db.execute('SELECT * FROM dicas_pos_parto ORDER BY semana ASC').fetchall()])
+    data = request.json or {}; semana = data.get('semana'); dica = data.get('dica','')
+    if not semana or not dica: return jsonify({"status":"error","message":"Semana e dica são obrigatórios"}), 400
+    db.execute('INSERT OR REPLACE INTO dicas_pos_parto (semana,titulo,dica,emoji) VALUES (?,?,?,?)',
+               (int(semana), data.get('titulo',''), dica, data.get('emoji','')))
+    db.commit(); return jsonify({"status":"success"})
+
+@app.route('/api/admin/dicas-pos-parto/<int:dica_id>', methods=['GET','PUT','DELETE','OPTIONS'])
+@require_admin
+def admin_dica_pos_parto_detail(dica_id):
+    if request.method == 'OPTIONS': return '', 204
+    db = get_db()
+    if request.method == 'GET':
+        dica = db.execute('SELECT * FROM dicas_pos_parto WHERE id=?', (dica_id,)).fetchone()
+        return jsonify(dict(dica)) if dica else (jsonify({"status":"error"}), 404)
+    if request.method == 'PUT':
+        data = request.json or {}; semana = data.get('semana'); dica = data.get('dica','')
+        if not semana or not dica: return jsonify({"status":"error","message":"Semana e dica são obrigatórios"}), 400
+        db.execute('UPDATE dicas_pos_parto SET semana=?,titulo=?,dica=?,emoji=? WHERE id=?',
+                   (int(semana), data.get('titulo',''), dica, data.get('emoji',''), dica_id))
+        db.commit(); return jsonify({"status":"success"})
+    db.execute('DELETE FROM dicas_pos_parto WHERE id=?', (dica_id,)); db.commit()
     return jsonify({"status":"success"})
 
 @app.route('/api/maternidade', methods=['GET','POST','OPTIONS'])

@@ -53,6 +53,7 @@ def migrate():
     required_user_columns.append(('asaas_subscription_id', 'TEXT'))
     required_user_columns.append(('assinatura_status', "TEXT DEFAULT 'inativa'"))
     required_user_columns.append(('plataforma', "TEXT DEFAULT 'pwa'"))
+    required_user_columns.append(('data_nascimento_bebe', 'TEXT'))
     cursor.execute("PRAGMA table_info(users)")
     current_user_cols = [row[1] for row in cursor.fetchall()]
     for col_name, col_type in required_user_columns:
@@ -276,7 +277,19 @@ def migrate():
             (chave, valor, descricao)
         )
 
-    # ── 6. Garantir admin com credenciais corretas da Nalin ──────────────────
+    # ── 6. Tabela dicas_pos_parto ─────────────────────────────────────────────
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS dicas_pos_parto (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        semana INTEGER NOT NULL UNIQUE,
+        titulo TEXT,
+        dica TEXT NOT NULL,
+        emoji TEXT,
+        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    # ── 7. Garantir admin com credenciais corretas da Nalin ──────────────────
     cursor.execute("SELECT COUNT(*) FROM admin_config WHERE username = 'nalinnazareth'")
     if cursor.fetchone()[0] == 0:
         # Não existe admin 'nalinnazareth' — verifica se tem algum admin

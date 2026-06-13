@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS users (
     asaas_customer_id TEXT,
     asaas_subscription_id TEXT,
     assinatura_status TEXT DEFAULT 'inativa',
+    data_nascimento_bebe TEXT,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -255,6 +256,16 @@ CREATE TABLE IF NOT EXISTS comunidade_curtidas (
     UNIQUE(post_id, user_id),
     FOREIGN KEY (post_id) REFERENCES comunidade_posts(id),
     FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Tabela de Dicas Pós-Parto
+CREATE TABLE IF NOT EXISTS dicas_pos_parto (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    semana INTEGER NOT NULL UNIQUE,
+    titulo TEXT,
+    dica TEXT NOT NULL,
+    emoji TEXT,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Tabela de Logs de Atividade
