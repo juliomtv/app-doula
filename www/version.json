@@ -1,6 +1,6 @@
 {
-  "versao": "1.6.4",
+  "versao": "1.6.5",
   "data": "2026-06-13",
-  "notas": "Fix: grid de recomendações responsivo com cards compactos",
+  "notas": "Fix: menu inferior fixo e imagens de produtos sem corte",
   "obrigatoria": false
 }
