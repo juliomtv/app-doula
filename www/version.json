@@ -1,6 +1,6 @@
 {
-  "versao": "1.6.3",
+  "versao": "1.6.4",
   "data": "2026-06-13",
-  "notas": "Fix: cards de recomendações com tamanho correto",
+  "notas": "Fix: grid de recomendações responsivo com cards compactos",
   "obrigatoria": false
 }
